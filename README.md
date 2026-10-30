@@ -127,11 +127,11 @@ Each category looks like this:
 },
 ```
 
-- **level** is 1 to 7: 1–2 easy, 3 medium, 4–5 hard, 6–7 expert. "All levels" games use levels 1–5, and Intermediate and Expert games use the harder levels.
+- **level** is 1 to 5 and sets the row: 1 = 100 (easiest), 2 = 200, 3 = 300 (medium), 4 = 400, 5 = 500 (somewhat hard). Older questions at levels 6–7 are only used if a category has nothing closer.
 - **hint** is optional. The host can show it to players.
 - **verse** is optional: the Bible passage the question comes from, like `verse: "Daniel 6:16"`. It shows with the hint as 📖 Daniel 6:16, so players can look it up. Almost every built-in Bible question has one.
 - **accept** is optional: other answers that count as correct when players type their answers.
-- Give each category at least one question for each level from 1 to 5, plus a few at 6–7 so it can appear in Expert games. Two or more per level means more variety between games.
+- Give each category at least one question for each level from 1 to 5. Two or more per level means more variety between games.
 - Final round questions are in the `finals` list at the bottom of the file.
 - **Audio:** add `melody` (notes like `"C4:1 E4:1 G4:2"`) and `bpm`, or `audio` (a sound file you uploaded to the repo, like `"songs/clip.mp3"`) with `start` and `length` in seconds. Use clips you have the right to play.
 - **Spotify:** a question can also have a `spotify` song link instead of audio, with `start` in seconds (1:05 = 65) and `length`. For whole categories of songs, use the `spotify` section at the bottom.
