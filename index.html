@@ -386,7 +386,11 @@ const fileStore={db(){return new Promise((ok,no)=>{try{const r=indexedDB.open('s
   async put(v){try{const d=await this.db();d.transaction('f','readwrite').objectStore('f').put(v,'theme')}catch{}},
   async get(){try{const d=await this.db();return await new Promise(ok=>{const r=d.transaction('f').objectStore('f').get('theme');r.onsuccess=()=>ok(r.result||null);r.onerror=()=>ok(null)})}catch{return null}},
   async del(){try{const d=await this.db();d.transaction('f','readwrite').objectStore('f').delete('theme')}catch{}}};
-function decodeAudio(buf){const ac=audio();return new Promise((ok,no)=>{const p=ac.decodeAudioData(buf,ok,no);if(p&&p.then)p.then(ok,no)})}
+function decodeAudio(buf){const ac=audio();return new Promise((ok,no)=>{const p=ac.decodeAudioData(buf,ok,no);if(p&&p.then)p.then(ok,no)}).then(trimSilence)}
+/* cut quiet stretches off the start and end so the loop has no gap */
+function trimSilence(b){try{const n=b.length,ch=[...Array(b.numberOfChannels)].map((_,i)=>b.getChannelData(i)),loud=i=>ch.some(c=>Math.abs(c[i])>0.004);
+  let a=0;while(a<n&&!loud(a))a++;let z=n-1;while(z>a&&!loud(z))z--;if(a>=z||(a<b.sampleRate*0.02&&n-1-z<b.sampleRate*0.02))return b;
+  const out=audio().createBuffer(b.numberOfChannels,z-a+1,b.sampleRate);ch.forEach((c,i)=>out.copyToChannel?out.copyToChannel(c.subarray(a,z+1),i):out.getChannelData(i).set(c.subarray(a,z+1)));return out}catch{return b}}
 function alertNote(t){const el=document.createElement('div');el.className='toast';el.textContent=t;document.body.appendChild(el);setTimeout(()=>el.remove(),4000)}
 async function restoreThemeFile(){const v=await fileStore.get();if(!v||!v.data)return;try{Music.buf=await decodeAudio(v.data.slice(0));Music.fname=v.name||'Your music';if(Music.kind==='show'){const k=Music.kind;Music.stop();Music.start(k)}if(view==='host'||view==='display'||view==='setup')render()}catch{}}
 const Music={on:false,kind:null,el:null,timer:null,bus:null,step:0,next:0,prog:()=>0,
@@ -402,7 +406,7 @@ const Music={on:false,kind:null,el:null,timer:null,bus:null,step:0,next:0,prog:(
   at:0,buf:null,src:null,fname:'',
   async file(f){const k=this.kind;this.stop();this.at=0;
     if(!f){this.buf=null;this.fname='';fileStore.del();if(k)this.start(k);render();return}
-    try{const data=await f.arrayBuffer();this.buf=await decodeAudio(data.slice(0));this.fname=f.name;fileStore.put({name:f.name,data})}catch{this.buf=null;this.fname='';alertNote('That file couldn’t be played. Try an MP3 or M4A.')}
+    try{const data=await f.arrayBuffer();this.buf=await decodeAudio(data.slice(0));this.fname=f.name;fileStore.put({name:f.name,data})}catch{this.buf=null;this.fname='';alertNote('That file’s sound couldn’t be read on this browser. Try an MP3, M4A or MP4.')}
     if(k)this.start(k);render()},
   tension(t){
     const p=Math.min(1,Math.max(0,this.prog()||0)),e=60/(92*(1+0.55*p))/2,s=this.step,bar=Math.floor(s/8)%4,i=s%8,b=this.bus;
@@ -525,9 +529,9 @@ function flash(kind){let el=document.getElementById('fxflash');if(!el){el=docume
   el.className='';void el.offsetWidth;el.className='fxflash '+(kind==='ok'?'fx-ok':'fx-no');el.innerHTML=`<span>${kind==='ok'?'✓':'✗'} ${txt}</span>`;
   clearTimeout(flashT);flashT=setTimeout(()=>{el.className=''},1700)}
 function hostAudio(){if(view!=='host'||!S)return;Music.prog=()=>S&&S.tmr?1-tLeft()/(S.tmr.len||1):0;if(displayOn()||S.sound===false){setMusic(null);return}setMusic(wantMusic(S.phase,!!S.tmr?.run,S.tmusic!==false,!!S.music))}
-function musicControlsHTML(){return `<div class="row"><label for="musicfile" class="lbl" style="margin:0">Theme from a music file (optional)</label><input type="file" id="musicfile" accept="audio/*" data-music="file" style="width:auto;max-width:100%;min-width:0">${Music.buf?`<span class="pill">♪ ${esc(Music.fname)}</span><button class="btn-sm btn-ghost" data-act="music-builtin">Use the Spotify theme again</button>`:''}
+function musicControlsHTML(){return `<div class="row"><label for="musicfile" class="lbl" style="margin:0">Theme from a music file (optional)</label><input type="file" id="musicfile" accept="audio/*,video/*,.mov,.mp4,.m4a" data-music="file" style="width:auto;max-width:100%;min-width:0">${Music.buf?`<span class="pill">♪ ${esc(Music.fname)}</span><button class="btn-sm btn-ghost" data-act="music-builtin">Use the Spotify theme again</button>`:''}
   <label for="musicvol" class="lbl" style="margin:0">Volume</label><input type="range" id="musicvol" min="0" max="1" step="0.05" value="${musicVol}" data-music="vol" style="width:140px;padding:0"></div>
-  <span class="note">${Music.buf?'Your file loops with no gap at all and is remembered on this device.':'The Jeopardy theme plays from Spotify on a loop. Its volume follows this device’s volume (the slider sets the timer music). If it doesn’t start, tap anywhere once.'} If you have your own copy of a theme as an audio file (MP3 or M4A), choose it here for a perfectly seamless loop. It plays only on this device.</span>`}
+  <span class="note">${Music.buf?'Your file loops with no gap at all and is remembered on this device.':'The Jeopardy theme plays from Spotify on a loop. Its volume follows this device’s volume (the slider sets the timer music). If it doesn’t start, tap anywhere once.'} You can choose an audio file (MP3 or M4A) or a video (like a screen recording), and the game plays its sound. Silence at the start and end is trimmed so it loops with no gap. The file stays on this device and is never uploaded.</span>`}
 let wakeLock=null;async function keepAwake(){try{if(navigator.wakeLock&&!wakeLock){wakeLock=await navigator.wakeLock.request('screen');wakeLock.addEventListener('release',()=>{wakeLock=null})}}catch{}}
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&(view==='display'||view==='host'))keepAwake()});
 
