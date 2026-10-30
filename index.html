@@ -350,26 +350,35 @@ let musicVol=Number(store.get('ssw.vol',0.5));
    'show'    an upbeat game-show theme for the board (or the host's own music file)
    'tension' suspenseful countdown music that speeds up as the timer runs down */
 /* theme song from Spotify (questions.js spotify.theme), looped with its own hidden player */
-const ThemeSpot={ctl:null,want:false,made:false,played:false,ok:false,pos:0,dur:0,
+const ThemeSpot={ctl:null,want:false,made:false,played:false,ok:false,pos:0,dur:0,playingAt:0,lastPos:0,kicked:0,
   id(){const qs=(window.QUESTION_BANK||{}).spotify||{};return typeof spotifyId==='function'?spotifyId(qs.theme||''):''},
+  /* true while Spotify has reported it's playing in the last 2 seconds */
+  isPlaying(){return Date.now()-this.playingAt<2000},
+  kick(){if(!this.ctl||this.isPlaying()||Date.now()-this.kicked<1500)return;this.kicked=Date.now();
+    try{this.played&&this.ctl.resume?this.ctl.resume():this.ctl.play()}catch{}},
   start(){const id=this.id();if(!id)return false;this.want=true;
-    if(this.ctl){try{this.played?this.ctl.resume():this.ctl.play()}catch{}}
+    if(this.ctl)this.kick();
     else if(!this.made){this.made=true;Spot.load(api=>{let w=document.getElementById('themewrap');if(!w){w=document.createElement('div');w.id='themewrap';w.setAttribute('aria-hidden','true');
       w.style.cssText='position:fixed;left:0;bottom:0;width:300px;height:80px;opacity:0;pointer-events:none;z-index:-1;overflow:hidden';document.body.appendChild(w)}
       const el=document.createElement('div');w.appendChild(el);
-      api.createController(el,{uri:'spotify:track:'+id,width:300,height:80},ctl=>{this.ctl=ctl;ctl.addListener('playback_update',e=>this.update(e));ctl.addListener('ready',()=>{if(this.want)try{ctl.play()}catch{}});if(this.want)try{ctl.play()}catch{}})})}
+      api.createController(el,{uri:'spotify:track:'+id,width:300,height:80},ctl=>{this.ctl=ctl;ctl.addListener('playback_update',e=>this.update(e));ctl.addListener('ready',()=>{if(this.want)this.kick()});if(this.want)this.kick()})})}
     return true},
-  update(e){const d=(e&&e.data)||{};this.pos=(d.position||0)/1000;if(d.duration)this.dur=d.duration/1000;
-    if(!d.isPaused&&!d.isBuffering&&d.duration){this.ok=true;this.played=true}
+  update(e){const d=(e&&e.data)||{},pos=d.position||0,dur=d.duration||0;this.pos=pos/1000;if(dur)this.dur=dur/1000;
+    const playing=!d.isPaused&&!d.isBuffering&&dur>0;
+    if(playing){this.ok=true;this.played=true;this.playingAt=Date.now()}
     if(!this.want){if(!d.isPaused)try{this.ctl.pause()}catch{}return}
-    /* loop: play the whole song, then jump back to the start right as it ends (timed to the song, not to the next update) */
+    /* loop: let the whole song play, then jump back to the start right as it ends.
+       The jump is timed from the song's own clock, so it doesn't wait for the next update. */
     clearTimeout(this.loopT);
-    if(d.duration&&!d.isPaused&&!d.isBuffering){const left=d.duration-d.position;
-      if(left<=60){try{this.ctl.seek(0)}catch{}}
-      else this.loopT=setTimeout(()=>{if(this.want){try{this.ctl.seek(0)}catch{}}},Math.max(0,left-60))}
-    else if(d.isPaused&&this.played&&d.duration&&(d.position===0||d.position>=d.duration-1500)){try{this.ctl.seek(0);this.ctl.resume?this.ctl.resume():this.ctl.play()}catch{}}},
+    if(playing){const left=dur-pos;
+      if(left<=80){this.loop()}else this.loopT=setTimeout(()=>{if(this.want)this.loop()},Math.max(0,left-80))}
+    /* the song finished on its own (stopped at the very end, or Spotify reset it to 0:00 after the end) */
+    else if(d.isPaused&&this.played&&dur&&(pos>=dur-1500||(pos===0&&this.lastPos>=dur-3000)))this.loop(true);
+    if(dur)this.lastPos=pos},
+  loop(stopped){this.lastPos=0;try{this.ctl.seek(0);if(stopped)this.ctl.resume?this.ctl.resume():this.ctl.play()}catch{}},
   stop(){this.want=false;clearTimeout(this.loopT);try{this.ctl&&this.ctl.pause()}catch{}}};
-document.addEventListener('pointerdown',()=>{if(ThemeSpot.want&&!ThemeSpot.ok&&ThemeSpot.ctl){try{ThemeSpot.ctl.play()}catch{}}},true);
+/* browsers can block music until someone taps: a tap starts the theme only if it isn't already playing */
+document.addEventListener('pointerdown',()=>{if(ThemeSpot.want)ThemeSpot.kick()},true);
 const Music={on:false,kind:null,el:null,timer:null,bus:null,step:0,next:0,prog:()=>0,
   start(kind){if(this.on&&this.kind===kind)return;this.stop();this.on=true;this.kind=kind;
     if(kind==='show'&&this.el){this.el.loop=true;this.el.volume=musicVol;this.el.currentTime=0;this.el.play().catch(()=>{});return}
