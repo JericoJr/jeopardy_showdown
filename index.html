@@ -372,7 +372,7 @@ let spotOpen=false,volOpen=false,cidDraft='';
 /* TV board size, remembered on the TV laptop: 90% by default so nothing gets cut off on a TV */
 const TV_SIZES=[0.7,0.75,0.8,0.85,0.9,0.95,1];
 const tvSize=()=>{const v=+D.tvSize;return TV_SIZES.includes(v)?v:0.9};
-function applyTvSize(){const z=view==='display'?tvSize():1;document.body.style.setProperty('--tvz',z)}
+function applyTvSize(){const z=view==='display'?tvSize():1;try{document.body.style.setProperty('--tvz',z)}catch{}}
 function setTvSize(d){const i=TV_SIZES.indexOf(tvSize());D.tvSize=TV_SIZES[Math.max(0,Math.min(TV_SIZES.length-1,i+d))];saveDisplay();render()}
 document.addEventListener('keydown',e=>{if(view!=='display'||/INPUT|TEXTAREA/.test((e.target&&e.target.tagName)||''))return;if(e.key==='-'){setTvSize(-1)}else if(e.key==='='||e.key==='+'){setTvSize(1)}});
 /* full screen (not available on iPhone; iPad and computers are fine) */
@@ -1026,7 +1026,7 @@ function render(){
   if(view==='host'&&dragging()){renderHeld=true;return}
   document.body.classList.toggle('tv',view==='display');
   document.body.classList.toggle('tvfit',view==='display'&&D.step==='live'&&!!PS&&['board','clue','dd'].includes(PS.ph));
-  document.documentElement.classList.toggle('tvhtml',view==='display');document.documentElement.classList.toggle('tvfithtml',document.body.classList.contains('tvfit'));applyTvSize();
+  try{const de=document.documentElement;de.classList.toggle('tvhtml',view==='display');de.classList.toggle('tvfithtml',view==='display'&&document.body.classList.contains('tvfit'))}catch{}applyTvSize();
   document.body.classList.toggle('tuning',view==='tuner');if(view!=='tuner')Tuner.close();
   if(spotDone){$('#app').innerHTML=spotDoneHTML();return}
   if(view==='display'&&document.activeElement&&document.activeElement.id==='spot-cid'){renderHeld=true;return}
