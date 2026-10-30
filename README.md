@@ -130,6 +130,8 @@ You can also edit the questions for a single game from the host screen with **Ed
 
 ## Good to know
 
+- **TV board fits any screen:** the board, scores and questions size themselves to the screen's height, so the whole board fits on a TV, laptop or tablet, including over AirPlay. Picture questions show the picture beside the question on widescreen TVs.
+
 - **Full screen:** the host, the TV board and players' phones have a **⛶ Full screen** button during the game (tap again to exit). iPhones don't allow web pages to go full screen, so the button doesn't show there; iPads, Android phones and computers are fine.
 
 - **AirPlay to a TV (for example a Roku TV):** on a Mac, mirroring sends the picture but keeps the sound on the Mac until you pick the TV: open **Control Center › Sound** and choose your TV. On iPhone or iPad, turn the volume up; the game plays sound even when the silent switch is on. On a Roku TV, make sure AirPlay is turned on and the TV volume is up. The TV board's code screen has these tips too.

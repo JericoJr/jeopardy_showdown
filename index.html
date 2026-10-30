@@ -154,6 +154,35 @@ label,.lbl{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:va
 .catpick button.sel{background:var(--gold);color:var(--gold-ink);border-color:var(--gold);font-weight:800}
 /* TV board display */
 body.tv .wrap{max-width:1600px}
+/* TV board: everything sizes to the screen's height, so the whole board fits on any TV, laptop or tablet */
+body.tvfit{height:100vh;height:100dvh;box-sizing:border-box;overflow:hidden;display:flex;flex-direction:column;padding-top:max(8px,env(safe-area-inset-top,0px));padding-bottom:max(8px,env(safe-area-inset-bottom,0px))}
+body.tvfit #app{flex:1 1 auto;min-height:0;width:100%;max-width:none;gap:clamp(4px,1vh,12px);overflow-y:auto;overflow-x:hidden}
+body.tvfit #app>*{flex-shrink:0}
+body.tvfit .board{flex:1 1 0;min-height:160px;grid-template-rows:minmax(0,.75fr) repeat(5,minmax(0,1fr));gap:clamp(3px,.6vh,8px);padding:clamp(3px,.6vh,8px)}
+body.tvfit .tile{aspect-ratio:auto;height:100%;min-height:0;font-size:clamp(16px,min(4.4vw,7vh),76px)}
+body.tvfit .cat{min-height:0;height:100%;font-size:clamp(10px,min(1.7vw,2.7vh),28px);padding:2px 4px}
+body.tvfit .order{padding:3px 8px;gap:4px 8px}body.tvfit .order .olab{display:none}
+body.tvfit .ochip{padding:3px 14px}body.tvfit .ochip .onm{font-size:clamp(13px,2.3vh,22px)}body.tvfit .ochip small{font-size:clamp(9px,1.4vh,13px)}body.tvfit .oarrow{font-size:clamp(13px,2.3vh,22px)}
+body.tvfit .scores{grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:6px}
+body.tvfit .scores .team{padding:3px 10px;gap:0}body.tvfit .scores .mem{display:none}body.tvfit .scores .badge{font-size:9px;padding:1px 5px}
+body.tvfit .scores .sc{font-size:clamp(16px,3.4vh,34px);line-height:1.1}body.tvfit .scores .nm{font-size:clamp(12px,2vh,18px)}
+body.tvfit .spotdd:not([open]){padding-top:4px;padding-bottom:4px}
+body.tvfit .tvq{display:flex;flex-direction:column;gap:clamp(6px,1.2vh,14px);flex:1 1 0!important;min-height:min(220px,40vh)}
+body.tvfit .tvq .tvbox{min-height:clamp(70px,16vh,260px)!important}
+body.tvfit .tvq.has-img .artbox{flex:none;max-height:46vh;width:auto;aspect-ratio:4/3;height:46vh;max-width:100%}
+@media (min-aspect-ratio:5/4){body.tvfit .tvq.has-img{flex-direction:row;align-items:stretch}
+  body.tvfit .tvq.has-img .artbox{height:auto;max-height:none;width:auto;max-width:56%;margin:0;align-self:center;height:100%;max-height:100%}
+  body.tvfit .tvq.has-img .tvbox{flex:1 1 0;min-width:0}}
+@media (max-height:640px){body.tvfit .order{display:none}body.tvfit .tvclue{font-size:clamp(16px,min(4vw,6vh),40px)}body.tvfit .bigtime{font-size:clamp(28px,8vh,60px)!important}}
+body.tvfit .tvmusic{display:none}
+body.tvfit .tvbox{min-height:0;flex:1 1 0;padding:clamp(10px,3vh,48px);gap:clamp(6px,1.5vh,18px)}
+body.tvfit .tvclue{font-size:clamp(18px,min(4.4vw,6.5vh),64px)}
+body.tvfit .artbox.tvsize{max-width:min(900px,100%,56vh)}
+body.tvfit .bigtime{font-size:clamp(32px,9vh,110px)!important;line-height:1}
+body.tvfit .result{font-size:clamp(22px,5.5vh,72px)}
+body.tvfit .answer .a{font-size:clamp(18px,4vh,44px)!important}
+body.tvfit .dd{font-size:clamp(40px,min(9vw,14vh),140px)}
+body.tvfit .ddwager b{font-size:clamp(36px,12vh,110px)}
 .tvclue{font-family:var(--f-clue);font-weight:500;font-size:clamp(28px,4.6vw,64px);line-height:1.2;text-align:center;text-wrap:balance;overflow-wrap:anywhere}
 .tvbox{background:var(--tile);border-radius:22px;padding:clamp(24px,5vw,64px);min-height:48vh;display:flex;flex-direction:column;justify-content:center;gap:18px;box-shadow:0 20px 60px rgba(0,0,0,.4)}
 .result{font-family:var(--f-display);text-transform:uppercase;text-align:center;font-size:clamp(30px,6vw,72px);line-height:1}
@@ -958,6 +987,7 @@ function applyState(st){
 function render(){
   if(view==='host'&&dragging()){renderHeld=true;return}
   document.body.classList.toggle('tv',view==='display');
+  document.body.classList.toggle('tvfit',view==='display'&&D.step==='live'&&!!PS&&['board','clue','dd'].includes(PS.ph));
   document.body.classList.toggle('tuning',view==='tuner');if(view!=='tuner')Tuner.close();
   if(spotDone){$('#app').innerHTML=spotDoneHTML();return}
   if(view==='display'&&document.activeElement&&document.activeElement.id==='spot-cid'){renderHeld=true;return}
@@ -1455,8 +1485,8 @@ function displayHTML(){
   else if(st.ph==='clue'&&st.clue){
     const c=st.clue,who=c.who,res=c.res||{},r=who!=null?res[who]:null;
     main=`${orderHTML(st.ord)}<div class="row"><span class="eyebrow" style="font-size:15px">${esc(c.cat)} · ${c.dd?'Daily Double · wager '+c.val:c.val+' points'}</span><div class="spacer"></div>${who!=null?`<span class="answering">${esc(st.teams[who]?.name)} answering</span>`:''}</div>
-    ${c.img?picHTML(c.img,c.zoom,c.ep,'tvsize'):''}
-    <div class="tvbox" style="${c.img?'min-height:0':''}">${c.m?`<div class="cliptag" style="font-size:18px">♪ Listen${c.m.spotify?' · playing from Spotify':''}</div>`:''}<div class="tvclue ${c.emoji?'emojiq':''}">${clueText(c.q||'')}</div>${c.h?`<div class="hint" style="font-size:clamp(18px,2.6vw,30px)">Hint: ${esc(c.h)}</div>`:''}</div>
+    <div class="tvq ${c.img?'has-img':''}">${c.img?picHTML(c.img,c.zoom,c.ep,'tvsize'):''}
+    <div class="tvbox" style="${c.img?'min-height:0':''}">${c.m?`<div class="cliptag" style="font-size:18px">♪ Listen${c.m.spotify?' · playing from Spotify':''}</div>`:''}<div class="tvclue ${c.emoji?'emojiq':''}">${clueText(c.q||'')}</div>${c.h?`<div class="hint" style="font-size:clamp(18px,2.6vw,30px)">Hint: ${esc(c.h)}</div>`:''}</div></div>
     ${!c.a?timerP(true):''}
     ${r===1?`<div class="result ok">Correct! ${esc(st.teams[who]?.name)} +${c.val}</div>`:r===-1&&!c.a?'<div class="result no">Not quite</div>':''}
     ${c.a||(c.rev&&c.m&&c.m.spotify)?`<div class="answer revealed"><span class="eyebrow">Answer</span><span class="a" style="font-size:clamp(22px,3.4vw,44px)">${esc(c.a||'')}</span></div>${c.m&&c.m.spotify?songCard(c.m.spotify,152):''}`:''}
@@ -1473,7 +1503,7 @@ function displayHTML(){
     else{const max=st.teams.length?Math.max(...st.teams.map(t=>t.score)):0;main=`<div class="tvbox"><div class="eyebrow" style="text-align:center">And the winner is</div><div class="banner">${st.teams.filter(t=>t.score===max).map(t=>esc(t.name)).join(' & ')}</div><div style="text-align:center;font-family:var(--f-display);font-size:40px;color:var(--gold)">${max} points</div></div>`}
   }
   return `${bar}${main}${scores}
-  <details class="card"><summary class="eyebrow" style="cursor:pointer">Music on this screen</summary><span class="note">The host turns background music on and off. ${PS&&PS.music?'Music is on.':'Music is off right now.'} Sound effects play only for correct and wrong answers.</span>${musicControlsHTML()}</details>`;
+  <details class="card tvmusic"><summary class="eyebrow" style="cursor:pointer">Music on this screen</summary><span class="note">The host turns background music on and off. ${PS&&PS.music?'Music is on.':'Music is off right now.'} Sound effects play only for correct and wrong answers.</span>${musicControlsHTML()}</details>`;
 }
 
 /* ---------- events ---------- */
