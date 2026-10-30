@@ -42,11 +42,12 @@ In every mode, higher points always means a harder question.
 
 ### Music and sounds
 
-- **Theme music:** an original, upbeat game-show theme for the board. The host turns it on or off with the **Theme music** button.
+- **Theme music:** an original, upbeat game-show theme that plays in the lobby and on the board between questions. It goes quiet while a question is open. It's on by default; the host turns it on or off with the **Theme music** button.
 - **Timer music:** original suspenseful countdown music that plays while the timer is running and speeds up as time runs out. It stops when the timer is paused or ends. Turn it on or off with the **Timer music** button.
 - Music plays on the TV board, or on the host's device if no TV board is connected. Song clips pause the music while they play.
 - To use your own theme song instead, choose a music file under **Music on this screen** on the TV board. Use music you have the right to play.
-- The only sound effects are for correct and wrong answers.
+- **Timer:** when the host starts the timer, a big countdown number shows on the TV board and players' phones. At zero, a buzzer sounds and a red **Time's up!** animation plays automatically. The host still decides the points.
+- **Sound effects and animations:** correct answers get a chime and a green **Correct!** flash; wrong answers get a buzz and a red **Wrong!** shake. They show on the TV board, the host screen and players' phones.
 - Turning **Sounds** off on the host also mutes the TV board.
 - Browsers can block sound until someone clicks the page. If the TV board shows **Click to turn on sound**, click it once on the laptop.
 
@@ -60,7 +61,7 @@ In every mode, higher points always means a harder question.
   - **Who Sings It?:** a clip plays and players name the artist.
   - **Name That Intro:** the first few seconds of a worship song or hymn play, and players name the song.
 - **Song Tuner** (in setup and on the host screen): play each song and tap **Chorus starts here** so clips play the part everyone knows. Times are saved on that device and used right away. To keep them for every device, tap **Copy all my times** and add them to `questions.js` as `start`.
-- The host sees the answer, including a Spotify song card, on the iPad. When the host reveals the answer, the TV board shows the same card.
+- The host sees the song title as the answer on the iPad, and no song audio or video plays on the iPad while a TV board is connected. When the host reveals the answer, the TV board shows the Spotify song card.
 - For full songs, the browser on the TV board laptop should be logged into Spotify. Without a login, Spotify plays only 30-second previews, which may not include the part you picked. If a clip doesn't start, tap **Play clip again** on the host screen.
 
 ## Adding your own questions
