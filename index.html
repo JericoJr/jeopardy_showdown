@@ -154,6 +154,9 @@ label,.lbl{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:va
 .catpick button.sel{background:var(--gold);color:var(--gold-ink);border-color:var(--gold);font-weight:800}
 /* TV board display */
 body.tv .wrap{max-width:1600px}
+/* TV board size: scales the whole board down and keeps it centred (TVs and AirPlay often crop the edges) */
+html.tvhtml{background:var(--stage)}html.tvfithtml{overflow:hidden;height:100%}
+body.tvfit{transform:scale(var(--tvz,1));transform-origin:50% 50%}
 /* TV board: everything sizes to the screen's height, so the whole board fits on any TV, laptop or tablet */
 body.tvfit{height:100vh;height:100dvh;box-sizing:border-box;overflow:hidden;display:flex;flex-direction:column;padding-top:max(8px,env(safe-area-inset-top,0px));padding-bottom:max(8px,env(safe-area-inset-bottom,0px))}
 body.tvfit #app{flex:1 1 auto;min-height:0;width:100%;max-width:none;gap:clamp(4px,1vh,12px);overflow-y:auto;overflow-x:hidden}
@@ -223,6 +226,7 @@ body.tuning{padding-bottom:62vh}
 .spotdd:not([open]){padding-top:10px;padding-bottom:10px;gap:0}
 .spotdd .spotsum{flex:1;min-width:0}.spotdd .spotchev{transition:transform .2s;opacity:.7}.spotdd[open] .spotchev{transform:rotate(180deg)}
 .volrow{display:grid;grid-template-columns:minmax(110px,auto) 1fr 48px;align-items:center;gap:10px}.volrow input{padding:0;width:100%}.volrow b{text-align:right;font-variant-numeric:tabular-nums}
+.tvsize{display:inline-flex;align-items:center;gap:4px}.tvsize .btn-sm{min-width:32px;padding:4px 8px}
 .steps{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:6px}
 .order{display:flex;align-items:center;justify-content:center;gap:6px 8px;flex-wrap:wrap;background:var(--panel);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:8px 10px}
 .order .olab{width:100%;text-align:center;margin-bottom:-2px}
@@ -365,6 +369,12 @@ setup.settings=Object.assign(clone(DEF_SET),setup.settings||{});
 if(!PRESETS.some(p=>p.id===setup.preset))setup.preset='random';
 setup.pick=(setup.pick||[]).filter(id=>BANK.some(b=>b.id===id));
 let spotOpen=false,volOpen=false,cidDraft='';
+/* TV board size, remembered on the TV laptop: 90% by default so nothing gets cut off on a TV */
+const TV_SIZES=[0.7,0.75,0.8,0.85,0.9,0.95,1];
+const tvSize=()=>{const v=+D.tvSize;return TV_SIZES.includes(v)?v:0.9};
+function applyTvSize(){const z=view==='display'?tvSize():1;document.body.style.setProperty('--tvz',z)}
+function setTvSize(d){const i=TV_SIZES.indexOf(tvSize());D.tvSize=TV_SIZES[Math.max(0,Math.min(TV_SIZES.length-1,i+d))];saveDisplay();render()}
+document.addEventListener('keydown',e=>{if(view!=='display'||/INPUT|TEXTAREA/.test((e.target&&e.target.tagName)||''))return;if(e.key==='-'){setTvSize(-1)}else if(e.key==='='||e.key==='+'){setTvSize(1)}});
 /* full screen (not available on iPhone; iPad and computers are fine) */
 const canFull=()=>!!(document.fullscreenEnabled||document.webkitFullscreenEnabled);
 const isFull=()=>!!(document.fullscreenElement||document.webkitFullscreenElement);
@@ -1016,6 +1026,7 @@ function render(){
   if(view==='host'&&dragging()){renderHeld=true;return}
   document.body.classList.toggle('tv',view==='display');
   document.body.classList.toggle('tvfit',view==='display'&&D.step==='live'&&!!PS&&['board','clue','dd'].includes(PS.ph));
+  document.documentElement.classList.toggle('tvhtml',view==='display');document.documentElement.classList.toggle('tvfithtml',document.body.classList.contains('tvfit'));applyTvSize();
   document.body.classList.toggle('tuning',view==='tuner');if(view!=='tuner')Tuner.close();
   if(spotDone){$('#app').innerHTML=spotDoneHTML();return}
   if(view==='display'&&document.activeElement&&document.activeElement.id==='spot-cid'){renderHeld=true;return}
@@ -1500,7 +1511,7 @@ function displayHTML(){
       <button class="btn-ghost btn-sm" data-act="go-role">Back</button></div>`;
   const st=PS;
   const bar=`<div class="row"><span class="eyebrow">${esc(st?.title||'Jeopardy Showdown')} · Join with code <b style="color:var(--gold)">${esc(D.code)}</b></span><div class="spacer"></div><div id="conn">${connHTML()}</div>
-    <span id="sndwarn"></span><button class="btn-sm btn-ghost" data-act="d-sound">${D.mute?'Sound: off':'Sound: on'}</button>${canFull()?`<button class="btn-sm btn-ghost" data-act="fs">${isFull()?'Exit full screen':'⛶ Full screen'}</button>`:''}<button class="btn-sm btn-ghost" data-act="d-leave">Exit</button></div>${tvSpotCardHTML()}`;
+    <span id="sndwarn"></span><button class="btn-sm btn-ghost" data-act="d-sound">${D.mute?'Sound: off':'Sound: on'}</button>${canFull()?`<button class="btn-sm btn-ghost" data-act="fs">${isFull()?'Exit full screen':'⛶ Full screen'}</button>`:''}<span class="tvsize" role="group" aria-label="Board size"><button class="btn-sm btn-ghost" data-act="tv-smaller" aria-label="Smaller">−</button><span class="note">Size ${Math.round(tvSize()*100)}%</span><button class="btn-sm btn-ghost" data-act="tv-bigger" aria-label="Bigger">+</button></span><button class="btn-sm btn-ghost" data-act="d-leave">Exit</button></div>${tvSpotCardHTML()}`;
   if(!st)return `${bar}<div class="tvbox"><div class="big-status">${net==='live'?'Loading…':'Connecting to the host…'}</div>${netNote()}</div>`;
   const scores=`<div class="scores">${st.teams.map((t,i)=>`<div class="team ${st.hi===i?'turn':''}">${st.hi===i?`<span class="badge">${st.ph==='clue'&&st.clue&&st.clue.who===i?'Answering':st.ph==='board'?'Picking':'Their turn'}</span>`:''}<span class="nm">${esc(t.name)}</span><span class="sc ${t.score<0?'neg':''}">${t.score}</span><span class="mem">${esc((t.m||[]).map(m=>m.n).join(', '))}</span></div>`).join('')}</div>`;
   let main='';
@@ -1679,6 +1690,8 @@ document.addEventListener('click',e=>{
     case 'd-code':{ended=false;setTimeout(tvSpotLinked,0);const c=String(D.code||'').toUpperCase().replace(/[^A-Z]/g,'');if(c.length!==4){$('#d-code')?.focus();return}D.code=c;D.step='live';saveDisplay();PS=null;PSkey='';clientOpen(c,'display');keepAwake();render();break}
     case 'd-leave':D.step='code';saveDisplay();netClose();Music.stop();Clip.stop();lastFx=null;lastClip=null;PS=null;PSkey='';view='role';render();break;
     case 'd-full':toggleFull();break;
+    case 'tv-smaller':setTvSize(-1);break;
+    case 'tv-bigger':setTvSize(1);break;
   }
 });
 document.addEventListener('input',e=>{
