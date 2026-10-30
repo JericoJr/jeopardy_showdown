@@ -50,15 +50,14 @@ In every mode, higher points always means a harder question.
 
 ### Song categories
 
-- **Finish the Lyric** shows a hymn line with an underlined blank, and players fill in the missing word. Lines with `start` and `cut` times play your Spotify recording and stop right at the blank; the rest use a built-in tune until you add times.
-- Clips play on the TV board (or the host's device if no TV board is connected) when the clue opens, then stop after a few seconds. The host can replay or stop a clip.
+- **Finish the Lyric** shows a public-domain hymn line with an underlined blank and plays a smooth built-in version of the tune, and players fill in the missing word.
+- Clips play on the TV board (or the host's device if no TV board is connected) when the host taps **Play clip**, then stop after a few seconds. To have clips start by themselves when a clue opens, turn on **Clip autoplay** in setup or on the host screen.
 - The built-in songs are public-domain hymns and carols, and the game plays their melodies itself.
 - **Spotify categories from your playlists:** `questions.js` has a `spotify` section listing songs from your worship and hymn playlists, each with a difficulty level. Paste each playlist's song links into `worshipLinks` and `hymnLinks` (in the Spotify desktop app: open the playlist, click a song, Ctrl+A / Cmd+A, then Ctrl+C / Cmd+C). The game then adds:
   - **Guess That Song** and **Name the Hymn:** a few seconds of the song play on the TV board. Harder rows play shorter clips, 12 seconds at 100 down to 3 seconds at 500.
   - **Who Sings It?:** a clip plays and players name the artist.
   - **Name That Intro:** the first few seconds of a worship song or hymn play, and players name the song.
-  - **Finish the Lyric:** lines in the `lyrics` list play your hymn recording and cut off right before the missing word once you set their `start` and `cut` times in seconds.
-- **Song Tuner** (in setup and on the host screen): play each song and tap **Chorus starts here** so clips play the part everyone knows. For Finish the Lyric, tap **Line starts here** and **Cut here** right before the missing word, and the real recording then plays the line and stops at the blank. Times are saved on that device and used right away. To keep them for every device, tap **Copy all my times** and add them to `questions.js` (as `start` and `cut`).
+- **Song Tuner** (in setup and on the host screen): play each song and tap **Chorus starts here** so clips play the part everyone knows. Times are saved on that device and used right away. To keep them for every device, tap **Copy all my times** and add them to `questions.js` as `start`.
 - The host sees the answer, including a Spotify song card, on the iPad. When the host reveals the answer, the TV board shows the same card.
 - For full songs, the browser on the TV board laptop should be logged into Spotify. Without a login, Spotify plays only 30-second previews, which may not include the part you picked. If a clip doesn't start, tap **Play clip again** on the host screen.
 
