@@ -826,7 +826,7 @@ function tunerExport(){const items=tunerItems().filter(x=>x.tuned||(x.kind!=='ly
 function tunerExportOld(){const items=tunerItems().filter(x=>x.tuned);if(!items.length)return 'No times set yet.';
   return items.map(x=>x.kind==='lyric'?`${x.title} (lyric "${x.answer}"): line ${fmtT(x.start)}, cut ${fmtT(x.cut)}`:`${x.title} (${x.sub||''}): chorus ${fmtT(x.start)}`).join('\n')}
 function tunerHTML(){
-  const all=tunerItems(),tabs=[['worship','Guess That Song'],['hymn','Name the Hymn']],list=all.filter(x=>x.kind===Tuner.tab),done=list.filter(x=>x.kind==='lyric'?(x.start!=null&&x.cut!=null):x.tuned).length;
+  const all=tunerItems(),tabs=[['worship','Guess That Song'],['hymn','Name the Hymn']].filter(([k])=>k==='worship'||all.some(x=>x.kind===k)),_tab=tabs.some(([k])=>k===Tuner.tab)||(Tuner.tab='worship'),list=all.filter(x=>x.kind===Tuner.tab),done=list.filter(x=>x.kind==='lyric'?(x.start!=null&&x.cut!=null):x.tuned).length;
   return `${header('Song Tuner')}
   <div class="card"><span class="muted">Mark where each song’s chorus starts so clips play the part everyone knows. Times are saved on this device and used in your games right away.</span>
     <div class="row"><button class="btn-ghost btn-sm" data-act="tu-back">Done</button><div class="spacer"></div><button class="btn-sm" data-act="tu-copy">Copy all my times</button></div>
@@ -865,7 +865,7 @@ function setupHTML(){
         <div class="row"><button class="btn-sm" data-act="skip-none" ${(setup.skip||[]).length?'':'disabled'}>Include all</button><button class="btn-sm btn-ghost" data-act="skip-songs">Leave out song categories</button></div>
       </details>`}
       <span class="note">${BANK.length} categories loaded. Add your own categories and questions in the questions.js file.</span>
-      <div class="row"><button class="btn-sm" data-act="ed-new">Write a game from scratch</button><button class="btn-sm" data-act="tuner">Song Tuner: set chorus and lyric cut points</button></div>`
+      <div class="row"><button class="btn-sm" data-act="ed-new">Write a game from scratch</button><button class="btn-sm" data-act="tuner">Song Tuner: set where each song’s clip starts</button></div>`
     :`${custom.length?`<div class="chips">${custom.map(c=>`<button class="chip ${setup.customId===c.id?'sel':''}" data-act="pickcustom" data-v="${esc(c.id)}">${esc(c.title)}</button>`).join('')}</div>
       <div class="row"><button class="btn-sm" data-act="ed-custom" ${setup.customId?'':'disabled'}>Edit this game</button><button class="btn-sm" data-act="ed-new">Write a new game</button></div>`
       :`<span class="note">No saved games yet. Write one from scratch, or start a game from the bank and tap “Edit questions” to save your own copy.</span><div><button class="btn-sm" data-act="ed-new">Write a game from scratch</button></div>`}`}

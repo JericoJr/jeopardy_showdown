@@ -447,23 +447,6 @@ window.QUESTION_BANK = {
       ]
     },
     {
-      name: "Finish the Lyric",
-      questions: [
-        { level: 1, question: "\"Amazing grace, how sweet the ___\"", answer: "Sound", hint: "The hymn is \"Amazing Grace.\"", accept: ["sound"], melody: "D4:1 G4:2 B4:0.5 G4:0.5 B4:2 A4:1 G4:2 E4:1 D4:2 D4:1 G4:2 B4:0.5 G4:0.5 B4:2 A4:0.5 B4:0.5 D5:3", bpm: 100, length: 10 },
-        { level: 1, question: "\"Jesus loves me, this I know, for the ___ tells me so\"", answer: "Bible", hint: "The song is \"Jesus Loves Me.\"", accept: ["bible","the bible"], melody: "G4:1 E4:1 E4:1 D4:1 E4:1 G4:1 G4:2 A4:1 A4:1 C5:1 A4:1 A4:1 G4:1 G4:2", bpm: 110, length: 10 },
-        { level: 2, question: "\"Joy to the world, the Lord is ___\"", answer: "Come", hint: "The carol is \"Joy to the World.\"", accept: ["come","come!"], melody: "D5:1 C#5:0.75 B4:0.25 A4:1.5 G4:0.5 F#4:1 E4:1 D4:1.5", bpm: 88, length: 10 },
-        { level: 2, question: "\"Silent night, holy night, all is calm, all is ___\"", answer: "Bright", hint: "The carol is \"Silent Night.\"", accept: ["bright"], melody: "G4:1.5 A4:0.5 G4:1 E4:3 G4:1.5 A4:0.5 G4:1 E4:3 D5:2 D5:1 B4:3 C5:2 C5:1 G4:3", bpm: 190, length: 10 },
-        { level: 2, question: "\"Oh, when the saints go marching in... Lord, how I want to be in that ___\"", answer: "Number", hint: "The song is \"When the Saints Go Marching In.\"", accept: ["number"], melody: "C4:1 E4:1 F4:1 G4:4 C4:1 E4:1 F4:1 G4:4 C4:1 E4:1 F4:1 G4:2 E4:2 C4:2 E4:2 D4:4", bpm: 170, length: 10 },
-        { level: 3, question: "\"Blessed assurance, Jesus is ___\"", answer: "Mine", hint: "The hymn is \"Blessed Assurance\" by Fanny Crosby.", accept: ["mine"] },
-        { level: 3, question: "\"O come, all ye faithful, joyful and ___\"", answer: "Triumphant", hint: "The carol is \"O Come, All Ye Faithful.\"", accept: ["triumphant"], melody: "G4:1 G4:2 D4:1 G4:1 A4:2 D4:2 B4:1 A4:1 B4:1 C5:1 B4:2 A4:1", bpm: 100, length: 10 },
-        { level: 3, question: "\"Holy, holy, holy! Lord God ___!\"", answer: "Almighty", hint: "The hymn is \"Holy, Holy, Holy.\"", accept: ["almighty"] },
-        { level: 4, question: "\"Joyful, joyful, we adore Thee, God of glory, Lord of ___\"", answer: "Love", hint: "The hymn is \"Joyful, Joyful, We Adore Thee.\"", accept: ["love"], melody: "E4:1 E4:1 F4:1 G4:1 G4:1 F4:1 E4:1 D4:1 C4:1 C4:1 D4:1 E4:1 E4:1.5 D4:0.5 D4:2", bpm: 120, length: 10 },
-        { level: 4, question: "\"Hark! The herald angels sing, glory to the newborn ___\"", answer: "King", hint: "The carol is \"Hark! The Herald Angels Sing.\"", accept: ["king"], melody: "C4:1 F4:1 F4:1.5 E4:0.5 F4:1 A4:1 A4:1 G4:1 C5:1 C5:1 C5:1.5 Bb4:0.5 A4:1 G4:1 A4:2", bpm: 112, length: 10 },
-        { level: 5, question: "\"Praise God, from whom all ___ flow\"", answer: "Blessings", hint: "This is \"The Doxology.\"", accept: ["blessings"], melody: "G4:2 G4:1 F#4:1 E4:1 D4:2 G4:1 A4:1 B4:2 B4:1 B4:1 A4:1 G4:1 C5:1 B4:1 A4:2", bpm: 92, length: 10 },
-        { level: 5, question: "\"When peace like a ___ attendeth my way\"", answer: "River", hint: "The hymn is \"It Is Well with My Soul.\"", accept: ["river"] }
-      ]
-    },
-    {
       name: "Scripture Snapshots",
       questions: [
         { level: 1, question: "What Bible story does this picture show?", image: "art:burning-bush", answer: "Moses and the burning bush", hint: "God spoke to him from it (Exodus 3).", accept: ["moses", "burning bush", "moses and the burning bush"] },
@@ -615,7 +598,7 @@ window.QUESTION_BANK = {
   /*
     SPOTIFY SONGS FROM YOUR PLAYLISTS
     ---------------------------------
-    1. Paste your playlists' song links into worshipLinks and hymnLinks below.
+    1. Paste your playlist's song links into worshipLinks below.
        Quick way: in the Spotify desktop app, open the playlist, click one song,
        press Ctrl+A (Cmd+A on Mac), then Ctrl+C (Cmd+C), and paste. Keep them in
        playlist order; "n" below is each song's position in the playlist.
@@ -623,20 +606,13 @@ window.QUESTION_BANK = {
     2. Songs with a link turn into these categories:
          Guess That Song          (worship list, plays the chorus area)
          Who Sings It?            (worship list, name the artist)
-         Name That Intro          (worship + hymns, plays the first seconds)
-         Name the Hymn            (hymns list)
-         Finish the Lyric         (lyrics list: once a line has start and cut times, it
-                                   plays the real recording instead of the built-in tune)
        Add artistLevel to a worship song to set how hard its artist is to name.
        Each category needs at least 5 songs with links to appear.
     3. Clips start where the most upbeat part usually is: worship songs about 45%
-       of the way in (the fuller second chorus), hymns about a third of the way in. Add start: 65 (seconds) to a song to set its clip start, and
+       of the way in (the fuller second chorus). Add start: 65 (seconds) to a song to set its clip start, and
        marks: ["1:05 Chorus", "2:40 Bridge"] to give it saved spots the host can
        jump to during a game.
        Every clip plays for 10 seconds.
-    4. Finish the Lyric: set start to a few seconds before the line is sung, and
-       cut to the moment just before the missing word (both in seconds; 1:05 = 65).
-       The song plays from start and stops at cut, right at the blank.
   */
   spotify: {
     /* Theme song: plays on a loop in the lobby and on the board (not during questions).
@@ -963,78 +939,6 @@ https://open.spotify.com/track/5sn2NVwXGfGEQDBbkAIXj6
 https://open.spotify.com/track/6FWu5yUk5TlhKDpzVZ5wpF
 https://open.spotify.com/track/5jwakA3WYHMeucmgu0tjbD
 `,
-    hymnLinks: `
-https://open.spotify.com/track/6XlUFokQc6VZMjdVyS2nv6
-https://open.spotify.com/track/3OYdTPsom81ka2fccjQM29
-https://open.spotify.com/track/3dbQ6EkRqF9QybiLBK6OtZ
-https://open.spotify.com/track/5nlVO7NbTBPwp08V0Ki1Nd
-https://open.spotify.com/track/15sauKN8vieeKOVWWR9UG2
-https://open.spotify.com/track/6yGkNN8IfqmQenroYW8GQ4
-https://open.spotify.com/track/0YuIuR62JK40a0AHeNJUup
-https://open.spotify.com/track/00tXkB7eblyLQ2doDckKPX
-https://open.spotify.com/track/3W119z4DiQFiypI5Zjn6v2
-https://open.spotify.com/track/2Za6mPd4CT813cEZOjwWTB
-https://open.spotify.com/track/4o0n1yoeqKglpnlDgprRzL
-https://open.spotify.com/track/10reQcK5nekulki4yuCvhQ
-https://open.spotify.com/track/6xQucpY9ELAnkaQH5Fjtxs
-https://open.spotify.com/track/2ZicbtrMnz97j3WyFf4So4
-https://open.spotify.com/track/1nsYAGD6eN6uNdXqpY7MM3
-https://open.spotify.com/track/3ClXZdl6wtMsDyhSiEP0ar
-https://open.spotify.com/track/0h5C31CdrgABjHATYcBq6e
-https://open.spotify.com/track/2A76kMu3t5zsBbEyCwF5Hx
-https://open.spotify.com/track/2uWr7ZnjVIkE69aCuBeAc9
-https://open.spotify.com/track/5hU9GCuztvoXlhKTJAlql6
-https://open.spotify.com/track/68WjCi38EOoOWGomk7CfVH
-https://open.spotify.com/track/2VAtZmI9nCB97Kdnn9tMIF
-https://open.spotify.com/track/6hCoUrjaWT7Z7PgxWRvYCm
-https://open.spotify.com/track/2YtsgFOv3e2oAPvGg5iLBb
-https://open.spotify.com/track/0YXRJuktePavqiwqZu4Mjk
-https://open.spotify.com/track/5Sh1kiVOwSOcS56YQaRxkq
-https://open.spotify.com/track/5obRW0OPQ5SDXWN55mtLLk
-https://open.spotify.com/track/5J4xE3gAYvcxnIipeFTmNq
-https://open.spotify.com/track/1SUxT5nRYEimRA0ysgE6In
-https://open.spotify.com/track/6O1WbrSpcFCFwV4AyiLQfH
-https://open.spotify.com/track/0W9bvOiI1fBKVjaaGdUpmp
-https://open.spotify.com/track/7lmwDlkBDwPwMO75wHVbl2
-https://open.spotify.com/track/4xdzgAag6aZjfhJPDFeTvO
-https://open.spotify.com/track/3ZtyWJ13xGys5P788Rhhpa
-https://open.spotify.com/track/4EAIZmr7M3QSIACki4qWWy
-https://open.spotify.com/track/6wnvzxmFM1EgqOMHptPB0P
-https://open.spotify.com/track/63b3Ml9OsczH1iCGZDD0si
-https://open.spotify.com/track/7lDMtF5GO5yd90vKsmIued
-https://open.spotify.com/track/5bWYXXBCc1pMqr9IZ7zVZL
-https://open.spotify.com/track/6tKycnskkPaobPKFo6dw7L
-https://open.spotify.com/track/4TvSdxwziuv2uzaXblesBr
-https://open.spotify.com/track/1t4cMgdTF0Qc9ySZAhX1e6
-https://open.spotify.com/track/73SzlTYfTMy4JR86H3aHeJ
-https://open.spotify.com/track/7vv0bWoT3iGCAjA39zUxPZ
-https://open.spotify.com/track/2VbLvaEeZ8YjdEHL0JiMeH
-https://open.spotify.com/track/5S3KGLRJlrwZq0xfT3VLdV
-https://open.spotify.com/track/1TzGB6BZ5Q3adYMtq88zLz
-https://open.spotify.com/track/6UWTTuFgQQI2ZAyHxCKEI5
-https://open.spotify.com/track/2G2b5w0IiHWmvS68wlJHuZ
-https://open.spotify.com/track/1SnZi2eVU2kcXRNJT6ek4J
-https://open.spotify.com/track/3JfK0CVrKXDwXHYX7lZ6b8
-https://open.spotify.com/track/3uuh0VNuzlMUI900v20588
-https://open.spotify.com/track/0JNH9xKLxC1oYzc4riW4pi
-https://open.spotify.com/track/3y3SbBdW6zJY1LRxnjQnsf
-https://open.spotify.com/track/4LWxGrlOMi3sLOKmFHgyXO
-https://open.spotify.com/track/5A4ZXadjljOWZQ5zSovnjV
-https://open.spotify.com/track/36NoBturpUMJJmDLEBECfp
-https://open.spotify.com/track/5QVgUbFGSeN0S6gFinYjRP
-https://open.spotify.com/track/4ipVxFW75zXceushTlxpZH
-https://open.spotify.com/track/2kyurwpq49H0egXp7m8peL
-https://open.spotify.com/track/4eo01dTibMj0SQR0jLNhLS
-https://open.spotify.com/track/4PittRKmlpw9mlIgKPuQ0G
-https://open.spotify.com/track/3aF6OE44FTSoZnnhXazpqW
-https://open.spotify.com/track/2P4h4BnBsFxdMbHFr0jCo9
-https://open.spotify.com/track/3qMQhou4HNCmq8jlu4SYV3
-https://open.spotify.com/track/1FKOIzVCErKyUV7ojq4yQW
-https://open.spotify.com/track/0ID3FnO65J2HV9sQjs7X5M
-https://open.spotify.com/track/7G4FLal4Gx4zBOAgYCvGlp
-https://open.spotify.com/track/2iPDTm8ktDoSLCYmdai03Y
-https://open.spotify.com/track/67VlbSn55nNtmHEhVfcfCQ
-`,
     worship: [
       { n: 7, level: 1, title: "Oceans (Where Feet May Fail)", artist: "Hillsong UNITED", accept: ["oceans", "where feet may fail"] },
       { n: 48, level: 1, title: "What A Beautiful Name", artist: "Hillsong Worship", accept: ["what a beautiful name"] },
@@ -1111,88 +1015,6 @@ https://open.spotify.com/track/67VlbSn55nNtmHEhVfcfCQ
       { n: 99, level: 7, title: "What Faith Can Do", artist: "Kutless", accept: ["what faith can do"] },
       { n: 56, level: 7, title: "Start A Fire", artist: "Unspoken", accept: ["start a fire"] },
       { n: 47, level: 7, title: "My Story", artist: "Big Daddy Weave", accept: ["my story"] }
-    ],
-    hymns: [
-      { n: 1, level: 1, title: "Amazing Grace", artist: "CeCe Winans", accept: ["amazing grace"] },
-      { n: 24, level: 1, title: "How Great Thou Art", artist: "Chris Rice", accept: ["how great thou art"] },
-      { n: 30, level: 1, title: "It Is Well With My Soul", artist: "Phil Wickham", accept: ["it is well", "it is well with my soul"] },
-      { n: 3, level: 1, title: "Great Is Thy Faithfulness", artist: "Carrie Underwood & CeCe Winans", accept: ["great is thy faithfulness"] },
-      { n: 7, level: 1, title: "Holy, Holy, Holy", artist: "Anthem Lights", accept: ["holy holy holy"] },
-      { n: 5, level: 2, title: "In Christ Alone", artist: "Keith & Kristyn Getty", accept: ["in christ alone"] },
-      { n: 65, level: 2, title: "Blessed Assurance", artist: "Nathan Drake", accept: ["blessed assurance"] },
-      { n: 54, level: 2, title: "Come Thou Fount of Every Blessing", artist: "Phil Wickham", accept: ["come thou fount", "come thou fount of every blessing"] },
-      { n: 8, level: 2, title: "Rock Of Ages", artist: "Chris Rice", accept: ["rock of ages"] },
-      { n: 15, level: 2, title: "What A Friend We Have In Jesus", artist: "Chris Rice", accept: ["what a friend we have in jesus", "what a friend"] },
-      { n: 57, level: 2, title: "Doxology", artist: "Nichole Nordeman", accept: ["doxology", "the doxology"] },
-      { n: 4, level: 2, title: "I Surrender All", artist: "Phillips, Craig & Dean", accept: ["i surrender all"] },
-      { n: 20, level: 3, title: "Joyful, Joyful, We Adore Thee", artist: "Amy Grant", accept: ["joyful joyful we adore thee", "joyful joyful"] },
-      { n: 52, level: 3, title: "The Old Rugged Cross", artist: "Bart Millard", accept: ["the old rugged cross", "old rugged cross"] },
-      { n: 67, level: 3, title: "I’ll Fly Away", artist: "The Gray Havens", accept: ["ill fly away", "i ll fly away"] },
-      { n: 37, level: 3, title: "Nothing But The Blood", artist: "Keith & Kristyn Getty", accept: ["nothing but the blood"] },
-      { n: 49, level: 3, title: "Jesus Paid It All", artist: "Fernando Ortega", accept: ["jesus paid it all"] },
-      { n: 36, level: 3, title: "I Need Thee Every Hour", artist: "Jars Of Clay", accept: ["i need thee every hour"] },
-      { n: 31, level: 3, title: "How Deep The Father’s Love For Us", artist: "Phillips, Craig & Dean", accept: ["how deep the fathers love for us", "how deep the fathers love"] },
-      { n: 29, level: 3, title: "When I Survey The Wondrous Cross", artist: "Chris Rice", accept: ["when i survey the wondrous cross", "when i survey"] },
-      { n: 2, level: 3, title: "On Christ the Solid Rock", artist: "Phillips, Craig & Dean", accept: ["on christ the solid rock", "the solid rock", "my hope is built"] },
-      { n: 42, level: 3, title: "Just As I Am", artist: "MercyMe", accept: ["just as i am"] },
-      { n: 32, level: 4, title: "A Mighty Fortress Is Our God", artist: "Chris Rice", accept: ["a mighty fortress is our god", "a mighty fortress"] },
-      { n: 22, level: 4, title: "Leaning On The Everlasting Arms", artist: "David Crowder Band", accept: ["leaning on the everlasting arms"] },
-      { n: 62, level: 4, title: "Softly and Tenderly", artist: "Greg LaFollette & Alisa Turner", accept: ["softly and tenderly"] },
-      { n: 35, level: 4, title: "I Have Decided To Follow Jesus", artist: "Phil Wickham", accept: ["i have decided to follow jesus"] },
-      { n: 39, level: 4, title: "Before The Throne", artist: "Shane & Shane", accept: ["before the throne", "before the throne of god above"] },
-      { n: 53, level: 4, title: "O For A Thousand Tongues To Sing", artist: "Chris Rice", accept: ["o for a thousand tongues", "o for a thousand tongues to sing"] },
-      { n: 59, level: 4, title: "This Is My Father’s World", artist: "Chris Rice", accept: ["this is my fathers world"] },
-      { n: 26, level: 4, title: "All Creatures Of Our God And King", artist: "David Crowder Band", accept: ["all creatures of our god and king"] },
-      { n: 34, level: 4, title: "Fairest Lord Jesus", artist: "Sara Groves", accept: ["fairest lord jesus"] },
-      { n: 44, level: 4, title: "Abide With Me", artist: "Audrey Assad", accept: ["abide with me"] },
-      { n: 48, level: 4, title: "There Is A Fountain", artist: "MercyMe", accept: ["there is a fountain"] },
-      { n: 11, level: 5, title: "Christ Is Risen, He Is Risen Indeed", artist: "Keith & Kristyn Getty", accept: ["christ is risen he is risen indeed", "christ is risen"] },
-      { n: 13, level: 5, title: "Come Thou Long Expected Jesus", artist: "Laura Story", accept: ["come thou long expected jesus"] },
-      { n: 17, level: 5, title: "Oh, the Deep, Deep Love of Jesus", artist: "Audrey Assad", accept: ["oh the deep deep love of jesus", "the deep deep love of jesus"] },
-      { n: 18, level: 5, title: "My Jesus, I Love Thee", artist: "Bart Millard", accept: ["my jesus i love thee"] },
-      { n: 58, level: 5, title: "Give Me Jesus", artist: "Fernando Ortega", accept: ["give me jesus"] },
-      { n: 38, level: 5, title: "I Stand Amazed", artist: "Bart Millard", accept: ["i stand amazed"] },
-      { n: 41, level: 5, title: "Praise to the Lord, the Almighty", artist: "Fernando Ortega", accept: ["praise to the lord the almighty"] },
-      { n: 46, level: 5, title: "Speak O Lord", artist: "Keith & Kristyn Getty", accept: ["speak o lord"] },
-      { n: 47, level: 5, title: "Jesus, Keep Me Near The Cross", artist: "Keith & Kristyn Getty", accept: ["jesus keep me near the cross"] },
-      { n: 25, level: 5, title: "How Can I Keep From Singing", artist: "Ginny Owens", accept: ["how can i keep from singing"] },
-      { n: 27, level: 5, title: "Breathe On Me, Breath Of God", artist: "Keith & Kristyn Getty", accept: ["breathe on me breath of god"] },
-      { n: 6, level: 6, title: "Untitled Hymn (Come To Jesus)", artist: "Chris Rice", accept: ["untitled hymn", "come to jesus"] },
-      { n: 10, level: 6, title: "Beautiful Savior", artist: "Ginny Owens", accept: ["beautiful savior"] },
-      { n: 40, level: 6, title: "Wonderful Merciful Savior", artist: "Phillips, Craig & Dean", accept: ["wonderful merciful savior"] },
-      { n: 43, level: 6, title: "Who But Jesus", artist: "Laura Story", accept: ["who but jesus"] },
-      { n: 60, level: 6, title: "Come Behold The Wondrous Mystery", artist: "Matt Boswell & Matt Papa", accept: ["come behold the wondrous mystery"] },
-      { n: 64, level: 6, title: "My Worth Is Not In What I Own", artist: "Keith & Kristyn Getty", accept: ["my worth is not in what i own"] },
-      { n: 33, level: 6, title: "Brethren, We Have Met To Worship", artist: "Bart Millard", accept: ["brethren we have met to worship"] },
-      { n: 68, level: 6, title: "For the Beauty of the Earth", artist: "Kyle Church", accept: ["for the beauty of the earth"] },
-      { n: 56, level: 7, title: "He’s Always Been Faithful", artist: "Sara Groves", accept: ["hes always been faithful"] },
-      { n: 66, level: 7, title: "Jesus, Fount of Joy Eternal", artist: "The Trails Church", accept: ["jesus fount of joy eternal"] },
-      { n: 70, level: 7, title: "O, the Sorrows of My LORD", artist: "Melodyblue", accept: ["o the sorrows of my lord"] },
-      { n: 21, level: 7, title: "I Saw The Light", artist: "Bart Millard", accept: ["i saw the light"] }
-    ],
-    lyrics: [
-      { n: 1, level: 1, lyric: "\"Amazing grace, how sweet the ___\"", answer: "Sound", accept: ["sound"], start: null, cut: null },
-      { n: 15, level: 1, lyric: "\"What a friend we have in ___\"", answer: "Jesus", accept: ["jesus"], start: null, cut: null },
-      { n: 52, level: 1, lyric: "\"On a hill far away stood an old rugged ___\"", answer: "Cross", accept: ["cross"], start: null, cut: null },
-      { n: 37, level: 1, lyric: "\"What can wash away my sin? Nothing but the blood of ___\"", answer: "Jesus", accept: ["jesus"], start: null, cut: null },
-      { n: 65, level: 1, lyric: "\"Blessed assurance, Jesus is ___\"", answer: "Mine", accept: ["mine"], start: null, cut: null },
-      { n: 8, level: 2, lyric: "\"Rock of Ages, cleft for ___\"", answer: "Me", accept: ["me"], start: null, cut: null },
-      { n: 54, level: 2, lyric: "\"Come, Thou Fount of every ___\"", answer: "Blessing", accept: ["blessing"], start: null, cut: null },
-      { n: 7, level: 2, lyric: "\"Holy, holy, holy! Lord God ___!\"", answer: "Almighty", accept: ["almighty"], start: null, cut: null },
-      { n: 4, level: 2, lyric: "\"All to Jesus I ___\"", answer: "Surrender", accept: ["surrender"], start: null, cut: null },
-      { n: 36, level: 2, lyric: "\"I need Thee, oh, I need Thee; every hour I need ___\"", answer: "Thee", accept: ["thee", "you"], start: null, cut: null },
-      { n: 30, level: 3, lyric: "\"When peace like a ___ attendeth my way\"", answer: "River", accept: ["river"], start: null, cut: null },
-      { n: 29, level: 3, lyric: "\"When I survey the wondrous ___\"", answer: "Cross", accept: ["cross"], start: null, cut: null },
-      { n: 20, level: 3, lyric: "\"Joyful, joyful, we adore Thee, God of glory, Lord of ___\"", answer: "Love", accept: ["love"], start: null, cut: null },
-      { n: 49, level: 3, lyric: "\"Jesus paid it all, all to Him I ___\"", answer: "Owe", accept: ["owe"], start: null, cut: null },
-      { n: 62, level: 4, lyric: "\"Softly and tenderly Jesus is ___\"", answer: "Calling", accept: ["calling"], start: null, cut: null },
-      { n: 22, level: 4, lyric: "\"Leaning, leaning, safe and secure from all ___\"", answer: "Alarms", accept: ["alarms", "alarm"], start: null, cut: null },
-      { n: 32, level: 4, lyric: "\"A mighty fortress is our God, a bulwark never ___\"", answer: "Failing", accept: ["failing"], start: null, cut: null },
-      { n: 2, level: 4, lyric: "\"My hope is built on nothing less than Jesus’ blood and ___\"", answer: "Righteousness", accept: ["righteousness"], start: null, cut: null },
-      { n: 44, level: 5, lyric: "\"Abide with me; fast falls the ___\"", answer: "Eventide", accept: ["eventide"], start: null, cut: null },
-      { n: 59, level: 5, lyric: "\"This is my Father’s world, and to my listening ___\"", answer: "Ears", accept: ["ears"], start: null, cut: null },
-      { n: 34, level: 5, lyric: "\"Fairest Lord Jesus, Ruler of all ___\"", answer: "Nature", accept: ["nature"], start: null, cut: null },
-      { n: 41, level: 5, lyric: "\"Praise to the Lord, the Almighty, the King of ___\"", answer: "Creation", accept: ["creation"], start: null, cut: null }
     ]
   }
 };
