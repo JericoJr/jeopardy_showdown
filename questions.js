@@ -633,12 +633,16 @@ window.QUESTION_BANK = {
        of the way in (the fuller second chorus), hymns about a third of the way in. Add start: 65 (seconds) to a song to set its clip start, and
        marks: ["1:05 Chorus", "2:40 Bridge"] to give it saved spots the host can
        jump to during a game.
-       Harder rows play shorter clips: 100 = 12 seconds down to 500 = 3 seconds.
+       Every clip plays for 10 seconds.
     4. Finish the Lyric: set start to a few seconds before the line is sung, and
        cut to the moment just before the missing word (both in seconds; 1:05 = 65).
        The song plays from start and stops at cut, right at the blank.
   */
   spotify: {
+    /* Theme song: plays on a loop in the lobby and on the board (not during questions).
+       Paste any Spotify song link here, or set it to "" to use the built-in theme. */
+    theme: "https://open.spotify.com/track/4qkYiZablQoG7f0Qu4Nd1c",
+
     worshipLinks: `
 https://open.spotify.com/track/3s0h3pyKFrS3XX6ZLBPx6s
 https://open.spotify.com/track/6VMT3SzIMbNoR5lsUsniQY

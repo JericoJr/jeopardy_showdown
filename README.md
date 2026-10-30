@@ -53,7 +53,7 @@ In both styles, any player on the picking team can tap a clue on their phone to 
 
 ### Music and sounds
 
-- **Theme music:** an original, upbeat game-show theme that plays in the lobby and on the board between questions. It goes quiet while a question is open. It's on by default; the host turns it on or off with the **Theme music** button.
+- **Theme music:** the Jeopardy theme song from Spotify plays on a loop in the lobby and on the board between questions. It goes quiet while a question is open. It's on by default; the host turns it on or off with the **Theme music** button. To use a different song, paste its Spotify link into `theme` in the `spotify` section of `questions.js`, or set it to `""` to use the built-in original theme. If Spotify can't play on that screen, the built-in theme plays instead. The theme song's volume follows the device's volume; the volume slider sets the timer music.
 - **Timer music:** original suspenseful countdown music that plays while the timer is running and speeds up as time runs out. It stops when the timer is paused or ends. Turn it on or off with the **Timer music** button.
 - **Where sound plays:** all music, sound effects and song clips play on the TV board when one is connected, and on the host's device when it isn't. If the TV board connects or drops out mid-game (even mid-song), sound switches over right away. The host screen shows where sound is playing (**Sound: TV board** or **Sound: this device**). Song clips pause the music while they play.
 - To use your own theme song instead, choose a music file under **Music on this screen** on the TV board. Use music you have the right to play.

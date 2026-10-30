@@ -344,13 +344,32 @@ let musicVol=Number(store.get('ssw.vol',0.5));
 /* Two original tracks, played by the game itself:
    'show'    an upbeat game-show theme for the board (or the host's own music file)
    'tension' suspenseful countdown music that speeds up as the timer runs down */
+/* theme song from Spotify (questions.js spotify.theme), looped with its own hidden player */
+const ThemeSpot={ctl:null,want:false,made:false,played:false,ok:false,pos:0,dur:0,
+  id(){const qs=(window.QUESTION_BANK||{}).spotify||{};return typeof spotifyId==='function'?spotifyId(qs.theme||''):''},
+  start(){const id=this.id();if(!id)return false;this.want=true;
+    if(this.ctl){try{this.played?this.ctl.resume():this.ctl.play()}catch{}}
+    else if(!this.made){this.made=true;Spot.load(api=>{let w=document.getElementById('themewrap');if(!w){w=document.createElement('div');w.id='themewrap';w.setAttribute('aria-hidden','true');
+      w.style.cssText='position:fixed;left:0;bottom:0;width:300px;height:80px;opacity:0;pointer-events:none;z-index:-1;overflow:hidden';document.body.appendChild(w)}
+      const el=document.createElement('div');w.appendChild(el);
+      api.createController(el,{uri:'spotify:track:'+id,width:300,height:80},ctl=>{this.ctl=ctl;ctl.addListener('playback_update',e=>this.update(e));ctl.addListener('ready',()=>{if(this.want)try{ctl.play()}catch{}});if(this.want)try{ctl.play()}catch{}})})}
+    clearTimeout(this.fb);this.fb=setTimeout(()=>{if(this.want&&!this.ok&&Music.on&&Music.kind==='show'){Music.spotFail=true;const k=Music.kind;Music.stop();Music.start(k)}},8000);
+    return true},
+  update(e){const d=(e&&e.data)||{};this.pos=(d.position||0)/1000;if(d.duration)this.dur=d.duration/1000;
+    if(!d.isPaused&&!d.isBuffering&&d.duration){this.ok=true;this.played=true}
+    if(!this.want){if(!d.isPaused)try{this.ctl.pause()}catch{}return}
+    /* loop: jump back to the start just before the end, or restart if it finished */
+    if(d.duration&&!d.isPaused&&d.position>=d.duration-700){try{this.ctl.seek(0)}catch{}}
+    else if(d.isPaused&&this.played&&d.duration&&(d.position===0||d.position>=d.duration-1500)){try{this.ctl.seek(0);this.ctl.resume?this.ctl.resume():this.ctl.play()}catch{}}},
+  stop(){this.want=false;clearTimeout(this.fb);try{this.ctl&&this.ctl.pause()}catch{}}};
 const Music={on:false,kind:null,el:null,timer:null,bus:null,step:0,next:0,prog:()=>0,
   start(kind){if(this.on&&this.kind===kind)return;this.stop();this.on=true;this.kind=kind;
     if(kind==='show'&&this.el){this.el.loop=true;this.el.volume=musicVol;this.el.currentTime=0;this.el.play().catch(()=>{});return}
+    if(kind==='show'&&!this.spotFail&&ThemeSpot.start()){this.spot=true;return}
     const ac=audio();if(!ac){this.on=false;this.kind=null;return}
     this.bus=ac.createGain();this.bus.gain.value=musicVol*0.55;this.bus.connect(ac.destination);this.step=0;this.next=ac.currentTime+0.1;
     this.timer=setInterval(()=>{const a=actx;if(!a||!this.bus)return;while(this.next<a.currentTime+0.35){this.next+=this.kind==='tension'?this.tension(this.next):this.show(this.next);this.step++}},70)},
-  stop(){this.on=false;this.kind=null;clearInterval(this.timer);this.timer=null;if(this.el)try{this.el.pause()}catch{};try{this.bus&&this.bus.disconnect()}catch{}this.bus=null},
+  stop(){this.on=false;this.kind=null;if(this.spot){this.spot=false;ThemeSpot.stop()}clearInterval(this.timer);this.timer=null;if(this.el)try{this.el.pause()}catch{};try{this.bus&&this.bus.disconnect()}catch{}this.bus=null},
   vol(v){musicVol=v;store.set('ssw.vol',v);if(this.el)this.el.volume=v;if(this.bus)this.bus.gain.value=v*0.55},
   file(f){const k=this.kind;this.stop();try{this.el&&URL.revokeObjectURL(this.el.src)}catch{}this.el=f?new Audio(URL.createObjectURL(f)):null;if(k)this.start(k)},
   show(t){
@@ -486,8 +505,9 @@ function flash(kind){let el=document.getElementById('fxflash');if(!el){el=docume
   el.className='';void el.offsetWidth;el.className='fxflash '+(kind==='ok'?'fx-ok':'fx-no');el.innerHTML=`<span>${kind==='ok'?'✓':'✗'} ${txt}</span>`;
   clearTimeout(flashT);flashT=setTimeout(()=>{el.className=''},1700)}
 function hostAudio(){if(view!=='host'||!S)return;Music.prog=()=>S&&S.tmr?1-tLeft()/(S.tmr.len||1):0;if(displayOn()||S.sound===false){setMusic(null);return}setMusic(wantMusic(S.phase,!!S.tmr?.run,S.tmusic!==false,!!S.music))}
-function musicControlsHTML(){return `<div class="row"><label for="musicfile" class="lbl" style="margin:0">Your own music (optional)</label><input type="file" id="musicfile" accept="audio/*" data-music="file" style="width:auto;max-width:100%;min-width:0">${Music.el?'<button class="btn-sm btn-ghost" data-act="music-builtin">Use built-in music</button>':''}
-  <label for="musicvol" class="lbl" style="margin:0">Volume</label><input type="range" id="musicvol" min="0" max="1" step="0.05" value="${musicVol}" data-music="vol" style="width:140px;padding:0"></div>`}
+function musicControlsHTML(){return `<div class="row"><label for="musicfile" class="lbl" style="margin:0">Your own music (optional)</label><input type="file" id="musicfile" accept="audio/*" data-music="file" style="width:auto;max-width:100%;min-width:0">${Music.el?'<button class="btn-sm btn-ghost" data-act="music-builtin">Use the theme song again</button>':''}
+  <label for="musicvol" class="lbl" style="margin:0">Volume</label><input type="range" id="musicvol" min="0" max="1" step="0.05" value="${musicVol}" data-music="vol" style="width:140px;padding:0"></div>
+  ${ThemeSpot.id()&&!Music.el?'<span class="note">The theme song plays from Spotify on a loop. Its volume follows this device’s volume, not the slider (the slider sets the timer music). If Spotify can’t play, the built-in theme plays instead.</span>':''}`}
 let wakeLock=null;async function keepAwake(){try{if(navigator.wakeLock&&!wakeLock){wakeLock=await navigator.wakeLock.request('screen');wakeLock.addEventListener('release',()=>{wakeLock=null})}}catch{}}
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&(view==='display'||view==='host'))keepAwake()});
 
@@ -1316,7 +1336,7 @@ document.addEventListener('click',e=>{
     case 'mark-start':{const cl=curClue();if(!cl||!cl.m||!cl.m.spotify)return;const t=b.dataset.t==='now'?currentSongPos():+b.dataset.t;setSongStart(cl.m.spotify,t);
       S.game.cats.forEach(cat=>cat.clues.forEach(x=>{if(x.m&&x.m.spotify===cl.m.spotify&&x.m.start!==0){x.m.start=Math.round(t*10)/10;x.m.auto=false}}));commit();break}
     case 'music-builtin':Music.file(null);render();break;
-    case 'd-unlock':audio();Spot.load(()=>{});updateSoundWarn();break;
+    case 'd-unlock':audio();Spot.load(()=>{});if(Music.spotFail){Music.spotFail=false;const k=Music.kind;if(k){Music.stop();Music.start(k)}}else if(Music.spot)ThemeSpot.start();updateSoundWarn();break;
     case 'd-sound':D.mute=!D.mute;saveDisplay();displayAudio();render();break;
     case 'peek':peek=!peek;render();break;
     case 'hint':S.hint=true;commit();break;
