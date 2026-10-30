@@ -157,5 +157,7 @@ You can also edit the questions for a single game from the host screen with **Ed
 - A few small differences by device: iPhones can't go full screen in the browser (iPads and computers can); Firefox lets screens dim during long pauses, so keep the host and TV board awake in settings; and Spotify clips play best on the TV board laptop with a browser logged into Spotify.
 
 - The host's device runs the game, so keep the host page open and the iPad awake. If the host page reloads, tap **Host a game** to resume, and everyone reconnects within a few seconds.
-- Live syncing uses PeerJS's free public connection service, so devices connect straight to the host. It works best when everyone is on the same Wi-Fi. Some school or church networks block these direct connections; if phones can't join, try a phone hotspot for the host.
+- **Joining from anywhere:** players don't need to be on the same Wi-Fi as the host. Phones on the same Wi-Fi connect directly; phones on cellular data or another network go through a relay. The game includes a basic free relay, but many cellular networks block it.
+- **Free relay for reliable joining (one-time setup on the host device):** open **🌐 Connections** on the host screen, sign up for Metered's free Open Relay (metered.ca/tools/openrelay, 20 GB a month free), paste your app name and API key, and tap **Save and test**. It uses the standard web ports that cellular networks and firewalls allow. The details are saved only on that device, never in the repo, and players don't need to set anything up.
+- If a phone still can't join, switch it between Wi-Fi and cellular data. Some school or church Wi-Fi blocks game connections; a phone hotspot for the host works too.
 - Anyone with the game code can join while the game is running.

@@ -11,8 +11,8 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=Fraunces:opsz,wght@9..144,500;9..144,700&family=Figtree:wght@400;600;800&display=swap">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
-<script src="images.js?v=202610301726-71f232"></script>
-<script src="questions.js?v=202610301726-71f232"></script>
+<script src="images.js?v=202610301745-71f232"></script>
+<script src="questions.js?v=202610301745-71f232"></script>
 <style>
 html{{-webkit-text-size-adjust:100%}}
 body{{margin:0;padding-top:max(16px,env(safe-area-inset-top,0px))}}
@@ -378,9 +378,9 @@ setup.skip=(setup.skip||[]).filter(n=>BANK.some(b=>b.name===n));
 setup.settings=Object.assign(clone(DEF_SET),setup.settings||{});
 if(!PRESETS.some(p=>p.id===setup.preset))setup.preset='random';
 setup.pick=(setup.pick||[]).filter(id=>BANK.some(b=>b.id===id));
-let spotOpen=false,volOpen=false,cidDraft='';
+let spotOpen=false,volOpen=false,netOpen=false,cidDraft='';
 /* TV board size, remembered on the TV laptop: 90% by default so nothing gets cut off on a TV */
-const APP_VERSION='202610301726-71f232';
+const APP_VERSION='202610301745-71f232';
 const TV_SIZES=[0.7,0.75,0.8,0.85,0.9,0.95,1];
 const tvSize=()=>{const v=+D.tvSize;return TV_SIZES.includes(v)?v:0.9};
 function applyTvSize(){const z=view==='display'?tvSize():1;try{document.body.style.setProperty('--tvz',z)}catch{}}
@@ -395,7 +395,7 @@ const isFull=()=>!!(document.fullscreenElement||document.webkitFullscreenElement
 function toggleFull(){const d=document,el=d.documentElement;try{if(isFull()){const x=d.exitFullscreen||d.webkitExitFullscreen;x&&x.call(d)}else{const r=el.requestFullscreen||el.webkitRequestFullscreen;const pr=r&&r.call(el);pr&&pr.catch&&pr.catch(()=>{})}}catch{}}
 document.addEventListener('fullscreenchange',()=>render());document.addEventListener('webkitfullscreenchange',()=>render());
 /* remember whether the Spotify dropdown is open, so it stays that way when the screen updates */
-document.addEventListener('toggle',e=>{const t=e.target;if(!t||!t.id)return;if(t.id==='spotcard')spotOpen=t.open;if(t.id==='volcard')volOpen=t.open;if(t.id==='tvspot'){D.spotOpen=t.open;saveDisplay()}},true);let view='role',edit=null,editFrom='setup',confirmDel=false,peek=false,showLobby=false,confirmNew=false,confirmRm=null,confirmEnd=false,ended=false;
+document.addEventListener('toggle',e=>{const t=e.target;if(!t||!t.id)return;if(t.id==='spotcard')spotOpen=t.open;if(t.id==='volcard')volOpen=t.open;if(t.id==='netcard')netOpen=t.open;if(t.id==='tvspot'){D.spotOpen=t.open;saveDisplay()}},true);let view='role',edit=null,editFrom='setup',confirmDel=false,peek=false,showLobby=false,confirmNew=false,confirmRm=null,confirmEnd=false,ended=false;
 let P=Object.assign({pid:uid(),name:'',code:'',step:'code'},store.get('ssw.player',{}));
 let D=Object.assign({code:'',step:'code'},store.get('ssw.display',{}));
 let PS=null,PSkey='',pDraft={wager:'',ans:'',fans:'',team:''},pTimer={end:0,left:0,run:false,len:1},pSent={buzz:-1,ans:-1,wager:-1,fans:-1};
@@ -687,6 +687,7 @@ function paintSongPos(){paintPlayer();const el=$('#songpos'),tx=$('#songtime');i
   const pos=Math.max(0,(sp.pos||0)+(live?(Date.now()-(sp.at||Date.now()))/1000:0)),dur=sp.dur||Spot.dur||0;
   if(el&&!dragging()){if(dur)el.max=String(Math.ceil(dur));if(c.full)el.value=String(Math.floor(pos))}
   if(tx){const v=dragging()&&el?+el.value:pos;tx.textContent=`${fmtT(Math.floor(v))} / ${dur?fmtT(Math.floor(dur)):'—:——'}`}}
+setInterval(()=>{if((view==='player'||view==='display')&&net==='connecting'&&connectingSince&&Date.now()-connectingSince>12000&&!document.querySelector('.note.no')&&!PS)render()},3000);
 setInterval(()=>{if(view==='host'&&S&&S.phase==='clue')paintSongPos();if(renderHeld&&!dragging()){renderHeld=false;songDrag=false;render()}},500);
 function soundBlocked(){return !actx||actx.state!=='running'}
 function previewChanged(){if(view==='display'){sendSpotStat();render();return}const el=$('#spotcard');if(el&&view==='host')render()}
@@ -723,6 +724,18 @@ function volHTML(){const pc=k=>Math.round(vol(k)*100)+'%';const spotSongs=displa
   return spotDD('volcard',volOpen,`🔊 Volume <span class="muted" style="font-weight:400">· theme <span data-volv="music">${pc('music')}</span> · songs <span data-volv="songs">${pc('songs')}</span> · effects <span data-volv="fx">${pc('fx')}</span></span>`,false,
     `${sl('music','Theme & timer music')}${sl('songs','Songs & clips')}${sl('fx','Sound effects')}
     <span class="note">Sets the volume on ${displayOn()?'the TV board':'this device'} (wherever the sound plays). ${spotSongs?'Spotify song clips and the Spotify theme can only follow the device’s own volume unless Spotify Premium is linked there, because Spotify’s regular player doesn’t allow websites to change its volume.':'Spotify Premium is linked, so the theme and song clips follow these sliders too.'}</span>`)}
+function netHTML(){const r=Relay.get()||{},on=Relay.servers().length>0;
+  return spotDD('netcard',netOpen,`🌐 Connections <span class="muted" style="font-weight:400">· ${on?'<b class="ok">✓ relay on</b>: phones can join from cellular data or any Wi-Fi':'players on other networks or cellular data? Turn on the free relay'}</span>`,false,
+    `<span class="note">Phones on the same Wi-Fi as this device connect directly. Phones on cellular data or a different Wi-Fi often can’t, so their connection needs a <b>relay</b>. The game includes a basic free one, but many cellular networks block it. For reliable joining from anywhere, set up Metered’s free relay once (20 GB a month free; a game night uses only a tiny part of that). Your relay details are saved on this device only, never in the game’s files or repo.</span>
+    <details class="card" style="gap:6px" ${on?'':'open'}><summary class="eyebrow" style="cursor:pointer">One-time setup (about 3 minutes)</summary>
+      <ol class="steps"><li>Go to <b>metered.ca/tools/openrelay</b> and sign up for a free account.</li>
+      <li>In your Metered dashboard, find your <b>app name</b> (your address looks like <b>yourapp.metered.live</b>) and your TURN <b>API key</b>.</li>
+      <li>Paste both below and tap <b>Save and test</b>.</li></ol></details>
+    <label for="relay-app">App name (the part before .metered.live)</label><input id="relay-app" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="yourapp" value="${esc(r.app||'')}">
+    <label for="relay-key">API key</label><input id="relay-key" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="API key" value="${esc(r.key||'')}">
+    <div class="row"><button class="btn btn-gold" data-act="relay-save">Save and test</button>${on?'<button class="btn-sm btn-ghost" data-act="relay-off">Turn relay off</button>':''}</div>
+    ${relayMsg?`<span class="note">${relayMsg}</span>`:''}
+    <span class="note">If players still can’t join, have them switch between Wi-Fi and cellular data. School and church Wi-Fi sometimes block game connections; a phone hotspot for this device works too.</span>`)}
 function spotDD(id,open,summary,bad,body){return `<details class="card spotcard spotdd" id="${id}" ${open?'open':''} style="gap:8px;${bad?'border-color:var(--bad)':''}"><summary><span class="spotsum">${summary}</span><span class="spotchev" aria-hidden="true">▾</span></summary><div class="col" style="gap:8px;margin-top:8px">${body}</div></details>`}
 function spotifyCardHTML(){const st=spotState(),tv=displayOn(),where=tv?'the TV board':'this device',fo=S.fullOnly!==false;
   if(st==='none'||st==='file')return '';
@@ -786,13 +799,31 @@ function musicControlsHTML(){return `<div class="row"><label for="musicfile" cla
 let wakeLock=null;async function keepAwake(){try{if(navigator.wakeLock&&!wakeLock){wakeLock=await navigator.wakeLock.request('screen');wakeLock.addEventListener('release',()=>{wakeLock=null})}}catch{}}
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&(view==='display'||view==='host'))keepAwake()});
 
+/* ---------- connections across different networks ----------
+   Phones on cellular data or another Wi-Fi often can't reach the host directly, so the connection goes through a relay (TURN).
+   Built in: several STUN servers and PeerJS's free relay. Optional: the host's own free Metered "Open Relay" (ports 80/443,
+   which cellular networks and firewalls allow). Its details are saved on the host device only, never in the repo. */
+const BASE_ICE=[{urls:['stun:stun.l.google.com:19302','stun:stun1.l.google.com:19302','stun:stun.cloudflare.com:3478']},
+  {urls:['turn:eu-0.turn.peerjs.com:3478','turn:us-0.turn.peerjs.com:3478','turn:eu-0.turn.peerjs.com:3478?transport=tcp','turn:us-0.turn.peerjs.com:3478?transport=tcp'],username:'peerjs',credential:'peerjsp'}];
+const Relay={
+  get(){return store.get('ssw.relay',null)},
+  servers(){const c=store.get('ssw.relay.ice',null);return c&&Array.isArray(c.servers)?c.servers:[]},
+  /* the free Metered relay: https://<app>.metered.live/api/v1/turn/credentials?apiKey=<key> returns the relay servers */
+  async load(){const r=this.get();if(!r||!r.app||!r.key)return {ok:false,msg:'not set up'};
+    try{const res=await fetch(`https://${encodeURIComponent(r.app)}.metered.live/api/v1/turn/credentials?apiKey=${encodeURIComponent(r.key)}`);
+      const j=await res.json();if(!res.ok||!Array.isArray(j)||!j.length)return {ok:false,msg:(j&&(j.error||j.message))||'The relay didn’t accept that app name and API key.'};
+      store.set('ssw.relay.ice',{at:Date.now(),servers:j});return {ok:true,n:j.length}}catch(e){return {ok:false,msg:'Couldn’t reach the relay. Check the app name and your internet.'}}},
+  clear(){store.set('ssw.relay',null);store.set('ssw.relay.ice',null)}};
+/* every connection (host, players, TV board) gets these servers; the host's relay is used whenever it's set up on that device */
+const peerOpts=()=>({config:{iceServers:[...Relay.servers(),...BASE_ICE]}});
+let relayMsg='';
 /* ---------- networking (PeerJS: the host's device is the game server) ---------- */
-let peer=null,net='off',conns=new Map(),hconn=null,netCode='',retryT=null,lastState=0,hostTries=0;
+let connectingSince=0;let peer=null,net='off',conns=new Map(),hconn=null,netCode='',retryT=null,lastState=0,hostTries=0;
 function netClose(){sentPv=null;clearTimeout(retryT);try{hconn&&hconn.close()}catch{}hconn=null;conns.forEach((_,c)=>{try{c.close()}catch{}});conns.clear();try{peer&&peer.destroy()}catch{}peer=null;net='off'}
 function hostOpen(fresh){
   if(!window.Peer){net='nolib';updateConn();return}
   netClose();netCode=S.code;net='connecting';updateConn();
-  peer=new Peer(PREFIX+S.code.toLowerCase());
+  peer=new Peer(PREFIX+S.code.toLowerCase(),peerOpts());
   peer.on('open',()=>{net='live';hostTries=0;updateConn()});
   peer.on('connection',c=>{
     c.on('open',()=>{conns.set(c,{role:null,pid:null});sendTo(c)});
@@ -810,8 +841,8 @@ function hostOpen(fresh){
 }
 function clientOpen(code,role){
   if(!window.Peer){net='nolib';updateConn();return}
-  netClose();netCode=code;net='connecting';updateConn();
-  peer=new Peer();
+  netClose();netCode=code;net='connecting';updateConn();connectingSince=Date.now();
+  peer=new Peer(peerOpts());
   peer.on('open',dial);
   peer.on('disconnected',()=>{setTimeout(()=>{try{peer&&!peer.destroyed&&peer.reconnect()}catch{}},1500)});
   peer.on('error',e=>{
@@ -1272,11 +1303,11 @@ function lobbyHTML(inOverlay){
 }
 function hostHTML(){
   const g=S.game;
-  if(S.phase==='lobby')return `<div class="row"><div><div class="eyebrow">Jeopardy Showdown · lobby</div><h1 style="font-family:var(--f-display);font-weight:400;font-size:clamp(24px,4vw,38px);text-transform:uppercase">${esc(g.title)}</h1></div><div class="spacer"></div>${tvSizeCtl()}${canFull()?`<button class="btn-sm" data-act="fs">${isFull()?'Exit full screen':'⛶ Full screen'}</button>`:''}<div id="conn">${connHTML()}</div></div>${spotifyCardHTML()}${volHTML()}${lobbyHTML(false)}`;
+  if(S.phase==='lobby')return `<div class="row"><div><div class="eyebrow">Jeopardy Showdown · lobby</div><h1 style="font-family:var(--f-display);font-weight:400;font-size:clamp(24px,4vw,38px);text-transform:uppercase">${esc(g.title)}</h1></div><div class="spacer"></div>${tvSizeCtl()}${canFull()?`<button class="btn-sm" data-act="fs">${isFull()?'Exit full screen':'⛶ Full screen'}</button>`:''}<div id="conn">${connHTML()}</div></div>${spotifyCardHTML()}${volHTML()}${netHTML()}${lobbyHTML(false)}`;
   const allUsed=S.used.every(c=>c.every(Boolean));
   return `<div class="row"><div><div class="eyebrow">Jeopardy Showdown · host</div><h1 style="font-family:var(--f-display);font-weight:400;font-size:clamp(24px,4vw,38px);letter-spacing:.02em;text-transform:uppercase">${esc(g.title)}</h1></div><div class="spacer"></div>
     <button class="btn-sm" data-act="show-lobby">Code ${esc(S.code)} · teams & QR</button>${tvSizeCtl()}${canFull()?`<button class="btn-sm" data-act="fs">${isFull()?'Exit full screen':'⛶ Full screen'}</button>`:''}<div id="conn">${connHTML()}</div></div>
-  ${spotifyCardHTML()}${volHTML()}
+  ${spotifyCardHTML()}${volHTML()}${netHTML()}
   ${firstHTML(S.first&&Date.now()-S.first.at<4500?(S.teams[S.first.t]||{}).name:'')}
   ${orderHTML(orderState())}
   <div class="turnbar"><span class="eyebrow">${classic()?'In control':'Picking now'}</span><b>${esc(S.teams[S.turn]?.name||'No teams yet')}</b><span class="spacer"></span><span class="note">${classic()?'Classic Jeopardy':'Team Order'} · ${esc(LEVEL_NAMES[S.settings.level]||'All levels')} · ${S.settings.mode==='turns'?'next team steals':'buzz-in'} · ${S.settings.answers==='typed'?'typed answers'+(S.settings.auto?', auto-scored':''):'answers out loud'}</span></div>
@@ -1454,7 +1485,9 @@ function finalOverlay(){
 /* ---------- player view ---------- */
 function timerP(big){if(!(PS&&PS.tm&&(PS.tm.run||PS.tm.left<PS.tm.len)))return '';const left=PS.tm.run?Math.max(0,pTimer.end-Date.now()):PS.tm.left;
   return `<div class="col" style="gap:6px"><div class="bigtime ${left<=5000?'low':''}" id="bignum" style="${big?'':'font-size:clamp(44px,14vw,72px)'}">${Math.ceil(left/1000)}</div><div class="row"><div class="timer"><i id="tbar"></i></div>${!PS.tm.run?(left<=0?'<span class="no">Time’s up</span>':'<span class="muted">Paused</span>'):''}</div></div>`}
-function netNote(){return net==='nogame'?'<div class="note no">No game with that code is running yet. Check the code; this keeps trying.</div>':net==='nolib'?'<div class="note no">Couldn’t load the connection library. Check your internet connection and reload.</div>':''}
+function netNote(){const slow=net==='connecting'&&connectingSince&&Date.now()-connectingSince>12000;
+  if(slow)return '<div class="note no">Still connecting… If this phone is on cellular data or a different Wi-Fi than the host, try switching (turn Wi-Fi off to use cellular, or join the host’s Wi-Fi). The host can also turn on the free relay under 🌐 Connections.</div>';
+  return net==='nogame'?'<div class="note no">No game with that code is running yet. Check the code; this keeps trying.</div>':net==='nolib'?'<div class="note no">Couldn’t load the connection library. Check your internet connection and reload.</div>':''}
 function playerLobbyHTML(st,mi){
   const my=st.teams[mi],n=my?(my.m||[]).length:0,total=st.teams.reduce((k,t)=>k+(t.m||[]).length,0)+(st.loose||[]).length;
   return `<div class="row"><div style="min-width:0"><div class="eyebrow">Lobby · game ${esc(P.code)}</div><h2>${esc(P.name)}${my?` <span class="muted" style="font-weight:400">· ${esc(my.name)}</span>`:''}</h2></div><div class="spacer"></div><div id="conn">${connHTML()}</div></div>
@@ -1584,7 +1617,7 @@ document.addEventListener('click',e=>{
   if(view==='host'||view==='display'||a==='go-display'||a==='go-host'||a==='d-code'||a==='resume'||a==='create')audio();
   switch(a){
     case 'go-role':if(view!=='host')netClose();if(view==='display')Music.stop();view='role';render();break;
-    case 'go-host':ThemeSpot.prepare();audio();if(S)goHost();else{view='setup';render()}break;
+    case 'go-host':if(Relay.get())Relay.load();ThemeSpot.prepare();audio();if(S)goHost();else{view='setup';render()}break;
     case 'go-setup':view='setup';confirmNew=false;render();window.scrollTo(0,0);break;
     case 'tuner':tunerFrom=view;Clip.stop();setMusic(null);view='tuner';render();window.scrollTo(0,0);break;
     case 'tu-back':view=tunerFrom==='host'&&S?'host':'setup';render();hostAudio();break;
@@ -1651,6 +1684,12 @@ document.addEventListener('click',e=>{
     case 'spot-unlink':SpotAuth.unlink();SpotSDK.stopAll();if(view==='display'){SpotSDK.report('off');themeSourceChanged();render();break}S.hostSdk='';conns.forEach((inf,c)=>{if(inf.role==='display'){inf.spotTok=null;try{c.send({t:'spottoken',a:''})}catch{}}});themeSourceChanged();render();break;
     case 'fs':toggleFull();break;
     case 'auto-timer':S.settings.autoTimer=!S.settings.autoTimer;setup.settings.autoTimer=S.settings.autoTimer;saveSetup();commit();break;
+    case 'relay-save':{const app=String(($('#relay-app')||{}).value||'').trim().replace(/^https?:\/\//,'').replace(/\.metered\.live.*$/,''),key=String(($('#relay-key')||{}).value||'').trim();
+      if(!app||!key){relayMsg='<b class="no">Enter both the app name and the API key.</b>';render();return}
+      store.set('ssw.relay',{app,key});relayMsg='Testing…';netOpen=true;render();
+      Relay.load().then(r=>{relayMsg=r.ok?`<b class="ok">✓ Relay ready.</b> Phones can now join from cellular data or any Wi-Fi.${S&&conns.size?' Players already in the game stay connected.':''}`:`<b class="no">${esc(r.msg)}</b>`;
+        if(r.ok&&S&&!conns.size&&view==='host')hostOpen(false);render()});break}
+    case 'relay-off':Relay.clear();relayMsg='Relay turned off on this device.';render();break;
     case 'spot-full':S.fullOnly=S.fullOnly===false;commit();if(!displayOn())ThemeSpot.kick();break;
     case 'spot-check':if(view==='display'){sentPv=null;resetSpotify();render();break}if(displayOn()){S.tvSpot=null;S.spotCheck=(S.spotCheck||0)+1;commit()}else{resetSpotify();render()}break;
     case 'autoplay':S.settings.autoplay=!S.settings.autoplay;setup.settings.autoplay=S.settings.autoplay;saveSetup();commit();break;
