@@ -488,25 +488,188 @@ window.QUESTION_BANK = {
     { category: "Kings", question: "This king of Babylon saw a hand write on the wall during his feast.", answer: "Belshazzar", hint: "It is in Daniel 5.", accept: ["belshazzar"] },
     { category: "Women of the Bible", question: "A Moabite woman, she is the great-grandmother of King David.", answer: "Ruth", hint: "A book of the Bible is named after her.", accept: ["ruth"] }
   ],
-
   /*
-    SPOTIFY SONGS
-    Paste Spotify song links here, one per line, inside "double quotes" with a comma after each.
-    The game turns them into a "Name That Song" category, picks 5 random songs per board,
-    and plays each one from Spotify on the TV board. Harder rows play shorter clips:
-    100 = 12 seconds, 200 = 10, 300 = 8, 400 = 5, 500 = 3.
-
-    Each clip starts 45 seconds into the song unless you add a time after the link,
-    like "https://open.spotify.com/track/... 1:05" to start at the chorus.
-
-    Quick way to get links: in the Spotify desktop app, open a playlist, click one song,
-    press Ctrl+A (Cmd+A on Mac) to select all, then Ctrl+C (Cmd+C) to copy every song link.
-    You need at least 5 songs in a list for its category to appear.
+    SPOTIFY SONGS FROM YOUR PLAYLISTS
+    ---------------------------------
+    1. Paste your playlists' song links into worshipLinks and hymnLinks below.
+       Quick way: in the Spotify desktop app, open the playlist, click one song,
+       press Ctrl+A (Cmd+A on Mac), then Ctrl+C (Cmd+C), and paste. Keep them in
+       playlist order; "n" below is each song's position in the playlist.
+       Paste them as one long block of text between the backticks ` `.
+    2. Songs with a link turn into these categories:
+         Guess the Worship Song   (worship list)
+         Guess the Hymn           (hymns list)
+         Finish the Hymn          (lyrics list, only once start and cut are set)
+       Each category needs at least 5 songs with links to appear.
+    3. Clips start 45 seconds in. Add start: 65 (seconds) to a song to change it.
+       Harder rows play shorter clips: 100 = 12 seconds down to 500 = 3 seconds.
+    4. Finish the Hymn: set start to a few seconds before the line is sung, and
+       cut to the moment just before the missing word (both in seconds; 1:05 = 65).
+       The song plays from start and stops at cut, right at the blank.
   */
-  songs: [
-  ],
-
-  /* Hymn recordings, same format. These become a "Hymns on Spotify" category. */
-  hymnRecordings: [
-  ]
+  spotify: {
+    worshipLinks: `
+`,
+    hymnLinks: `
+`,
+    worship: [
+      { n: 7, level: 1, title: "Oceans (Where Feet May Fail)", artist: "Hillsong UNITED", accept: ["oceans", "where feet may fail"] },
+      { n: 48, level: 1, title: "What A Beautiful Name", artist: "Hillsong Worship", accept: ["what a beautiful name"] },
+      { n: 57, level: 1, title: "Reckless Love", artist: "Cory Asbury", accept: ["reckless love"] },
+      { n: 34, level: 1, title: "How Great Is Our God", artist: "Chris Tomlin", accept: ["how great is our god"] },
+      { n: 39, level: 1, title: "Good Good Father", artist: "Chris Tomlin", accept: ["good good father"] },
+      { n: 5, level: 1, title: "I Can Only Imagine", artist: "MercyMe", accept: ["i can only imagine"] },
+      { n: 4, level: 1, title: "You Say", artist: "Lauren Daigle", accept: ["you say"] },
+      { n: 37, level: 2, title: "Who You Say I Am", artist: "Hillsong Worship", accept: ["who you say i am"] },
+      { n: 10, level: 2, title: "Great Are You Lord", artist: "All Sons & Daughters", accept: ["great are you lord"] },
+      { n: 25, level: 2, title: "Graves Into Gardens", artist: "Elevation Worship", accept: ["graves into gardens"] },
+      { n: 24, level: 2, title: "Our God", artist: "Chris Tomlin", accept: ["our god"] },
+      { n: 21, level: 2, title: "How He Loves", artist: "David Crowder Band", accept: ["how he loves"] },
+      { n: 42, level: 2, title: "Holy Spirit", artist: "Francesca Battistelli", accept: ["holy spirit"] },
+      { n: 28, level: 2, title: "Chain Breaker", artist: "Zach Williams", accept: ["chain breaker"] },
+      { n: 38, level: 2, title: "Even If", artist: "MercyMe", accept: ["even if"] },
+      { n: 40, level: 2, title: "Lord, I Need You", artist: "Matt Maher", accept: ["lord i need you", "i need you"] },
+      { n: 84, level: 3, title: "Here I Am To Worship", artist: "Jeremy Camp", accept: ["here i am to worship"] },
+      { n: 29, level: 3, title: "Who Am I", artist: "Casting Crowns", accept: ["who am i"] },
+      { n: 30, level: 3, title: "Redeemed", artist: "Big Daddy Weave", accept: ["redeemed"] },
+      { n: 41, level: 3, title: "Hello, My Name Is", artist: "Matthew West", accept: ["hello my name is"] },
+      { n: 91, level: 3, title: "Fear Is a Liar", artist: "Zach Williams", accept: ["fear is a liar"] },
+      { n: 59, level: 3, title: "Old Church Choir", artist: "Zach Williams", accept: ["old church choir"] },
+      { n: 76, level: 3, title: "Run To The Father", artist: "Cody Carnes", accept: ["run to the father"] },
+      { n: 16, level: 3, title: "Death Was Arrested", artist: "North Point Worship", accept: ["death was arrested"] },
+      { n: 12, level: 3, title: "O Come to the Altar", artist: "Elevation Worship", accept: ["o come to the altar", "come to the altar"] },
+      { n: 61, level: 4, title: "At The Cross (Love Ran Red)", artist: "Chris Tomlin", accept: ["at the cross", "love ran red"] },
+      { n: 23, level: 4, title: "This Is Amazing Grace", artist: "Phil Wickham", accept: ["this is amazing grace"] },
+      { n: 51, level: 4, title: "Overwhelmed", artist: "Big Daddy Weave", accept: ["overwhelmed"] },
+      { n: 31, level: 4, title: "Thy Will", artist: "Hillary Scott & The Scott Family", accept: ["thy will"] },
+      { n: 32, level: 4, title: "He Knows My Name", artist: "Francesca Battistelli", accept: ["he knows my name"] },
+      { n: 45, level: 4, title: "The Lion and the Lamb", artist: "Big Daddy Weave", accept: ["the lion and the lamb", "lion and the lamb"] },
+      { n: 3, level: 4, title: "Voice of Truth", artist: "Casting Crowns", accept: ["voice of truth"] },
+      { n: 46, level: 4, title: "Trust In You", artist: "Lauren Daigle", accept: ["trust in you"] },
+      { n: 33, level: 4, title: "Flawless", artist: "MercyMe", accept: ["flawless"] },
+      { n: 15, level: 4, title: "Greater", artist: "MercyMe", accept: ["greater"] },
+      { n: 55, level: 4, title: "Tell Your Heart To Beat Again", artist: "Danny Gokey", accept: ["tell your heart to beat again"] },
+      { n: 53, level: 4, title: "Fix My Eyes", artist: "for KING & COUNTRY", accept: ["fix my eyes"] },
+      { n: 18, level: 4, title: "Hills and Valleys", artist: "Tauren Wells", accept: ["hills and valleys"] },
+      { n: 1, level: 5, title: "Oh My Soul", artist: "Casting Crowns", accept: ["oh my soul"] },
+      { n: 35, level: 5, title: "Just Be Held", artist: "Casting Crowns", accept: ["just be held"] },
+      { n: 13, level: 5, title: "Sinking Deep", artist: "Hillsong Young & Free", accept: ["sinking deep"] },
+      { n: 17, level: 5, title: "Canvas And Clay", artist: "Pat Barrett", accept: ["canvas and clay"] },
+      { n: 44, level: 5, title: "We Believe", artist: "Newsboys", accept: ["we believe"] },
+      { n: 49, level: 5, title: "God Is on the Move", artist: "7eventh Time Down", accept: ["god is on the move"] },
+      { n: 60, level: 5, title: "Where I Belong", artist: "Building 429", accept: ["where i belong"] },
+      { n: 63, level: 5, title: "Give Me Your Eyes", artist: "Brandon Heath", accept: ["give me your eyes"] },
+      { n: 62, level: 5, title: "Never Too Far Gone", artist: "Jordan Feliz", accept: ["never too far gone"] },
+      { n: 65, level: 5, title: "Live Like That", artist: "Sidewalk Prophets", accept: ["live like that"] },
+      { n: 89, level: 5, title: "Refiner", artist: "Maverick City Music", accept: ["refiner"] },
+      { n: 82, level: 5, title: "There Was Jesus", artist: "Zach Williams & Dolly Parton", accept: ["there was jesus"] },
+      { n: 72, level: 5, title: "Only Jesus", artist: "Casting Crowns", accept: ["only jesus"] },
+      { n: 93, level: 5, title: "Best News Ever", artist: "MercyMe", accept: ["best news ever"] },
+      { n: 92, level: 5, title: "Survivor", artist: "Zach Williams", accept: ["survivor"] },
+      { n: 8, level: 6, title: "I Am Not Alone", artist: "Kari Jobe", accept: ["i am not alone"] },
+      { n: 9, level: 6, title: "How Can It Be", artist: "Lauren Daigle", accept: ["how can it be"] },
+      { n: 36, level: 6, title: "Love on the Radio", artist: "Matthew West", accept: ["love on the radio"] },
+      { n: 26, level: 6, title: "Lead Me To The Cross", artist: "Hillsong UNITED", accept: ["lead me to the cross"] },
+      { n: 27, level: 6, title: "Because He Lives (Amen)", artist: "Matt Maher", accept: ["because he lives", "amen"] },
+      { n: 67, level: 6, title: "First", artist: "Lauren Daigle", accept: ["first"] },
+      { n: 68, level: 6, title: "He Knows", artist: "Jeremy Camp", accept: ["he knows"] },
+      { n: 69, level: 6, title: "Hope in Front of Me", artist: "Danny Gokey", accept: ["hope in front of me"] },
+      { n: 71, level: 6, title: "I Have This Hope", artist: "Tenth Avenue North", accept: ["i have this hope"] },
+      { n: 73, level: 6, title: "Never Have I Ever", artist: "Hillsong Young & Free", accept: ["never have i ever"] },
+      { n: 75, level: 6, title: "Who Can", artist: "Cochren & Co.", accept: ["who can"] },
+      { n: 81, level: 6, title: "Peace Be Still", artist: "Hope Darst", accept: ["peace be still"] },
+      { n: 83, level: 6, title: "The Father’s House", artist: "Cory Asbury", accept: ["the fathers house", "fathers house"] },
+      { n: 85, level: 6, title: "Eye of the Storm", artist: "Ryan Stevenson", accept: ["eye of the storm"] },
+      { n: 87, level: 6, title: "God Only Knows", artist: "for KING & COUNTRY", accept: ["god only knows"] },
+      { n: 80, level: 7, title: "Drops In the Ocean", artist: "Hawk Nelson", accept: ["drops in the ocean"] },
+      { n: 64, level: 7, title: "Broken Things", artist: "Matthew West", accept: ["broken things"] },
+      { n: 94, level: 7, title: "Confidence", artist: "Sanctus Real", accept: ["confidence"] },
+      { n: 97, level: 7, title: "Come To the Table", artist: "Sidewalk Prophets", accept: ["come to the table"] },
+      { n: 99, level: 7, title: "What Faith Can Do", artist: "Kutless", accept: ["what faith can do"] },
+      { n: 56, level: 7, title: "Start A Fire", artist: "Unspoken", accept: ["start a fire"] },
+      { n: 47, level: 7, title: "My Story", artist: "Big Daddy Weave", accept: ["my story"] }
+    ],
+    hymns: [
+      { n: 1, level: 1, title: "Amazing Grace", artist: "CeCe Winans", accept: ["amazing grace"] },
+      { n: 24, level: 1, title: "How Great Thou Art", artist: "Chris Rice", accept: ["how great thou art"] },
+      { n: 30, level: 1, title: "It Is Well With My Soul", artist: "Phil Wickham", accept: ["it is well", "it is well with my soul"] },
+      { n: 3, level: 1, title: "Great Is Thy Faithfulness", artist: "Carrie Underwood & CeCe Winans", accept: ["great is thy faithfulness"] },
+      { n: 7, level: 1, title: "Holy, Holy, Holy", artist: "Anthem Lights", accept: ["holy holy holy"] },
+      { n: 5, level: 2, title: "In Christ Alone", artist: "Keith & Kristyn Getty", accept: ["in christ alone"] },
+      { n: 65, level: 2, title: "Blessed Assurance", artist: "Nathan Drake", accept: ["blessed assurance"] },
+      { n: 54, level: 2, title: "Come Thou Fount of Every Blessing", artist: "Phil Wickham", accept: ["come thou fount", "come thou fount of every blessing"] },
+      { n: 8, level: 2, title: "Rock Of Ages", artist: "Chris Rice", accept: ["rock of ages"] },
+      { n: 15, level: 2, title: "What A Friend We Have In Jesus", artist: "Chris Rice", accept: ["what a friend we have in jesus", "what a friend"] },
+      { n: 57, level: 2, title: "Doxology", artist: "Nichole Nordeman", accept: ["doxology", "the doxology"] },
+      { n: 4, level: 2, title: "I Surrender All", artist: "Phillips, Craig & Dean", accept: ["i surrender all"] },
+      { n: 20, level: 3, title: "Joyful, Joyful, We Adore Thee", artist: "Amy Grant", accept: ["joyful joyful we adore thee", "joyful joyful"] },
+      { n: 52, level: 3, title: "The Old Rugged Cross", artist: "Bart Millard", accept: ["the old rugged cross", "old rugged cross"] },
+      { n: 67, level: 3, title: "I’ll Fly Away", artist: "The Gray Havens", accept: ["ill fly away", "i ll fly away"] },
+      { n: 37, level: 3, title: "Nothing But The Blood", artist: "Keith & Kristyn Getty", accept: ["nothing but the blood"] },
+      { n: 49, level: 3, title: "Jesus Paid It All", artist: "Fernando Ortega", accept: ["jesus paid it all"] },
+      { n: 36, level: 3, title: "I Need Thee Every Hour", artist: "Jars Of Clay", accept: ["i need thee every hour"] },
+      { n: 31, level: 3, title: "How Deep The Father’s Love For Us", artist: "Phillips, Craig & Dean", accept: ["how deep the fathers love for us", "how deep the fathers love"] },
+      { n: 29, level: 3, title: "When I Survey The Wondrous Cross", artist: "Chris Rice", accept: ["when i survey the wondrous cross", "when i survey"] },
+      { n: 2, level: 3, title: "On Christ the Solid Rock", artist: "Phillips, Craig & Dean", accept: ["on christ the solid rock", "the solid rock", "my hope is built"] },
+      { n: 42, level: 3, title: "Just As I Am", artist: "MercyMe", accept: ["just as i am"] },
+      { n: 32, level: 4, title: "A Mighty Fortress Is Our God", artist: "Chris Rice", accept: ["a mighty fortress is our god", "a mighty fortress"] },
+      { n: 22, level: 4, title: "Leaning On The Everlasting Arms", artist: "David Crowder Band", accept: ["leaning on the everlasting arms"] },
+      { n: 62, level: 4, title: "Softly and Tenderly", artist: "Greg LaFollette & Alisa Turner", accept: ["softly and tenderly"] },
+      { n: 35, level: 4, title: "I Have Decided To Follow Jesus", artist: "Phil Wickham", accept: ["i have decided to follow jesus"] },
+      { n: 39, level: 4, title: "Before The Throne", artist: "Shane & Shane", accept: ["before the throne", "before the throne of god above"] },
+      { n: 53, level: 4, title: "O For A Thousand Tongues To Sing", artist: "Chris Rice", accept: ["o for a thousand tongues", "o for a thousand tongues to sing"] },
+      { n: 59, level: 4, title: "This Is My Father’s World", artist: "Chris Rice", accept: ["this is my fathers world"] },
+      { n: 26, level: 4, title: "All Creatures Of Our God And King", artist: "David Crowder Band", accept: ["all creatures of our god and king"] },
+      { n: 34, level: 4, title: "Fairest Lord Jesus", artist: "Sara Groves", accept: ["fairest lord jesus"] },
+      { n: 44, level: 4, title: "Abide With Me", artist: "Audrey Assad", accept: ["abide with me"] },
+      { n: 48, level: 4, title: "There Is A Fountain", artist: "MercyMe", accept: ["there is a fountain"] },
+      { n: 11, level: 5, title: "Christ Is Risen, He Is Risen Indeed", artist: "Keith & Kristyn Getty", accept: ["christ is risen he is risen indeed", "christ is risen"] },
+      { n: 13, level: 5, title: "Come Thou Long Expected Jesus", artist: "Laura Story", accept: ["come thou long expected jesus"] },
+      { n: 17, level: 5, title: "Oh, the Deep, Deep Love of Jesus", artist: "Audrey Assad", accept: ["oh the deep deep love of jesus", "the deep deep love of jesus"] },
+      { n: 18, level: 5, title: "My Jesus, I Love Thee", artist: "Bart Millard", accept: ["my jesus i love thee"] },
+      { n: 58, level: 5, title: "Give Me Jesus", artist: "Fernando Ortega", accept: ["give me jesus"] },
+      { n: 38, level: 5, title: "I Stand Amazed", artist: "Bart Millard", accept: ["i stand amazed"] },
+      { n: 41, level: 5, title: "Praise to the Lord, the Almighty", artist: "Fernando Ortega", accept: ["praise to the lord the almighty"] },
+      { n: 46, level: 5, title: "Speak O Lord", artist: "Keith & Kristyn Getty", accept: ["speak o lord"] },
+      { n: 47, level: 5, title: "Jesus, Keep Me Near The Cross", artist: "Keith & Kristyn Getty", accept: ["jesus keep me near the cross"] },
+      { n: 25, level: 5, title: "How Can I Keep From Singing", artist: "Ginny Owens", accept: ["how can i keep from singing"] },
+      { n: 27, level: 5, title: "Breathe On Me, Breath Of God", artist: "Keith & Kristyn Getty", accept: ["breathe on me breath of god"] },
+      { n: 6, level: 6, title: "Untitled Hymn (Come To Jesus)", artist: "Chris Rice", accept: ["untitled hymn", "come to jesus"] },
+      { n: 10, level: 6, title: "Beautiful Savior", artist: "Ginny Owens", accept: ["beautiful savior"] },
+      { n: 40, level: 6, title: "Wonderful Merciful Savior", artist: "Phillips, Craig & Dean", accept: ["wonderful merciful savior"] },
+      { n: 43, level: 6, title: "Who But Jesus", artist: "Laura Story", accept: ["who but jesus"] },
+      { n: 60, level: 6, title: "Come Behold The Wondrous Mystery", artist: "Matt Boswell & Matt Papa", accept: ["come behold the wondrous mystery"] },
+      { n: 64, level: 6, title: "My Worth Is Not In What I Own", artist: "Keith & Kristyn Getty", accept: ["my worth is not in what i own"] },
+      { n: 33, level: 6, title: "Brethren, We Have Met To Worship", artist: "Bart Millard", accept: ["brethren we have met to worship"] },
+      { n: 68, level: 6, title: "For the Beauty of the Earth", artist: "Kyle Church", accept: ["for the beauty of the earth"] },
+      { n: 56, level: 7, title: "He’s Always Been Faithful", artist: "Sara Groves", accept: ["hes always been faithful"] },
+      { n: 66, level: 7, title: "Jesus, Fount of Joy Eternal", artist: "The Trails Church", accept: ["jesus fount of joy eternal"] },
+      { n: 70, level: 7, title: "O, the Sorrows of My LORD", artist: "Melodyblue", accept: ["o the sorrows of my lord"] },
+      { n: 21, level: 7, title: "I Saw The Light", artist: "Bart Millard", accept: ["i saw the light"] }
+    ],
+    lyrics: [
+      { n: 1, level: 1, lyric: "\"Amazing grace, how sweet the ___\"", answer: "Sound", accept: ["sound"], start: null, cut: null },
+      { n: 15, level: 1, lyric: "\"What a friend we have in ___\"", answer: "Jesus", accept: ["jesus"], start: null, cut: null },
+      { n: 52, level: 1, lyric: "\"On a hill far away stood an old rugged ___\"", answer: "Cross", accept: ["cross"], start: null, cut: null },
+      { n: 37, level: 1, lyric: "\"What can wash away my sin? Nothing but the blood of ___\"", answer: "Jesus", accept: ["jesus"], start: null, cut: null },
+      { n: 65, level: 1, lyric: "\"Blessed assurance, Jesus is ___\"", answer: "Mine", accept: ["mine"], start: null, cut: null },
+      { n: 8, level: 2, lyric: "\"Rock of Ages, cleft for ___\"", answer: "Me", accept: ["me"], start: null, cut: null },
+      { n: 54, level: 2, lyric: "\"Come, Thou Fount of every ___\"", answer: "Blessing", accept: ["blessing"], start: null, cut: null },
+      { n: 7, level: 2, lyric: "\"Holy, holy, holy! Lord God ___!\"", answer: "Almighty", accept: ["almighty"], start: null, cut: null },
+      { n: 4, level: 2, lyric: "\"All to Jesus I ___\"", answer: "Surrender", accept: ["surrender"], start: null, cut: null },
+      { n: 36, level: 2, lyric: "\"I need Thee, oh, I need Thee; every hour I need ___\"", answer: "Thee", accept: ["thee", "you"], start: null, cut: null },
+      { n: 30, level: 3, lyric: "\"When peace like a ___ attendeth my way\"", answer: "River", accept: ["river"], start: null, cut: null },
+      { n: 29, level: 3, lyric: "\"When I survey the wondrous ___\"", answer: "Cross", accept: ["cross"], start: null, cut: null },
+      { n: 20, level: 3, lyric: "\"Joyful, joyful, we adore Thee, God of glory, Lord of ___\"", answer: "Love", accept: ["love"], start: null, cut: null },
+      { n: 49, level: 3, lyric: "\"Jesus paid it all, all to Him I ___\"", answer: "Owe", accept: ["owe"], start: null, cut: null },
+      { n: 62, level: 4, lyric: "\"Softly and tenderly Jesus is ___\"", answer: "Calling", accept: ["calling"], start: null, cut: null },
+      { n: 22, level: 4, lyric: "\"Leaning, leaning, safe and secure from all ___\"", answer: "Alarms", accept: ["alarms", "alarm"], start: null, cut: null },
+      { n: 32, level: 4, lyric: "\"A mighty fortress is our God, a bulwark never ___\"", answer: "Failing", accept: ["failing"], start: null, cut: null },
+      { n: 2, level: 4, lyric: "\"My hope is built on nothing less than Jesus’ blood and ___\"", answer: "Righteousness", accept: ["righteousness"], start: null, cut: null },
+      { n: 44, level: 5, lyric: "\"Abide with me; fast falls the ___\"", answer: "Eventide", accept: ["eventide"], start: null, cut: null },
+      { n: 59, level: 5, lyric: "\"This is my Father’s world, and to my listening ___\"", answer: "Ears", accept: ["ears"], start: null, cut: null },
+      { n: 34, level: 5, lyric: "\"Fairest Lord Jesus, Ruler of all ___\"", answer: "Nature", accept: ["nature"], start: null, cut: null },
+      { n: 41, level: 5, lyric: "\"Praise to the Lord, the Almighty, the King of ___\"", answer: "Creation", accept: ["creation"], start: null, cut: null }
+    ]
+  }
 };

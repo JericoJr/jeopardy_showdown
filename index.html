@@ -166,14 +166,21 @@ const BANK=(QB.categories||[]).filter(c=>c&&c.name&&Array.isArray(c.questions)).
   q:c.questions.filter(q=>q&&q.question&&q.answer&&!('spotify' in q&&!spotifyId(q.spotify))).map(q=>[Math.min(7,Math.max(1,parseInt(q.level,10)||3)),String(q.question),String(q.answer),String(q.hint||''),acc(q.accept),media(q)])})).filter(c=>c.q.length);
 const FINALS=(QB.finals||[]).filter(f=>f&&f.question&&f.answer).map(f=>[String(f.category||'Final Round'),String(f.question),String(f.answer),String(f.hint||''),acc(f.accept)]);
 if(!FINALS.length)FINALS.push(['The Disciples','Before following Jesus, this disciple was a tax collector. The first Gospel carries his name.','Matthew','He was also called Levi.','matthew|levi']);
-/* Spotify song lists (questions.js: songs, hymnRecordings). Each entry is a song link, optionally followed by
-   where to start, like "https://open.spotify.com/track/... 1:05". Harder rows play a shorter clip. */
-const toSec=v=>{const m=/(\d+):(\d{1,2})/.exec(String(v||''));return m?(+m[1])*60+(+m[2]):(/^\s*\d+\s*$/.test(String(v||''))?+v:null)};
-function songEntries(list){return (Array.isArray(list)?list:[]).map(e=>{const raw=typeof e==='string'?e:(e&&e.link)||'';const id=spotifyId(raw);if(!id)return null;
-  const rest=typeof e==='string'?e.replace(/\S*spotify\S*/,''):(e.start??'');const st=toSec(rest);return{id,start:st==null?45:st,title:typeof e==='object'&&e.title||''}}).filter(Boolean)}
-[['songs','Name That Song','Listen to the clip. Name this song.'],['hymnRecordings','Hymns on Spotify','Listen to the recording. Name this hymn.']].forEach(([key,name,question])=>{
-  const list=songEntries(QB[key]);if(list.length<5)return;
-  BANK.push({id:'spotify-'+key,name,song:true,q:list.map(e=>[3,question,e.title||'',e.title?'':'',e.title?e.title.toLowerCase():'',{spotify:e.id,audio:'',start:e.start,length:8,melody:'',bpm:100}])})});
+/* Spotify categories built from your playlists (questions.js: spotify). Links are matched by playlist position. */
+const toSec=v=>{if(v==null||v==='')return null;if(typeof v==='number')return v;const m=/(\d+):(\d{1,2})/.exec(String(v));return m?(+m[1])*60+(+m[2]):(/^\s*\d+(\.\d+)?\s*$/.test(String(v))?+v:null)};
+const linkList=t=>String(t||'').match(/(?:open\.spotify\.com\/(?:intl-[a-z]+\/)?track\/|spotify:track:)[A-Za-z0-9]{22}/g)?.map(spotifyId)||[];
+(()=>{const sp=QB.spotify;if(!sp)return;const wl=linkList(sp.worshipLinks),hl=linkList(sp.hymnLinks);
+  const idFor=(e,list)=>spotifyId(e.link)||(e.n>0?list[e.n-1]||'':'');
+  const acc2=e=>[...(e.accept||[]),String(e.title||'').toLowerCase().replace(/\s*[\(\[].*$/,'')].filter(Boolean).join('|');
+  const guess=(key,list,name,question)=>{const q=(sp[key]||[]).map(e=>{const id=idFor(e,list);if(!id||!e.title)return null;
+      return[Math.min(7,Math.max(1,+e.level||3)),question,String(e.title),e.artist?`Recorded by ${e.artist}.`:'',acc2(e),{spotify:id,audio:'',start:toSec(e.start)??45,length:8,melody:'',bpm:100}]}).filter(Boolean);
+    if(q.length>=5)BANK.push({id:'spotify-'+key,name,clipByRow:true,q})};
+  guess('worship',wl,'Guess the Worship Song','Listen to the clip. Name this worship song.');
+  guess('hymns',hl,'Guess the Hymn','Listen to the recording. Name this hymn.');
+  const lq=(sp.lyrics||[]).map(e=>{const id=idFor(e,hl),st=toSec(e.start),cut=toSec(e.cut);if(!id||st==null||cut==null||cut<=st||!e.lyric||!e.answer)return null;
+    return[Math.min(7,Math.max(1,+e.level||3)),String(e.lyric),String(e.answer),'',(e.accept||[]).join('|'),{spotify:id,audio:'',start:st,length:Math.min(20,cut-st),melody:'',bpm:100}]}).filter(Boolean);
+  if(lq.length>=5)BANK.push({id:'spotify-lyrics',name:'Finish the Hymn',q:lq});
+})();
 const CLIP_SECONDS=[12,10,8,5,3];
 const PRESETS=[{id:'random',name:'Random categories'},{id:'pick',name:'Pick my own categories'}];
 
@@ -197,7 +204,7 @@ const PREFIX='scripture-showdown-v1-';
 const LEVELS={all:[1,2,3,4,5],inter:[2,3,4,5,6],expert:[4,5,6,6,7]};
 const LEVEL_NAMES={all:'All levels',inter:'Intermediate',expert:'Expert'};
 /* random categories, preferring ones with enough questions at the levels this mode needs */
-function exactRows(b,lv){if(b.song)return 5;const used=new Set();let n=0;lv.forEach(d=>{const k=b.q.findIndex((q,i)=>!used.has(i)&&q[0]===d);if(k>=0){used.add(k);n++}});return n}
+function exactRows(b,lv){const used=new Set();let n=0;lv.forEach(d=>{const k=b.q.findIndex((q,i)=>!used.has(i)&&q[0]===d);if(k>=0){used.add(k);n++}});return n}
 function randomCats(mode){const lv=LEVELS[mode]||LEVELS.all;
   for(const need of [5,4,3]){const ok=BANK.filter(b=>exactRows(b,lv)>=need);if(ok.length>=5)return shuffle(ok.map(b=>b.id)).slice(0,5)}
   return shuffle(BANK.map(b=>b.id)).slice(0,5)}
@@ -205,7 +212,7 @@ function buildBoard(catIds,mode){const lv=LEVELS[mode]||LEVELS.all;
   return{title:'Jeopardy Showdown',levels:lv,cats:catIds.map(id=>{const b=BANK.find(x=>x.id===id);return{name:b.name,bank:id,clues:pickClues(b,lv)}}),
     final:(f=>({cat:f[0],q:f[1],a:f[2],h:f[3],alt:f[4]}))(rnd(FINALS))};
 }
-function pickClues(b,lv){if(b.song)return shuffle(b.q).slice(0,5).map((x,r)=>{const c=mkClue(x);c.m=Object.assign({},c.m,{length:CLIP_SECONDS[r]});c.song=true;return c});const used=new Set();return (lv||LEVELS.all).map(d=>{let best=null;
+function pickClues(b,lv){if(b.clipByRow)return pickClues({q:b.q},lv).map((c,r)=>{c.m=Object.assign({},c.m,{length:CLIP_SECONDS[r]});c.song=true;return c});const used=new Set();return (lv||LEVELS.all).map(d=>{let best=null;
   for(let dist=0;dist<7&&!best;dist++){for(const lvl of (d>=4?[d+dist,d-dist]:[d-dist,d+dist])){const pool=b.q.filter((q,k)=>!used.has(k)&&q[0]===lvl);if(pool.length){best=rnd(pool);break}}}
   if(!best)best=rnd(b.q);used.add(b.q.indexOf(best));return mkClue(best)})}
 const norm=s=>String(s||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/\([^)]*\)/g,' ').replace(/&/g,' and ').replace(/[^a-z0-9 ]+/g,' ')
