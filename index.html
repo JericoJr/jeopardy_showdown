@@ -176,6 +176,7 @@ body.tuning{padding-bottom:62vh}
 .ddwager{display:flex;flex-direction:column;align-items:center;gap:2px;margin-top:6px}
 .ddwager b{font-family:var(--f-display);font-weight:400;font-size:clamp(40px,9vw,96px);color:var(--gold);line-height:1}
 .catpick button.off{opacity:.5;text-decoration:line-through}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--panel);border:1px solid var(--gold);border-radius:10px;padding:10px 14px;z-index:60;max-width:90vw}
 .order{display:flex;align-items:center;justify-content:center;gap:6px 8px;flex-wrap:wrap;background:var(--panel);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:8px 10px}
 .order .olab{width:100%;text-align:center;margin-bottom:-2px}
 .ochip{display:flex;flex-direction:column;align-items:center;gap:1px;padding:6px 14px;border-radius:999px;border:2px solid rgba(255,255,255,.12);background:rgba(255,255,255,.05);max-width:44vw;transition:all .3s}
@@ -357,12 +358,13 @@ const ThemeSpot={ctl:null,want:false,made:false,played:false,ok:false,pos:0,dur:
   kick(){if(!this.ctl||this.isPlaying()||Date.now()-this.kicked<1500)return;this.kicked=Date.now();
     try{this.played&&this.ctl.resume?this.ctl.resume():this.ctl.play()}catch{}},
   start(){const id=this.id();if(!id)return false;this.want=true;
-    if(this.ctl)this.kick();
-    else if(!this.made){this.made=true;Spot.load(api=>{let w=document.getElementById('themewrap');if(!w){w=document.createElement('div');w.id='themewrap';w.setAttribute('aria-hidden','true');
+    if(this.ctl)this.kick();else this.prepare();
+    return true},
+  /* load the player ahead of time (on the setup and TV screens) so the theme starts instantly */
+  prepare(){const id=this.id();if(!id||this.made)return;this.made=true;Spot.load(api=>{let w=document.getElementById('themewrap');if(!w){w=document.createElement('div');w.id='themewrap';w.setAttribute('aria-hidden','true');
       w.style.cssText='position:fixed;left:0;bottom:0;width:300px;height:80px;opacity:0;pointer-events:none;z-index:-1;overflow:hidden';document.body.appendChild(w)}
       const el=document.createElement('div');w.appendChild(el);
-      api.createController(el,{uri:'spotify:track:'+id,width:300,height:80},ctl=>{this.ctl=ctl;ctl.addListener('playback_update',e=>this.update(e));ctl.addListener('ready',()=>{if(this.want)this.kick()});if(this.want)this.kick()})})}
-    return true},
+      api.createController(el,{uri:'spotify:track:'+id,width:300,height:80},ctl=>{this.ctl=ctl;ctl.addListener('playback_update',e=>this.update(e));ctl.addListener('ready',()=>{if(this.want)this.kick()});if(this.want)this.kick()})})},
   update(e){const d=(e&&e.data)||{},pos=d.position||0,dur=d.duration||0;this.pos=pos/1000;if(dur)this.dur=dur/1000;
     const playing=!d.isPaused&&!d.isBuffering&&dur>0;
     if(playing){this.ok=true;this.played=true;this.playingAt=Date.now()}else if(d.isPaused)this.playingAt=0;
@@ -379,16 +381,29 @@ const ThemeSpot={ctl:null,want:false,made:false,played:false,ok:false,pos:0,dur:
   stop(){this.want=false;this.playingAt=0;this.kicked=0;clearTimeout(this.loopT);try{this.ctl&&this.ctl.pause()}catch{}}};
 /* browsers can block music until someone taps: a tap starts the theme only if it isn't already playing */
 document.addEventListener('pointerdown',()=>{if(ThemeSpot.want)ThemeSpot.kick()},true);
+/* your own theme file, kept in this browser so it's there next time */
+const fileStore={db(){return new Promise((ok,no)=>{try{const r=indexedDB.open('ssw-music',1);r.onupgradeneeded=()=>r.result.createObjectStore('f');r.onsuccess=()=>ok(r.result);r.onerror=()=>no(r.error)}catch(e){no(e)}})},
+  async put(v){try{const d=await this.db();d.transaction('f','readwrite').objectStore('f').put(v,'theme')}catch{}},
+  async get(){try{const d=await this.db();return await new Promise(ok=>{const r=d.transaction('f').objectStore('f').get('theme');r.onsuccess=()=>ok(r.result||null);r.onerror=()=>ok(null)})}catch{return null}},
+  async del(){try{const d=await this.db();d.transaction('f','readwrite').objectStore('f').delete('theme')}catch{}}};
+function decodeAudio(buf){const ac=audio();return new Promise((ok,no)=>{const p=ac.decodeAudioData(buf,ok,no);if(p&&p.then)p.then(ok,no)})}
+function alertNote(t){const el=document.createElement('div');el.className='toast';el.textContent=t;document.body.appendChild(el);setTimeout(()=>el.remove(),4000)}
+async function restoreThemeFile(){const v=await fileStore.get();if(!v||!v.data)return;try{Music.buf=await decodeAudio(v.data.slice(0));Music.fname=v.name||'Your music';if(Music.kind==='show'){const k=Music.kind;Music.stop();Music.start(k)}if(view==='host'||view==='display'||view==='setup')render()}catch{}}
 const Music={on:false,kind:null,el:null,timer:null,bus:null,step:0,next:0,prog:()=>0,
   start(kind){if(this.on&&this.kind===kind)return;this.stop();this.on=true;this.kind=kind;
-    if(kind==='show'&&this.el){this.el.loop=true;this.el.volume=musicVol;this.el.currentTime=0;this.el.play().catch(()=>{});return}
+    if(kind==='show'&&this.buf){const ac=audio();if(ac){this.bus=ac.createGain();this.bus.gain.value=musicVol;this.bus.connect(ac.destination);
+      const src=ac.createBufferSource();src.buffer=this.buf;src.loop=true;src.connect(this.bus);src.start(0,this.at%this.buf.duration);this.src=src;this.t0=ac.currentTime-(this.at%this.buf.duration);return}}
     if(kind==='show'){if(ThemeSpot.start())this.spot=true;else{this.on=false;this.kind=null}return}
     const ac=audio();if(!ac){this.on=false;this.kind=null;return}
     this.bus=ac.createGain();this.bus.gain.value=musicVol*0.55;this.bus.connect(ac.destination);this.step=0;this.next=ac.currentTime+0.1;
     this.timer=setInterval(()=>{const a=actx;if(!a||!this.bus)return;while(this.next<a.currentTime+0.35){this.next+=this.tension(this.next);this.step++}},70)},
-  stop(){this.on=false;this.kind=null;if(this.spot){this.spot=false;ThemeSpot.stop()}clearInterval(this.timer);this.timer=null;if(this.el)try{this.el.pause()}catch{};try{this.bus&&this.bus.disconnect()}catch{}this.bus=null},
-  vol(v){musicVol=v;store.set('ssw.vol',v);if(this.el)this.el.volume=v;if(this.bus)this.bus.gain.value=v*0.55},
-  file(f){const k=this.kind;this.stop();try{this.el&&URL.revokeObjectURL(this.el.src)}catch{}this.el=f?new Audio(URL.createObjectURL(f)):null;if(k)this.start(k)},
+  stop(){if(this.src){try{this.at=actx.currentTime-this.t0;this.src.stop()}catch{}this.src=null}this.on=false;this.kind=null;if(this.spot){this.spot=false;ThemeSpot.stop()}clearInterval(this.timer);this.timer=null;try{this.bus&&this.bus.disconnect()}catch{}this.bus=null},
+  vol(v){musicVol=v;store.set('ssw.vol',v);if(this.bus)this.bus.gain.value=this.src?v:v*0.55},
+  at:0,buf:null,src:null,fname:'',
+  async file(f){const k=this.kind;this.stop();this.at=0;
+    if(!f){this.buf=null;this.fname='';fileStore.del();if(k)this.start(k);render();return}
+    try{const data=await f.arrayBuffer();this.buf=await decodeAudio(data.slice(0));this.fname=f.name;fileStore.put({name:f.name,data})}catch{this.buf=null;this.fname='';alertNote('That file couldn’t be played. Try an MP3 or M4A.')}
+    if(k)this.start(k);render()},
   tension(t){
     const p=Math.min(1,Math.max(0,this.prog()||0)),e=60/(92*(1+0.55*p))/2,s=this.step,bar=Math.floor(s/8)%4,i=s%8,b=this.bus;
     const A=n=>110*Math.pow(2,n/12),root=[0,1,2,3][bar];
@@ -510,9 +525,9 @@ function flash(kind){let el=document.getElementById('fxflash');if(!el){el=docume
   el.className='';void el.offsetWidth;el.className='fxflash '+(kind==='ok'?'fx-ok':'fx-no');el.innerHTML=`<span>${kind==='ok'?'✓':'✗'} ${txt}</span>`;
   clearTimeout(flashT);flashT=setTimeout(()=>{el.className=''},1700)}
 function hostAudio(){if(view!=='host'||!S)return;Music.prog=()=>S&&S.tmr?1-tLeft()/(S.tmr.len||1):0;if(displayOn()||S.sound===false){setMusic(null);return}setMusic(wantMusic(S.phase,!!S.tmr?.run,S.tmusic!==false,!!S.music))}
-function musicControlsHTML(){return `<div class="row"><label for="musicfile" class="lbl" style="margin:0">Your own music (optional)</label><input type="file" id="musicfile" accept="audio/*" data-music="file" style="width:auto;max-width:100%;min-width:0">${Music.el?'<button class="btn-sm btn-ghost" data-act="music-builtin">Use the theme song again</button>':''}
+function musicControlsHTML(){return `<div class="row"><label for="musicfile" class="lbl" style="margin:0">Theme from a music file (optional)</label><input type="file" id="musicfile" accept="audio/*" data-music="file" style="width:auto;max-width:100%;min-width:0">${Music.buf?`<span class="pill">♪ ${esc(Music.fname)}</span><button class="btn-sm btn-ghost" data-act="music-builtin">Use the Spotify theme again</button>`:''}
   <label for="musicvol" class="lbl" style="margin:0">Volume</label><input type="range" id="musicvol" min="0" max="1" step="0.05" value="${musicVol}" data-music="vol" style="width:140px;padding:0"></div>
-  ${ThemeSpot.id()&&!Music.el?'<span class="note">The theme song plays from Spotify on a loop. Its volume follows this device’s volume, not the slider (the slider sets the timer music). If it doesn’t start, tap anywhere on this screen once.</span>':''}`}
+  <span class="note">${Music.buf?'Your file loops with no gap at all and is remembered on this device.':'The Jeopardy theme plays from Spotify on a loop. Its volume follows this device’s volume (the slider sets the timer music). If it doesn’t start, tap anywhere once.'} If you have your own copy of a theme as an audio file (MP3 or M4A), choose it here for a perfectly seamless loop. It plays only on this device.</span>`}
 let wakeLock=null;async function keepAwake(){try{if(navigator.wakeLock&&!wakeLock){wakeLock=await navigator.wakeLock.request('screen');wakeLock.addEventListener('release',()=>{wakeLock=null})}}catch{}}
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&(view==='display'||view==='host'))keepAwake()});
 
@@ -1282,7 +1297,7 @@ document.addEventListener('click',e=>{
   if(view==='host'||view==='display'||a==='go-display'||a==='go-host'||a==='d-code'||a==='resume'||a==='create')audio();
   switch(a){
     case 'go-role':if(view!=='host')netClose();if(view==='display')Music.stop();view='role';render();break;
-    case 'go-host':if(S)goHost();else{view='setup';render()}break;
+    case 'go-host':ThemeSpot.prepare();audio();if(S)goHost();else{view='setup';render()}break;
     case 'go-setup':view='setup';confirmNew=false;render();window.scrollTo(0,0);break;
     case 'tuner':tunerFrom=view;Clip.stop();setMusic(null);view='tuner';render();window.scrollTo(0,0);break;
     case 'tu-back':view=tunerFrom==='host'&&S?'host':'setup';render();hostAudio();break;
@@ -1298,7 +1313,7 @@ document.addEventListener('click',e=>{
     case 'tu-reset':Tuner.reset();break;
     case 'tu-copy':{const txt=tunerExport();const ta=$('#texport');if(ta){ta.value=txt;ta.hidden=false}try{navigator.clipboard.writeText(txt).then(()=>{b.textContent='Copied'},()=>{ta&&ta.select()})}catch{ta&&ta.select()}break}
     case 'go-player':view='player';render();break;
-    case 'go-display':view='display';if(D.step==='live'&&D.code){PS=null;PSkey='';clientOpen(D.code,'display');keepAwake()}render();break;
+    case 'go-display':ThemeSpot.prepare();audio();view='display';if(D.step==='live'&&D.code){PS=null;PSkey='';clientOpen(D.code,'display');keepAwake()}render();break;
     case 'src':setup.source=b.dataset.v;if(setup.source==='custom'&&!setup.customId&&custom[0])setup.customId=custom[0].id;saveSetup();render();break;
     case 'preset':setup.preset=b.dataset.v;saveSetup();render();break;
     case 'skipcat':{const n=b.dataset.v,k=setup.skip||(setup.skip=[]);const i=k.indexOf(n);if(i>=0)k.splice(i,1);else k.push(n);saveSetup();render();break}
@@ -1310,7 +1325,7 @@ document.addEventListener('click',e=>{
     case 'resume':goHost();break;
     case 'create':if(S&&S.phase!=='over'&&S.phase!=='lobby'){confirmNew=true;render();break}
     /* falls through */
-    case 'new-yes':{confirmNew=false;const go=()=>{const fresh=createGame();if(!S)return;view='host';if(fresh||netCode!==S.code||!peer)hostOpen(true);keepAwake();commit();fillSongTitles();window.scrollTo(0,0)};
+    case 'new-yes':{confirmNew=false;const go=()=>{const fresh=createGame();if(!S)return;view='host';if(fresh||netCode!==S.code||!peer)hostOpen(true);keepAwake();commit();hostAudio();fillSongTitles();window.scrollTo(0,0)};audio();
       if(S&&S.phase!=='lobby'&&conns.size){sendEnded();setTimeout(go,600)}else go();break}
     case 'end-game':confirmEnd=true;render();break;
     case 'end-no':confirmEnd=false;render();break;
@@ -1456,6 +1471,8 @@ window.addEventListener('hashchange',handleHash);
 window.addEventListener('pageshow',e=>{if(e.persisted)handleHash()});
 if(!handleHash()&&view==='player'&&P.step!=='code'&&P.code){clientOpen(P.code,'player')}
 render();
+/* remembered theme file, and the Spotify theme player loaded ahead of time */
+restoreThemeFile();setTimeout(()=>{if(view==='host'||view==='display'||view==='setup')ThemeSpot.prepare()},300);
 </script>
 </body>
 </html>
