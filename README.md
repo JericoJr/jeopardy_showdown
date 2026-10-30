@@ -131,6 +131,7 @@ Each category looks like this:
 
 - **level** is 1 to 7: 1–2 easy, 3 medium, 4–5 hard, 6–7 expert. "All levels" games use levels 1–5, and Intermediate and Expert games use the harder levels.
 - **hint** is optional. The host can show it to players.
+- **verse** is optional: the Bible passage the question comes from, like `verse: "Daniel 6:16"`. It shows with the hint as 📖 Daniel 6:16, so players can look it up. Almost every built-in Bible question has one.
 - **accept** is optional: other answers that count as correct when players type their answers.
 - Give each category at least one question for each level from 1 to 5, plus a few at 6–7 so it can appear in Expert games. Two or more per level means more variety between games.
 - Final round questions are in the `finals` list at the bottom of the file.

@@ -259,10 +259,12 @@ const QB=window.QUESTION_BANK||{categories:[],finals:[]};
 /* accepts a Spotify share link, a spotify:track: URI, or a bare track ID */
 const spotifyId=v=>{const m=/(?:track[\/:])([A-Za-z0-9]{22})/.exec(String(v||''))||/^([A-Za-z0-9]{22})$/.exec(String(v||'').trim());return m?m[1]:''};
 const media=q=>(q.audio||q.melody||spotifyId(q.spotify))?{spotify:spotifyId(q.spotify),audio:q.audio?String(q.audio):'',start:+q.start||0,length:Math.min(20,Math.max(2,+q.length||10)),melody:q.melody?String(q.melody):'',bpm:+q.bpm||100}:null;
+/* hint + the Bible passage it comes from, e.g. "Delilah betrayed him. · 📖 Judges 16:17" */
+const withVerse=(h,v)=>{h=String(h||'').trim();v=String(v||'').trim();if(!v||h.replace(/\s/g,'').includes(v.replace(/\s/g,'')))return h;return (h?h+' · ':'')+'📖 '+v};
 const acc=x=>(Array.isArray(x)?x:String(x||'').split('|')).map(v=>String(v).trim()).filter(Boolean).join('|');
 const BANK=(QB.categories||[]).filter(c=>c&&c.name&&Array.isArray(c.questions)).map((c,i)=>({id:String(c.name).toLowerCase().replace(/[^a-z0-9]+/g,'-')+'-'+i,name:String(c.name),
-  q:c.questions.filter(q=>q&&q.question&&q.answer&&!('spotify' in q&&!spotifyId(q.spotify))).map(q=>[Math.min(7,Math.max(1,parseInt(q.level,10)||3)),String(q.question),String(q.answer),String(q.hint||''),acc(q.accept),media(q),(q.image||c.style==='emoji')?{img:q.image?String(q.image):'',emoji:c.style==='emoji'}:null])})).filter(c=>c.q.length);
-const FINALS=(QB.finals||[]).filter(f=>f&&f.question&&f.answer).map(f=>[String(f.category||'Final Round'),String(f.question),String(f.answer),String(f.hint||''),acc(f.accept)]);
+  q:c.questions.filter(q=>q&&q.question&&q.answer&&!('spotify' in q&&!spotifyId(q.spotify))).map(q=>[Math.min(7,Math.max(1,parseInt(q.level,10)||3)),String(q.question),String(q.answer),withVerse(q.hint,q.verse),acc(q.accept),media(q),(q.image||c.style==='emoji')?{img:q.image?String(q.image):'',emoji:c.style==='emoji'}:null])})).filter(c=>c.q.length);
+const FINALS=(QB.finals||[]).filter(f=>f&&f.question&&f.answer).map(f=>[String(f.category||'Final Round'),String(f.question),String(f.answer),withVerse(f.hint,f.verse),acc(f.accept)]);
 if(!FINALS.length)FINALS.push(['The Disciples','Before following Jesus, this disciple was a tax collector. The first Gospel carries his name.','Matthew','He was also called Levi.','matthew|levi']);
 /* Spotify categories built from your playlists (questions.js: spotify). Links are matched by playlist position. */
 const toSec=v=>{if(v==null||v==='')return null;if(typeof v==='number')return v;const m=/(\d+):(\d{1,2})/.exec(String(v));return m?(+m[1])*60+(+m[2]):(/^\s*\d+(\.\d+)?\s*$/.test(String(v))?+v:null)};
