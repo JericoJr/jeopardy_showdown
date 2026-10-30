@@ -11,8 +11,8 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=Fraunces:opsz,wght@9..144,500;9..144,700&family=Figtree:wght@400;600;800&display=swap">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
-<script src="images.js?v=202610301749-71f232"></script>
-<script src="questions.js?v=202610301749-71f232"></script>
+<script src="images.js?v=202610301757-188141"></script>
+<script src="questions.js?v=202610301757-188141"></script>
 <style>
 html{{-webkit-text-size-adjust:100%}}
 body{{margin:0;padding-top:max(16px,env(safe-area-inset-top,0px))}}
@@ -380,7 +380,7 @@ if(!PRESETS.some(p=>p.id===setup.preset))setup.preset='random';
 setup.pick=(setup.pick||[]).filter(id=>BANK.some(b=>b.id===id));
 let spotOpen=false,volOpen=false,netOpen=false,cidDraft='';
 /* TV board size, remembered on the TV laptop: 90% by default so nothing gets cut off on a TV */
-const APP_VERSION='202610301749-71f232';
+const APP_VERSION='202610301757-188141';
 const TV_SIZES=[0.7,0.75,0.8,0.85,0.9,0.95,1];
 const tvSize=()=>{const v=+D.tvSize;return TV_SIZES.includes(v)?v:0.9};
 function applyTvSize(){const z=view==='display'?tvSize():1;try{document.body.style.setProperty('--tvz',z)}catch{}}
@@ -725,9 +725,10 @@ function volHTML(){const pc=k=>Math.round(vol(k)*100)+'%';const spotSongs=displa
     `${sl('music','Theme & timer music')}${sl('songs','Songs & clips')}${sl('fx','Sound effects')}
     <span class="note">Sets the volume on ${displayOn()?'the TV board':'this device'} (wherever the sound plays). ${spotSongs?'Spotify song clips and the Spotify theme can only follow the device’s own volume unless Spotify Premium is linked there, because Spotify’s regular player doesn’t allow websites to change its volume.':'Spotify Premium is linked, so the theme and song clips follow these sliders too.'}</span>`)}
 function netHTML(){const r=Relay.get()||{},on=Relay.servers().length>0;
-  return spotDD('netcard',netOpen,`🌐 Connections <span class="muted" style="font-weight:400">· ${on?'<b class="ok">✓ relay on</b>: phones can join from cellular data or any Wi-Fi':'players on other networks or cellular data? Turn on the free relay'}</span>`,false,
-    `<span class="note">Phones on the same Wi-Fi as this device connect directly. Phones on cellular data or a different Wi-Fi often can’t, so their connection needs a <b>relay</b>. The game includes a basic free one, but many cellular networks block it. For reliable joining from anywhere, set up Metered’s free relay once (20 GB a month free; a game night uses only a tiny part of that). Your relay details are saved on this device only, never in the game’s files or repo.</span>
-    <details class="card" style="gap:6px" ${on?'':'open'}><summary class="eyebrow" style="cursor:pointer">One-time setup (about 3 minutes)</summary>
+  return spotDD('netcard',netOpen,`🌐 Connections <span class="muted" style="font-weight:400">· <b class="ok">✓ ${on?'your own relay is on':'built-in relay on'}</b>: phones can join from guest Wi-Fi, cellular data or any network</span>`,false,
+    `<span class="note">Phones on the same Wi-Fi connect directly. On guest Wi-Fi (which keeps devices apart), cellular data or a different network, the game sends the connection through a free public <b>relay</b> automatically. No account is needed.</span>
+    <span class="note">Optional: if the shared public relay is ever slow or busy, you can use your own free Metered relay instead (20 GB a month). Its details are saved on this device only, never in the game’s files or repo.</span>
+    <details class="card" style="gap:6px"><summary class="eyebrow" style="cursor:pointer">Use your own relay (optional, needs a free account)</summary>
       <ol class="steps"><li>Go to <b>metered.ca/tools/openrelay</b> and sign up for a free account.</li>
       <li>In your Metered dashboard, find your <b>app name</b> (your address looks like <b>yourapp.metered.live</b>) and your TURN <b>API key</b>.</li>
       <li>Paste both below and tap <b>Save and test</b>.</li></ol></details>
@@ -814,8 +815,15 @@ const Relay={
       const j=await res.json();if(!res.ok||!Array.isArray(j)||!j.length)return {ok:false,msg:(j&&(j.error||j.message))||'The relay didn’t accept that app name and API key.'};
       store.set('ssw.relay.ice',{at:Date.now(),servers:j});return {ok:true,n:j.length}}catch(e){return {ok:false,msg:'Couldn’t reach the relay. Check the app name and your internet.'}}},
   clear(){store.set('ssw.relay',null);store.set('ssw.relay.ice',null)}};
-/* every connection (host, players, TV board) gets these servers; the host's relay is used whenever it's set up on that device */
-const peerOpts=()=>({config:{iceServers:[...Relay.servers(),...BASE_ICE]}});
+/* Built-in relay that needs no account: Metered's public Open Relay ("static auth"), on ports 80 and 443 so guest Wi-Fi,
+   cellular data and firewalls let it through. Short-lived credentials are made from its published shared secret. */
+let OPEN_RELAY=[];
+(async()=>{try{const user=(Math.floor(Date.now()/1000)+24*3600)+':showdown';
+  const key=await crypto.subtle.importKey('raw',new TextEncoder().encode('openrelayprojectsecret'),{name:'HMAC',hash:'SHA-1'},false,['sign']);
+  const sig=await crypto.subtle.sign('HMAC',key,new TextEncoder().encode(user));const cred=btoa(String.fromCharCode(...new Uint8Array(sig)));
+  OPEN_RELAY=[{urls:['turn:staticauth.openrelay.metered.ca:80','turn:staticauth.openrelay.metered.ca:443','turn:staticauth.openrelay.metered.ca:443?transport=tcp','turns:staticauth.openrelay.metered.ca:443?transport=tcp'],username:user,credential:cred}]}catch{}})();
+/* every connection (host, players, TV board) gets these servers; the host's own relay comes first when it's set up on that device */
+const peerOpts=()=>({config:{iceServers:[...Relay.servers(),...OPEN_RELAY,...BASE_ICE]}});
 let relayMsg='';
 /* ---------- networking (PeerJS: the host's device is the game server) ---------- */
 let connectingSince=0;let peer=null,net='off',conns=new Map(),hconn=null,netCode='',retryT=null,lastState=0,hostTries=0;
@@ -1488,7 +1496,7 @@ function finalOverlay(){
 function timerP(big){if(!(PS&&PS.tm&&(PS.tm.run||PS.tm.left<PS.tm.len)))return '';const left=PS.tm.run?Math.max(0,pTimer.end-Date.now()):PS.tm.left;
   return `<div class="col" style="gap:6px"><div class="bigtime ${left<=5000?'low':''}" id="bignum" style="${big?'':'font-size:clamp(44px,14vw,72px)'}">${Math.ceil(left/1000)}</div><div class="row"><div class="timer"><i id="tbar"></i></div>${!PS.tm.run?(left<=0?'<span class="no">Time’s up</span>':'<span class="muted">Paused</span>'):''}</div></div>`}
 function netNote(){const slow=net==='connecting'&&connectingSince&&Date.now()-connectingSince>12000;
-  if(slow)return '<div class="note no">Still connecting… If this phone is on cellular data or a different Wi-Fi than the host, try switching (turn Wi-Fi off to use cellular, or join the host’s Wi-Fi). The host can also turn on the free relay under 🌐 Connections.</div>';
+  if(slow)return '<div class="note no">Still connecting… Try switching this phone between Wi-Fi and cellular data. If it keeps happening, check the code with the host.</div>';
   return net==='nogame'?'<div class="note no">No game with that code is running yet. Check the code; this keeps trying.</div>':net==='nolib'?'<div class="note no">Couldn’t load the connection library. Check your internet connection and reload.</div>':''}
 function playerLobbyHTML(st,mi){
   const my=st.teams[mi],n=my?(my.m||[]).length:0,total=st.teams.reduce((k,t)=>k+(t.m||[]).length,0)+(st.loose||[]).length;

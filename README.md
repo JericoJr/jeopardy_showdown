@@ -91,7 +91,7 @@ In both styles, any player on the picking team can tap a clue on their phone to 
 
 ### Bible or Not?
 
-A quote or saying appears, and players decide whether it's really in the Bible. Easy rows mix famous verses ("Love thy neighbour as thyself") with obvious sayings ("An apple a day keeps the doctor away"); harder rows use sayings people often think are Bible verses, like "God helps those who help themselves" or "Cleanliness is next to godliness." Bible quotes use King James wording, and their hints include the verse. Typed answers need to be exactly "Bible" (or "yes") or "Not the Bible" (or "no", "not"), so "not the Bible" never counts as "Bible."
+A quote or saying appears, and players decide whether it's really in the Bible. It's meant to be tricky at every level: real verses that sound surprising ("Eat, drink, and be merry," "As a dog returneth to his vomit…") are mixed with sayings that sound like scripture but aren't ("God tempers the wind to the shorn lamb," Shakespeare's "To thine own self be true," "Money is the root of all evil"). Hints nudge without naming the source; when the answer is revealed it shows where the quote really comes from, like "Bible (Proverbs 26:11)" or "Not the Bible (Shakespeare, Hamlet)." Bible quotes use King James wording. Typed answers need to be "Bible" (or "yes") or "Not the Bible" (or "no", "not").
 
 ### Picture and emoji categories
 
@@ -159,7 +159,7 @@ You can also edit the questions for a single game from the host screen with **Ed
 - A few small differences by device: iPhones can't go full screen in the browser (iPads and computers can); Firefox lets screens dim during long pauses, so keep the host and TV board awake in settings; and Spotify clips play best on the TV board laptop with a browser logged into Spotify.
 
 - The host's device runs the game, so keep the host page open and the iPad awake. If the host page reloads, tap **Host a game** to resume, and everyone reconnects within a few seconds.
-- **Joining from anywhere:** players don't need to be on the same Wi-Fi as the host. Phones on the same Wi-Fi connect directly; phones on cellular data or another network go through a relay. The game includes a basic free relay, but many cellular networks block it.
-- **Free relay for reliable joining (one-time setup on the host device):** open **🌐 Connections** on the host screen, sign up for Metered's free Open Relay (metered.ca/tools/openrelay, 20 GB a month free), paste your app name and API key, and tap **Save and test**. It uses the standard web ports that cellular networks and firewalls allow. The details are saved only on that device, never in the repo, and players don't need to set anything up.
+- **Joining from anywhere:** players don't need to be on the same network as the host. Phones on the same Wi-Fi connect directly. On guest Wi-Fi (which keeps devices apart), cellular data or another network, the game automatically sends the connection through a free public relay (Metered's Open Relay) on the normal web ports, with no account needed.
+- **Your own relay (optional):** if the shared public relay is ever slow, open **🌐 Connections** on the host screen and add your own free Metered relay (metered.ca/tools/openrelay, 20 GB a month). Its details are saved only on that device, never in the repo.
 - If a phone still can't join, switch it between Wi-Fi and cellular data. Some school or church Wi-Fi blocks game connections; a phone hotspot for the host works too.
 - Anyone with the game code can join while the game is running.
