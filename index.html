@@ -206,15 +206,15 @@ function buildSpotify(){const sp=QB.spotify;if(!sp)return;const wl=linkList(sp.w
   const songStart=(id,e)=>T['S:'+id]?.start??toSec(e.start)??null;
   const idFor=(e,list)=>spotifyId(e.link)||(e.n>0?list[e.n-1]||'':'');
   const acc2=e=>[...(e.accept||[]),String(e.title||'').toLowerCase().replace(/\s*[\(\[].*$/,'')].filter(Boolean).join('|');
-  const guess=(key,list,name,question)=>{const q=(sp[key]||[]).map(e=>{const id=idFor(e,list);if(!id||!e.title)return null;
-      return[Math.min(7,Math.max(1,+e.level||3)),question,String(e.title),e.artist?`Recorded by ${e.artist}.`:'',acc2(e),{spotify:id,audio:'',start:songStart(id,e)??45,auto:songStart(id,e)==null,length:8,melody:'',bpm:100}]}).filter(Boolean);
+  const guess=(key,list,name,question)=>{const frac=key==='hymns'?0.33:0.45;const q=(sp[key]||[]).map(e=>{const id=idFor(e,list);if(!id||!e.title)return null;
+      return[Math.min(7,Math.max(1,+e.level||3)),question,String(e.title),e.artist?`Recorded by ${e.artist}.`:'',acc2(e),{spotify:id,audio:'',start:songStart(id,e)??45,auto:songStart(id,e)==null,frac,length:8,melody:'',bpm:100}]}).filter(Boolean);
     if(q.length>=5)BANK.push({id:'spotify-'+key,name,clipByRow:true,q})};
   guess('worship',wl,'Guess That Song','Listen to the clip. Name this worship song.');
   guess('hymns',hl,'Name the Hymn','Listen to the recording. Name this hymn.');
   /* name the artist from the chorus */
   const aq=(sp.worship||[]).map(e=>{const id=idFor(e,wl);if(!id||!e.artist)return null;const art=String(e.artist);
     const alts=[art,...art.split(/\s*(?:&|,| and | feat\.? )\s*/i)].map(x=>x.toLowerCase().trim()).filter(Boolean);
-    return[Math.min(7,Math.max(1,+(e.artistLevel||e.level)||3)),'Listen to the clip. Who is the artist?',art,`The song is "${e.title}."`,alts.join('|'),{spotify:id,audio:'',start:songStart(id,e)??45,auto:songStart(id,e)==null,length:8,melody:'',bpm:100}]}).filter(Boolean);
+    return[Math.min(7,Math.max(1,+(e.artistLevel||e.level)||3)),'Listen to the clip. Who is the artist?',art,`The song is "${e.title}."`,alts.join('|'),{spotify:id,audio:'',start:songStart(id,e)??45,auto:songStart(id,e)==null,frac:0.45,length:8,melody:'',bpm:100}]}).filter(Boolean);
   if(aq.length>=5)BANK.push({id:'spotify-artist',name:'Who Sings It?',clipByRow:true,q:aq});
   /* guess the song from its opening seconds; intros are harder, so each song counts one level higher */
   const iq=[['worship',wl,'worship song'],['hymns',hl,'hymn']].flatMap(([key,list,kind])=>(sp[key]||[]).map(e=>{const id=idFor(e,list);if(!id||!e.title)return null;
@@ -347,7 +347,7 @@ const Clip={timer:null,el:null,bus:null,playing:false,paused:false,kind:'',endAt
   play(m){this.stop();if(!m)return;const len=Math.min(20,Math.max(2,+m.length||8));this.playing=true;this.paused=false;if(Music.on)Music.stop();
     this.kind=m.spotify?'spotify':m.audio?'audio':'melody';
     this.full=false;
-    if(m.spotify){Spot.play(m.spotify,m.start,len,{auto:m.auto});this.arm((len+4)*1000);return}
+    if(m.spotify){Spot.play(m.spotify,m.start,len,{auto:m.auto,frac:m.frac});this.arm((len+4)*1000);return}
     if(m.audio){try{const el=new Audio(m.audio);this.el=el;const go=()=>{try{el.currentTime=+m.start||0}catch{}el.play().catch(()=>{})};el.addEventListener('loadedmetadata',go,{once:true});el.load()}catch{}}
     else if(m.melody){const ac=audio();if(ac){this.bus=ac.createGain();this.bus.gain.value=1;
         const lp=ac.createBiquadFilter();lp.type='lowpass';lp.frequency.value=2400;lp.Q.value=0.3;this.bus.connect(lp);lp.connect(ac.destination);this.lp=lp;
@@ -378,7 +378,7 @@ const Spot={api:null,ctl:null,waiting:[],loading:false,p:null,seeked:false,t:nul
       w.style.cssText='position:fixed;left:0;bottom:0;width:300px;height:80px;opacity:0;pointer-events:none;z-index:-1;overflow:hidden';document.body.appendChild(w)}
     const el=document.createElement('div');w.appendChild(el);
     api.createController(el,{uri,width:300,height:80},ctl=>{this.ctl=ctl;ctl.addListener('playback_update',e=>this.update(e));ctl.addListener('ready',()=>{if(this.p)this.go()});if(thenPlay)this.go()})},
-  play(id,start,len,o){o=o||{};this.p={id,start:+start||0,len,auto:!!o.auto,full:!!o.full};this.seeked=false;
+  play(id,start,len,o){o=o||{};this.p={id,start:+start||0,len,auto:!!o.auto,frac:+o.frac||0.45,full:!!o.full};this.seeked=false;
     this.load(api=>{const uri='spotify:track:'+id;if(!this.p)return;
       if(this.ctl&&this.cued===id){this.go();return}
       this.cued=id;
@@ -387,7 +387,7 @@ const Spot={api:null,ctl:null,waiting:[],loading:false,p:null,seeked:false,t:nul
   go(){if(!this.ctl||!this.p)return;try{this.ctl.play()}catch{}},
   update(e){const p=this.p,d=(e&&e.data)||{};this.pos=(d.position||0)/1000;if(d.duration)this.dur=d.duration/1000;if(this.onPos&&p&&this.seeked)this.onPos(this.pos,this.dur,!!d.isPaused);
     if(!p||this.seeked||d.isPaused||d.isBuffering)return;this.seeked=true;
-    if(p.auto&&this.dur>60)p.start=Math.min(80,Math.max(35,Math.round(this.dur*0.22)));
+    if(p.auto&&this.dur>60)p.start=Math.max(30,Math.min(this.dur-15,Math.round(this.dur*p.frac)));
     if(p.start>0)try{this.ctl.seek(p.start)}catch{};if(p.full)return;clearTimeout(this.t);const ms=(p.len+(p.start>0?0.7:0))*1000;this.endAt=Date.now()+ms;this.t=setTimeout(()=>this.stop(),ms)},
   pause(){if(!this.p)return;clearTimeout(this.t);this.left=this.seeked?Math.max(300,this.endAt-Date.now()):0;try{this.ctl&&this.ctl.pause()}catch{}},
   resume(){if(!this.p||!this.ctl)return;try{this.ctl.resume?this.ctl.resume():this.ctl.togglePlay()}catch{}if(this.seeked){clearTimeout(this.t);this.endAt=Date.now()+this.left;this.t=setTimeout(()=>this.stop(),this.left)}},

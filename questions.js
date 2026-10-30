@@ -491,8 +491,8 @@ window.QUESTION_BANK = {
                                    plays the real recording instead of the built-in tune)
        Add artistLevel to a worship song to set how hard its artist is to name.
        Each category needs at least 5 songs with links to appear.
-    3. Clips start about a fifth of the way into a song (where the first chorus
-       usually is). Add start: 65 (seconds) to a song to set its clip start, and
+    3. Clips start where the most upbeat part usually is: worship songs about 45%
+       of the way in (the fuller second chorus), hymns about a third of the way in. Add start: 65 (seconds) to a song to set its clip start, and
        marks: ["1:05 Chorus", "2:40 Bridge"] to give it saved spots the host can
        jump to during a game.
        Harder rows play shorter clips: 100 = 12 seconds down to 500 = 3 seconds.
