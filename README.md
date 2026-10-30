@@ -7,7 +7,7 @@ A free Bible quiz game show for youth groups and young adults. The host runs the
 1. Sign in at github.com and create a new **public** repository, for example `jeopardy_showdown`.
 2. Click **Add file → Upload files**, upload `index.html`, then click **Commit changes**.
 3. Go to **Settings → Pages**. Under "Build and deployment", set **Source** to "Deploy from a branch", choose the `main` branch and the `/ (root)` folder, then click **Save**.
-4. Wait a minute or two. Your game is live at `https://jericojr.github.io/jeopardy_showdown/`.
+4. Wait a minute or two. Your game is live at `https://<githubusername>.github.io/jeopardy_showdown/`.
 
 To update the game later, upload a new `index.html` to the same repository.
 
