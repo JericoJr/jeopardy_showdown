@@ -69,8 +69,8 @@ In both styles, any player on the picking team can tap a clue on their phone to 
 
 ### Picture and emoji categories
 
-- **Scripture Snapshots:** an original illustration appears, like a burning bush or a ladder of angels, and players name the Bible story. Easy rows show iconic scenes (Noah's ark, David and Goliath); expert rows show subtler ones (Aaron's budding rod, Ezekiel's wheels). On the 400 and 500 rows, the TV and phones start **zoomed in** on part of the picture and slowly zoom out. The host always sees the whole picture.
-- **Emoji Testament:** a Bible story told in emojis, like 🐋🙏🏙️ for Jonah, from Noah's ark at 100 to Ehud and King Eglon at expert.
+- **Scripture Snapshots:** an original illustration appears, like a burning bush or a ladder of angels, and players name the Bible story. Easy rows show iconic scenes (Noah's ark, David and Goliath); expert rows show stories that are harder to spot in a picture (the writing on the wall, Moses' bronze serpent). On the 400 and 500 rows, the TV and phones start **zoomed in** on part of the picture and slowly zoom out. The host always sees the whole picture.
+- **Emoji Testament:** a Bible story told in emojis, like 🐋🙏🏙️ for Jonah, from Noah's ark at 100 to Elijah on Mount Carmel at expert. Every question is a well-known story; harder rows use stories that are a bit less familiar or emojis that take more decoding.
 - Pictures show on the iPad, the TV and every phone, including older iPhones and iPads.
 - The drawings live in `images.js`. To use your own picture, upload it to the repo and add `image: "images/your-photo.jpg"` to a question in `questions.js`. Use pictures you have the right to show.
 
