@@ -175,8 +175,8 @@ const linkList=t=>String(t||'').match(/(?:open\.spotify\.com\/(?:intl-[a-z]+\/)?
   const guess=(key,list,name,question)=>{const q=(sp[key]||[]).map(e=>{const id=idFor(e,list);if(!id||!e.title)return null;
       return[Math.min(7,Math.max(1,+e.level||3)),question,String(e.title),e.artist?`Recorded by ${e.artist}.`:'',acc2(e),{spotify:id,audio:'',start:toSec(e.start)??45,length:8,melody:'',bpm:100}]}).filter(Boolean);
     if(q.length>=5)BANK.push({id:'spotify-'+key,name,clipByRow:true,q})};
-  guess('worship',wl,'Guess the Worship Song','Listen to the clip. Name this worship song.');
-  guess('hymns',hl,'Guess the Hymn','Listen to the recording. Name this hymn.');
+  guess('worship',wl,'Guess That Song','Listen to the clip. Name this worship song.');
+  guess('hymns',hl,'Name the Hymn','Listen to the recording. Name this hymn.');
   /* name the artist from the chorus */
   const aq=(sp.worship||[]).map(e=>{const id=idFor(e,wl);if(!id||!e.artist)return null;const art=String(e.artist);
     const alts=[art,...art.split(/\s*(?:&|,| and | feat\.? )\s*/i)].map(x=>x.toLowerCase().trim()).filter(Boolean);
@@ -188,7 +188,10 @@ const linkList=t=>String(t||'').match(/(?:open\.spotify\.com\/(?:intl-[a-z]+\/)?
   if(iq.length>=5)BANK.push({id:'spotify-intro',name:'Name That Intro',clipByRow:true,q:iq});
   const lq=(sp.lyrics||[]).map(e=>{const id=idFor(e,hl),st=toSec(e.start),cut=toSec(e.cut);if(!id||st==null||cut==null||cut<=st||!e.lyric||!e.answer)return null;
     return[Math.min(7,Math.max(1,+e.level||3)),String(e.lyric),String(e.answer),'',(e.accept||[]).join('|'),{spotify:id,audio:'',start:st,length:Math.min(20,cut-st),melody:'',bpm:100}]}).filter(Boolean);
-  if(lq.length>=5)BANK.push({id:'spotify-lyrics',name:'Finish the Hymn',q:lq});
+  /* lines with times play the real recording and join Finish the Lyric, replacing the built-in tune for the same line */
+  if(lq.length){let fl=BANK.find(b=>b.name==='Finish the Lyric');if(!fl){fl={id:'finish-the-lyric',name:'Finish the Lyric',q:[]};BANK.push(fl)}
+    const key=t=>String(t).toLowerCase().replace(/_{3,}/g,' ').replace(/[^a-z0-9 ]+/g,' ').replace(/\s+/g,' ').trim();const have=new Set(lq.map(x=>key(x[1])+'|'+key(x[2])));
+    fl.q=fl.q.filter(x=>!have.has(key(x[1])+'|'+key(x[2]))).concat(lq)}
 })();
 const CLIP_SECONDS=[12,10,8,5,3];
 const PRESETS=[{id:'random',name:'Random categories'},{id:'pick',name:'Pick my own categories'}];

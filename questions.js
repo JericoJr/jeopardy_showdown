@@ -443,20 +443,6 @@ window.QUESTION_BANK = {
       ]
     },
     {
-      name: "Name That Hymn",
-      questions: [
-        { level: 1, question: "Listen to the tune. Name this hymn.", answer: "Jesus Loves Me", hint: "A children’s song that ends \"...this I know.\"", accept: ["jesus loves me","jesus loves me this i know"], melody: "G4:1 E4:1 E4:1 D4:1 E4:1 G4:1 G4:2 A4:1 A4:1 C5:1 A4:1 A4:1 G4:1 G4:2", bpm: 110, length: 10 },
-        { level: 1, question: "Listen to the tune. Name this Christmas carol.", answer: "Joy to the World", hint: "It continues \"...the Lord is come.\"", accept: ["joy to the world"], melody: "D5:1 C#5:0.75 B4:0.25 A4:1.5 G4:0.5 F#4:1 E4:1 D4:1.5", bpm: 88, length: 10 },
-        { level: 1, question: "Listen to the tune. Name this Christmas carol.", answer: "Silent Night", hint: "It continues \"...holy night.\"", accept: ["silent night","silent night holy night"], melody: "G4:1.5 A4:0.5 G4:1 E4:3 G4:1.5 A4:0.5 G4:1 E4:3 D5:2 D5:1 B4:3 C5:2 C5:1 G4:3", bpm: 190, length: 10 },
-        { level: 2, question: "Listen to the tune. Name this hymn.", answer: "Amazing Grace", hint: "John Newton wrote the words.", accept: ["amazing grace"], melody: "D4:1 G4:2 B4:0.5 G4:0.5 B4:2 A4:1 G4:2 E4:1 D4:2 D4:1 G4:2 B4:0.5 G4:0.5 B4:2 A4:0.5 B4:0.5 D5:3", bpm: 100, length: 10 },
-        { level: 2, question: "Listen to the tune. Name this gospel song.", answer: "When the Saints Go Marching In", hint: "It is a favorite of New Orleans brass bands.", accept: ["when the saints go marching in","when the saints","the saints go marching in","saints go marching in"], melody: "C4:1 E4:1 F4:1 G4:4 C4:1 E4:1 F4:1 G4:4 C4:1 E4:1 F4:1 G4:2 E4:2 C4:2 E4:2 D4:4", bpm: 170, length: 10 },
-        { level: 3, question: "Listen to the tune. Name this Christmas carol.", answer: "O Come, All Ye Faithful", hint: "It continues \"...joyful and triumphant.\"", accept: ["o come all ye faithful","come all ye faithful","adeste fideles"], melody: "G4:1 G4:2 D4:1 G4:1 A4:2 D4:2 B4:1 A4:1 B4:1 C5:1 B4:2 A4:1", bpm: 100, length: 10 },
-        { level: 4, question: "Listen to the tune. Name this hymn.", answer: "Joyful, Joyful, We Adore Thee", hint: "Its tune comes from Beethoven’s Ninth Symphony.", accept: ["joyful joyful we adore thee","joyful joyful","ode to joy"], melody: "E4:1 E4:1 F4:1 G4:1 G4:1 F4:1 E4:1 D4:1 C4:1 C4:1 D4:1 E4:1 E4:1.5 D4:0.5 D4:2", bpm: 120, length: 10 },
-        { level: 4, question: "Listen to the tune. Name this Christmas carol.", answer: "Hark! The Herald Angels Sing", hint: "Charles Wesley wrote the words.", accept: ["hark the herald angels sing","hark the herald"], melody: "C4:1 F4:1 F4:1.5 E4:0.5 F4:1 A4:1 A4:1 G4:1 C5:1 C5:1 C5:1.5 Bb4:0.5 A4:1 G4:1 A4:2", bpm: 112, length: 10 },
-        { level: 5, question: "Listen to the tune. Many churches sing these words to it: \"Praise God, from whom all blessings flow.\" What is this short hymn called?", answer: "The Doxology", hint: "Its tune is often called \"Old Hundredth.\"", accept: ["doxology","the doxology","old hundredth","old 100th","praise god from whom all blessings flow"], melody: "G4:2 G4:1 F#4:1 E4:1 D4:2 G4:1 A4:1 B4:2 B4:1 B4:1 A4:1 G4:1 C5:1 B4:1 A4:2", bpm: 92, length: 10 }
-      ]
-    },
-    {
       name: "Finish the Lyric",
       questions: [
         { level: 1, question: "\"Amazing grace, how sweet the ___\"", answer: "Sound", hint: "The hymn is \"Amazing Grace.\"", accept: ["sound"], melody: "D4:1 G4:2 B4:0.5 G4:0.5 B4:2 A4:1 G4:2 E4:1 D4:2 D4:1 G4:2 B4:0.5 G4:0.5 B4:2 A4:0.5 B4:0.5 D5:3", bpm: 100, length: 10 },
@@ -497,16 +483,17 @@ window.QUESTION_BANK = {
        playlist order; "n" below is each song's position in the playlist.
        Paste them as one long block of text between the backticks ` `.
     2. Songs with a link turn into these categories:
-         Guess the Worship Song   (worship list, plays the chorus area)
+         Guess That Song          (worship list, plays the chorus area)
          Who Sings It?            (worship list, name the artist)
          Name That Intro          (worship + hymns, plays the first seconds)
-         Guess the Hymn           (hymns list)
-         Finish the Hymn          (lyrics list, only once start and cut are set)
+         Name the Hymn            (hymns list)
+         Finish the Lyric         (lyrics list: once a line has start and cut times, it
+                                   plays the real recording instead of the built-in tune)
        Add artistLevel to a worship song to set how hard its artist is to name.
        Each category needs at least 5 songs with links to appear.
     3. Clips start 45 seconds in. Add start: 65 (seconds) to a song to change it.
        Harder rows play shorter clips: 100 = 12 seconds down to 500 = 3 seconds.
-    4. Finish the Hymn: set start to a few seconds before the line is sung, and
+    4. Finish the Lyric: set start to a few seconds before the line is sung, and
        cut to the moment just before the missing word (both in seconds; 1:05 = 65).
        The song plays from start and stops at cut, right at the blank.
   */

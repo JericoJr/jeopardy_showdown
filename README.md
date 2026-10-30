@@ -50,15 +50,14 @@ In every mode, higher points always means a harder question.
 
 ### Song categories
 
-- **Name That Hymn** plays a short tune and players name the hymn or carol.
-- **Finish the Lyric** shows a line with an underlined blank and plays the tune, and players fill in the missing word.
+- **Finish the Lyric** shows a hymn line with an underlined blank, and players fill in the missing word. Lines with `start` and `cut` times play your Spotify recording and stop right at the blank; the rest use a built-in tune until you add times.
 - Clips play on the TV board (or the host's device if no TV board is connected) when the clue opens, then stop after a few seconds. The host can replay or stop a clip.
 - The built-in songs are public-domain hymns and carols, and the game plays their melodies itself.
 - **Spotify categories from your playlists:** `questions.js` has a `spotify` section listing songs from your worship and hymn playlists, each with a difficulty level. Paste each playlist's song links into `worshipLinks` and `hymnLinks` (in the Spotify desktop app: open the playlist, click a song, Ctrl+A / Cmd+A, then Ctrl+C / Cmd+C). The game then adds:
-  - **Guess the Worship Song** and **Guess the Hymn:** a few seconds of the song play on the TV board. Harder rows play shorter clips, 12 seconds at 100 down to 3 seconds at 500.
+  - **Guess That Song** and **Name the Hymn:** a few seconds of the song play on the TV board. Harder rows play shorter clips, 12 seconds at 100 down to 3 seconds at 500.
   - **Who Sings It?:** a clip plays and players name the artist.
   - **Name That Intro:** the first few seconds of a worship song or hymn play, and players name the song.
-  - **Finish the Hymn:** a public-domain hymn line appears with an underlined blank, and the recording plays and cuts off right before the missing word. Each question needs `start` and `cut` times in seconds, which you set after listening to that recording.
+  - **Finish the Lyric:** lines in the `lyrics` list play your hymn recording and cut off right before the missing word once you set their `start` and `cut` times in seconds.
 - The host sees the answer, including a Spotify song card, on the iPad. When the host reveals the answer, the TV board shows the same card.
 - For full songs, the browser on the TV board laptop should be logged into Spotify. Without a login, Spotify plays only 30-second previews, which may not include the part you picked. If a clip doesn't start, tap **Play clip again** on the host screen.
 
