@@ -357,7 +357,7 @@ const ThemeSpot={ctl:null,want:false,made:false,played:false,ok:false,pos:0,dur:
   isPlaying(){return Date.now()-this.playingAt<2000},
   kick(){if(!this.ctl||this.isPlaying()||Date.now()-this.kicked<1500)return;this.kicked=Date.now();
     try{this.played&&this.ctl.resume?this.ctl.resume():this.ctl.play()}catch{}},
-  start(){const id=this.id();if(!id)return false;this.want=true;
+  start(){const id=this.id();if(!id)return false;if(!this.want)this.fromTop=true;this.want=true;
     if(this.ctl)this.kick();else this.prepare();
     return true},
   /* load the player ahead of time (on the setup and TV screens) so the theme starts instantly */
@@ -367,7 +367,9 @@ const ThemeSpot={ctl:null,want:false,made:false,played:false,ok:false,pos:0,dur:
       api.createController(el,{uri:'spotify:track:'+id,width:300,height:80},ctl=>{this.ctl=ctl;ctl.addListener('playback_update',e=>this.update(e));ctl.addListener('ready',()=>{if(this.want)this.kick()});if(this.want)this.kick()})})},
   update(e){const d=(e&&e.data)||{},pos=d.position||0,dur=d.duration||0;this.pos=pos/1000;if(dur)this.dur=dur/1000;
     const playing=!d.isPaused&&!d.isBuffering&&dur>0;
-    if(playing){this.ok=true;this.played=true;this.playingAt=Date.now()}else if(d.isPaused)this.playingAt=0;
+    if(playing){this.ok=true;this.played=true;this.playingAt=Date.now();if(this.fromTop){this.fromTop=false;if(pos>1500){this.loop();return}}}
+    /* Spotify plays a 30-second preview (from the middle of the song) when it doesn't see a login */
+    if(dur){const pv=dur<=31000;if(pv!==this.preview){this.preview=pv;previewChanged()}}else if(d.isPaused)this.playingAt=0;
     if(!this.want){if(!d.isPaused)try{this.ctl.pause()}catch{}return}
     /* loop: let the whole song play, then jump back to the start right as it ends.
        The jump is timed from the song's own clock, so it doesn't wait for the next update. */
@@ -499,6 +501,8 @@ function paintSongPos(){paintPlayer();const el=$('#songpos'),tx=$('#songtime');i
   if(tx){const v=dragging()&&el?+el.value:pos;tx.textContent=`${fmtT(Math.floor(v))} / ${dur?fmtT(Math.floor(dur)):'—:——'}`}}
 setInterval(()=>{if(view==='host'&&S&&S.phase==='clue')paintSongPos();if(renderHeld&&!dragging()){renderHeld=false;songDrag=false;render()}},500);
 function soundBlocked(){return !actx||actx.state!=='running'}
+function previewChanged(){updateSoundWarn();const el=$('#themewarn');if(el)el.innerHTML=themeWarnHTML()}
+function themeWarnHTML(){if(!ThemeSpot.preview||Music.buf)return '';return `<div class="card" style="border-color:var(--bad);gap:6px"><b>Spotify is only playing a 30-second preview of the theme on this ${view==='display'?'TV board':'device'}.</b><span class="note">That’s why it starts mid-song. To hear the whole song: open open.spotify.com in this same browser, log in, then reload this page. On an iPhone or iPad (Safari), also go to Settings › Apps › Safari and turn off “Prevent Cross-Site Tracking,” or Spotify can’t see your login inside the game.</span></div>`}
 function updateSoundWarn(){const el=$('#sndwarn');if(!el)return;const show=view==='display'&&D.step==='live'&&!D.mute&&soundBlocked()&&!Clip.paused;
   el.innerHTML=show?'<button class="btn-sm btn-gold" data-act="d-unlock">🔊 Click to turn on sound</button>':''}
 setInterval(()=>{updateSoundWarn();if(view==='host'&&S&&S.clip){const el=$('#clipstat');if(el){const t=clipStatusText();if(el.textContent!==t)el.textContent=t;
@@ -1024,6 +1028,7 @@ function hostHTML(){
   </div>
   ${confirmEnd?endConfirmHTML():''}
   <div class="note">${S.tv?'Answers and hints are hidden on this screen until you reveal them. Use “Peek” to check privately.':'Answers show on this screen. If this screen is ever on the TV, turn on “Hide answers”.'}${S.dds.length?` ${S.dds.length===1?'A Daily Double is':'Two Daily Doubles are'} hidden on the board.`:''}</div>
+  ${displayOn()?'':`<div id="themewarn">${themeWarnHTML()}</div>`}
   <details class="card"><summary class="eyebrow" style="cursor:pointer">Music & sounds</summary>
     <span class="note">${displayOn()?'The TV board is connected, so music and sounds play there.':'No TV board is connected, so music and sounds play on this device.'} The theme plays on the board, and suspenseful timer music plays while the timer runs. The only sound effects are for correct and wrong answers.</span>
     ${displayOn()?'':musicControlsHTML()}</details>
@@ -1258,7 +1263,7 @@ function displayHTML(){
       <button class="btn-ghost btn-sm" data-act="go-role">Back</button></div>`;
   const st=PS;
   const bar=`<div class="row"><span class="eyebrow">${esc(st?.title||'Jeopardy Showdown')} · Join with code <b style="color:var(--gold)">${esc(D.code)}</b></span><div class="spacer"></div><div id="conn">${connHTML()}</div>
-    <span id="sndwarn"></span><button class="btn-sm btn-ghost" data-act="d-sound">${D.mute?'Sound: off':'Sound: on'}</button><button class="btn-sm btn-ghost" data-act="d-full">Full screen</button><button class="btn-sm btn-ghost" data-act="d-leave">Exit</button></div>`;
+    <span id="sndwarn"></span><button class="btn-sm btn-ghost" data-act="d-sound">${D.mute?'Sound: off':'Sound: on'}</button><button class="btn-sm btn-ghost" data-act="d-full">Full screen</button><button class="btn-sm btn-ghost" data-act="d-leave">Exit</button></div><div id="themewarn">${themeWarnHTML()}</div>`;
   if(!st)return `${bar}<div class="tvbox"><div class="big-status">${net==='live'?'Loading…':'Connecting to the host…'}</div>${netNote()}</div>`;
   const scores=`<div class="scores">${st.teams.map((t,i)=>`<div class="team ${st.hi===i?'turn':''}">${st.hi===i?`<span class="badge">${st.ph==='clue'&&st.clue&&st.clue.who===i?'Answering':st.ph==='board'?'Picking':'Their turn'}</span>`:''}<span class="nm">${esc(t.name)}</span><span class="sc ${t.score<0?'neg':''}">${t.score}</span><span class="mem">${esc((t.m||[]).map(m=>m.n).join(', '))}</span></div>`).join('')}</div>`;
   let main='';
