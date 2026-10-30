@@ -13,22 +13,35 @@ A free Bible quiz game show for youth groups and young adults. The host runs the
 
 1. **Host (iPad):** open the site, tap **Host a game**, choose your rules, then tap **Create game**. Every new game picks 5 random categories with random questions.
 2. **TV board (laptop on AirPlay):** open the site, tap **Show the board**, enter the 4-letter code, then tap **Full screen**. Music and sound effects play from this screen.
-3. **Players (any phone):** scan the QR code on the TV and enter a name. In the lobby, each player can join a team, play solo, or create a team.
+3. **Players (any phone):** scan the QR code on the TV and enter a name. Scanning always opens the game for that code, even if the phone was in an earlier game. Each player starts on their own team and can join another team in the lobby.
 4. When the teams look right, the host taps **Start the game**.
 5. When you're done, the host taps **End game**, which sends every player and the TV board back to the start screen.
 
 ### Teams
 
-- Teams can be any size: 1, 2, 3 or more players, and sizes can differ.
-- Teams of 1 or 2 don't need a name; they're named after their players, like "Ana" or "Ana & Ben".
-- Teams of 3 or more need a name before the game can start. Any player on the team, or the host, can set it.
-- In the lobby the host can add or delete teams, move or remove players, and shuffle everyone into random teams.
+- Every player starts on their own team, named Team 1, Team 2, Team 3 in the order they join.
+- In the lobby, players can leave their team to join another one, or go back to playing solo. Teams can be any size, and sizes can differ.
+- Renaming a team is optional. Any player on the team, or the host, can do it.
+- The host can also add or delete teams, move or remove players, and shuffle everyone into random teams.
+
+### Taking turns
+
+- Any player on the team whose turn it is can tap a clue on their phone to open it, or the host can tap it.
+- The scoreboard highlights the team that's answering, and the highlight moves when a question is passed.
+- If a team misses, the host can pass the question to any other team, once per question.
 
 ### Music and sounds
 
 - The host turns background music on or off with the **Music** button. It plays on the TV board, or on the host's device if no TV board is connected.
 - The built-in music is an original loop. To use your own song, choose a music file under **Music on this screen** on the TV board. Use music you have the right to play.
 - The only sound effects are for correct and wrong answers.
+
+### Song categories
+
+- **Name That Hymn** plays a short tune and players name the hymn or carol.
+- **Finish the Lyric** shows a line with an underlined blank and plays the tune, and players fill in the missing word.
+- Clips play on the TV board (or the host's device if no TV board is connected) when the clue opens, then stop after a few seconds. The host can replay or stop a clip.
+- The built-in songs are public-domain hymns and carols, and the game plays their melodies itself.
 
 ## Adding your own questions
 
@@ -51,6 +64,8 @@ Each category looks like this:
 - **accept** is optional: other answers that count as correct when players type their answers.
 - Give each category at least one question per level. Two or more per level means more variety between games.
 - Final round questions are in the `finals` list at the bottom of the file.
+- **Audio:** add `melody` (notes like `"C4:1 E4:1 G4:2"`) and `bpm`, or `audio` (a sound file you uploaded to the repo, like `"songs/clip.mp3"`) with `start` and `length` in seconds. Use clips you have the right to play.
+- **Lyrics:** write three or more underscores `___` where the missing word goes, and the game shows an underlined blank.
 - Keep the commas between items and the "double quotes" around text. If the game stops loading questions after an edit, a missing comma or quote is the usual cause.
 
 You can also edit the questions for a single game from the host screen with **Edit questions**, and save those games on your device.

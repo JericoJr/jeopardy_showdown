@@ -12,6 +12,19 @@
     accept     optional, other answers that count as correct when players type
                answers (spelling mistakes are already forgiven a little)
 
+  Optional audio for a question (plays on the TV board when the clue opens):
+    melody     notes the game plays itself, like "C4:1 E4:1 G4:2"
+               (note name + octave, then a colon and the length in beats;
+               use # for sharp, b for flat, and R for a rest)
+    bpm        speed of the melody in beats per minute (default 100)
+    audio      or a sound file instead, like "songs/my-clip.mp3"
+               (upload the file to your repo; use clips you have the right to play)
+    start      where the sound file starts, in seconds (default 0)
+    length     how many seconds to play (default 8)
+
+  Lyric questions: write three or more underscores ___ where the missing word
+  goes, and the game shows an underlined blank.
+
   Tips:
   - Give each category at least one question for every level, 1 to 5.
     Two or more per level means more variety between games.
@@ -335,6 +348,37 @@ window.QUESTION_BANK = {
         { level: 4, question: "Paul’s hometown.", answer: "Tarsus", hint: "It was in Cilicia.", accept: ["tarsus"] },
         { level: 5, question: "Paul left Titus on this island to appoint elders.", answer: "Crete", hint: "It is a large Greek island.", accept: ["crete"] },
         { level: 5, question: "Paul told this young pastor, \"Don’t let anyone look down on you because you are young.\"", answer: "Timothy", hint: "It is in 1 Timothy 4:12.", accept: ["timothy"] }
+      ]
+    },
+    {
+      name: "Name That Hymn",
+      questions: [
+        { level: 1, question: "Listen to the tune. Name this hymn.", answer: "Jesus Loves Me", hint: "A children’s song that ends \"...this I know.\"", accept: ["jesus loves me", "jesus loves me this i know"], melody: "G4:1 E4:1 E4:1 D4:1 E4:1 G4:1 G4:2 A4:1 A4:1 C5:1 A4:1 A4:1 G4:1 G4:2", bpm: 110, length: 10 },
+        { level: 1, question: "Listen to the tune. Name this Christmas carol.", answer: "Joy to the World", hint: "It continues \"...the Lord is come.\"", accept: ["joy to the world"], melody: "D5:1 C#5:0.75 B4:0.25 A4:1.5 G4:0.5 F#4:1 E4:1 D4:1.5", bpm: 88, length: 10 },
+        { level: 2, question: "Listen to the tune. Name this Christmas carol.", answer: "Silent Night", hint: "It continues \"...holy night.\"", accept: ["silent night", "silent night holy night"], melody: "G4:1.5 A4:0.5 G4:1 E4:3 G4:1.5 A4:0.5 G4:1 E4:3 D5:2 D5:1 B4:3 C5:2 C5:1 G4:3", bpm: 190, length: 10 },
+        { level: 2, question: "Listen to the tune. Name this hymn.", answer: "Amazing Grace", hint: "John Newton wrote the words.", accept: ["amazing grace"], melody: "D4:1 G4:2 B4:0.5 G4:0.5 B4:2 A4:1 G4:2 E4:1 D4:2 D4:1 G4:2 B4:0.5 G4:0.5 B4:2 A4:0.5 B4:0.5 D5:3", bpm: 100, length: 10 },
+        { level: 3, question: "Listen to the tune. Name this gospel song.", answer: "When the Saints Go Marching In", hint: "It is a favorite of New Orleans brass bands.", accept: ["when the saints go marching in", "when the saints", "the saints go marching in", "saints go marching in"], melody: "C4:1 E4:1 F4:1 G4:4 C4:1 E4:1 F4:1 G4:4 C4:1 E4:1 F4:1 G4:2 E4:2 C4:2 E4:2 D4:4", bpm: 170, length: 10 },
+        { level: 3, question: "Listen to the tune. Name this Christmas carol.", answer: "O Come, All Ye Faithful", hint: "It continues \"...joyful and triumphant.\"", accept: ["o come all ye faithful", "come all ye faithful", "adeste fideles"], melody: "G4:1 G4:2 D4:1 G4:1 A4:2 D4:2 B4:1 A4:1 B4:1 C5:1 B4:2 A4:1", bpm: 100, length: 10 },
+        { level: 4, question: "Listen to the tune. Name this hymn.", answer: "Joyful, Joyful, We Adore Thee", hint: "Its tune comes from Beethoven’s Ninth Symphony.", accept: ["joyful joyful we adore thee", "joyful joyful", "ode to joy"], melody: "E4:1 E4:1 F4:1 G4:1 G4:1 F4:1 E4:1 D4:1 C4:1 C4:1 D4:1 E4:1 E4:1.5 D4:0.5 D4:2", bpm: 120, length: 10 },
+        { level: 4, question: "Listen to the tune. Name this Christmas carol.", answer: "Hark! The Herald Angels Sing", hint: "Charles Wesley wrote the words.", accept: ["hark the herald angels sing", "hark the herald"], melody: "C4:1 F4:1 F4:1.5 E4:0.5 F4:1 A4:1 A4:1 G4:1 C5:1 C5:1 C5:1.5 Bb4:0.5 A4:1 G4:1 A4:2", bpm: 112, length: 10 },
+        { level: 5, question: "Listen to the tune. Many churches sing these words to it: \"Praise God, from whom all blessings flow.\" What is this short hymn called?", answer: "The Doxology", hint: "Its tune is often called \"Old Hundredth.\"", accept: ["doxology", "the doxology", "old hundredth", "old 100th", "praise god from whom all blessings flow"], melody: "G4:2 G4:1 F#4:1 E4:1 D4:2 G4:1 A4:1 B4:2 B4:1 B4:1 A4:1 G4:1 C5:1 B4:1 A4:2", bpm: 92, length: 10 }
+      ]
+    },
+    {
+      name: "Finish the Lyric",
+      questions: [
+        { level: 1, question: "\"Amazing grace, how sweet the ___\"", answer: "Sound", hint: "The hymn is \"Amazing Grace.\"", accept: ["sound"], melody: "D4:1 G4:2 B4:0.5 G4:0.5 B4:2 A4:1 G4:2 E4:1 D4:2 D4:1 G4:2 B4:0.5 G4:0.5 B4:2 A4:0.5 B4:0.5 D5:3", bpm: 100, length: 10 },
+        { level: 1, question: "\"Jesus loves me, this I know, for the ___ tells me so\"", answer: "Bible", hint: "The song is \"Jesus Loves Me.\"", accept: ["bible", "the bible"], melody: "G4:1 E4:1 E4:1 D4:1 E4:1 G4:1 G4:2 A4:1 A4:1 C5:1 A4:1 A4:1 G4:1 G4:2", bpm: 110, length: 10 },
+        { level: 2, question: "\"Joy to the world, the Lord is ___\"", answer: "Come", hint: "The carol is \"Joy to the World.\"", accept: ["come", "come!"], melody: "D5:1 C#5:0.75 B4:0.25 A4:1.5 G4:0.5 F#4:1 E4:1 D4:1.5", bpm: 88, length: 10 },
+        { level: 2, question: "\"Silent night, holy night, all is calm, all is ___\"", answer: "Bright", hint: "The carol is \"Silent Night.\"", accept: ["bright"], melody: "G4:1.5 A4:0.5 G4:1 E4:3 G4:1.5 A4:0.5 G4:1 E4:3 D5:2 D5:1 B4:3 C5:2 C5:1 G4:3", bpm: 190, length: 10 },
+        { level: 2, question: "\"Blessed assurance, Jesus is ___\"", answer: "Mine", hint: "The hymn is \"Blessed Assurance\" by Fanny Crosby.", accept: ["mine"] },
+        { level: 3, question: "\"Oh, when the saints go marching in... Lord, how I want to be in that ___\"", answer: "Number", hint: "The song is \"When the Saints Go Marching In.\"", accept: ["number"], melody: "C4:1 E4:1 F4:1 G4:4 C4:1 E4:1 F4:1 G4:4 C4:1 E4:1 F4:1 G4:2 E4:2 C4:2 E4:2 D4:4", bpm: 170, length: 10 },
+        { level: 3, question: "\"O come, all ye faithful, joyful and ___\"", answer: "Triumphant", hint: "The carol is \"O Come, All Ye Faithful.\"", accept: ["triumphant"], melody: "G4:1 G4:2 D4:1 G4:1 A4:2 D4:2 B4:1 A4:1 B4:1 C5:1 B4:2 A4:1", bpm: 100, length: 10 },
+        { level: 3, question: "\"Holy, holy, holy! Lord God ___!\"", answer: "Almighty", hint: "The hymn is \"Holy, Holy, Holy.\"", accept: ["almighty"] },
+        { level: 4, question: "\"Joyful, joyful, we adore Thee, God of glory, Lord of ___\"", answer: "Love", hint: "The hymn is \"Joyful, Joyful, We Adore Thee.\"", accept: ["love"], melody: "E4:1 E4:1 F4:1 G4:1 G4:1 F4:1 E4:1 D4:1 C4:1 C4:1 D4:1 E4:1 E4:1.5 D4:0.5 D4:2", bpm: 120, length: 10 },
+        { level: 4, question: "\"Hark! The herald angels sing, glory to the newborn ___\"", answer: "King", hint: "The carol is \"Hark! The Herald Angels Sing.\"", accept: ["king"], melody: "C4:1 F4:1 F4:1.5 E4:0.5 F4:1 A4:1 A4:1 G4:1 C5:1 C5:1 C5:1.5 Bb4:0.5 A4:1 G4:1 A4:2", bpm: 112, length: 10 },
+        { level: 5, question: "\"Praise God, from whom all ___ flow\"", answer: "Blessings", hint: "This is \"The Doxology.\"", accept: ["blessings"], melody: "G4:2 G4:1 F#4:1 E4:1 D4:2 G4:1 A4:1 B4:2 B4:1 B4:1 A4:1 G4:1 C5:1 B4:1 A4:2", bpm: 92, length: 10 },
+        { level: 5, question: "\"When peace like a ___ attendeth my way\"", answer: "River", hint: "The hymn is \"It Is Well with My Soul.\"", accept: ["river"] }
       ]
     }
   ],

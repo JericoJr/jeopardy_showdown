@@ -147,6 +147,8 @@ body.tv .wrap{max-width:1600px}
 .result.ok{color:var(--good)}.result.no{color:var(--bad)}
 .tvcode{font-family:var(--f-display);font-size:clamp(80px,16vw,200px);letter-spacing:.12em;color:var(--gold);line-height:1}
 body.tv .qr img,body.tv .qr canvas{width:260px;height:260px}
+.blank{display:inline-block;min-width:4.5ch;border-bottom:4px solid currentColor;margin:0 .15em;vertical-align:baseline;height:1em}
+.cliptag{display:inline-flex;gap:6px;align-items:center;justify-content:center;font-weight:800;color:var(--gold);letter-spacing:.06em;text-transform:uppercase;font-size:13px}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
 </head>
@@ -156,9 +158,10 @@ body.tv .qr img,body.tv .qr canvas{width:260px;height:260px}
 const VALUES=[100,200,300,400,500];
 /* ---------- question bank: edit questions.js to add categories and questions ---------- */
 const QB=window.QUESTION_BANK||{categories:[],finals:[]};
+const media=q=>(q.audio||q.melody)?{audio:q.audio?String(q.audio):'',start:+q.start||0,length:Math.min(20,Math.max(2,+q.length||8)),melody:q.melody?String(q.melody):'',bpm:+q.bpm||100}:null;
 const acc=x=>(Array.isArray(x)?x:String(x||'').split('|')).map(v=>String(v).trim()).filter(Boolean).join('|');
 const BANK=(QB.categories||[]).filter(c=>c&&c.name&&Array.isArray(c.questions)).map((c,i)=>({id:String(c.name).toLowerCase().replace(/[^a-z0-9]+/g,'-')+'-'+i,name:String(c.name),
-  q:c.questions.filter(q=>q&&q.question&&q.answer).map(q=>[Math.min(5,Math.max(1,parseInt(q.level,10)||3)),String(q.question),String(q.answer),String(q.hint||''),acc(q.accept)])})).filter(c=>c.q.length);
+  q:c.questions.filter(q=>q&&q.question&&q.answer).map(q=>[Math.min(5,Math.max(1,parseInt(q.level,10)||3)),String(q.question),String(q.answer),String(q.hint||''),acc(q.accept),media(q)])})).filter(c=>c.q.length);
 const FINALS=(QB.finals||[]).filter(f=>f&&f.question&&f.answer).map(f=>[String(f.category||'Final Round'),String(f.question),String(f.answer),String(f.hint||''),acc(f.accept)]);
 if(!FINALS.length)FINALS.push(['The Disciples','Before following Jesus, this disciple was a tax collector. The first Gospel carries his name.','Matthew','He was also called Levi.','matthew|levi']);
 const PRESETS=[{id:'random',name:'Random categories'},{id:'pick',name:'Pick my own categories'}];
@@ -170,7 +173,9 @@ const clone=o=>JSON.parse(JSON.stringify(o));
 const $=s=>document.querySelector(s);
 const rnd=a=>a[Math.floor(Math.random()*a.length)];
 const shuffle=a=>{a=[...a];for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
-const mkClue=x=>({q:x[1],a:x[2],h:x[3]||'',alt:x[4]||''});
+const mkClue=x=>Object.assign({q:x[1],a:x[2],h:x[3]||'',alt:x[4]||''},x[5]?{m:x[5]}:{});
+/* lyric blanks: ___ shows as an underlined gap */
+const clueText=q=>esc(q).replace(/_{3,}/g,'<span class="blank" aria-label="blank"></span>');
 const short=(s,n)=>String(s??'').trim().slice(0,n);
 const uid=()=>Math.random().toString(36).slice(2,10);
 function newCode(){const L='ABCDEFGHJKLMNPQRSTUVWXYZ';let s='';for(let i=0;i<4;i++)s+=L[Math.floor(Math.random()*L.length)];return s}
@@ -213,7 +218,6 @@ const saveHost=()=>store.set('ssw.host',S);
 const watching=()=>view==='player'||view==='display';
 
 /* code from a shared link opens the join screen */
-(()=>{const h=(location.hash||'').replace('#','').toUpperCase();if(/^[A-Z]{4}$/.test(h)){if(P.code!==h){P.code=h;P.step='code'}view='player'}})();
 
 /* ---------- sound & wake lock ---------- */
 let actx=null;
@@ -241,7 +245,20 @@ const Music={on:false,el:null,timer:null,bus:null,step:0,next:0,
     if(s===0||s===4)tone(actx,f(ch[0]-12),t,.6,'sine',.28,this.bus);
     if(s%2===1)tone(actx,f(ch[2]+12),t,.08,'sine',.05,this.bus)}
 };
-function setMusic(want){if(want&&!Music.on)Music.start();else if(!want&&Music.on)Music.stop()}
+function noteFreq(n){const m=/^([A-Ga-g])([#b]?)(-?\d)$/.exec(String(n||''));if(!m)return 0;const base={c:0,d:2,e:4,f:5,g:7,a:9,b:11}[m[1].toLowerCase()]+(m[2]==='#'?1:m[2]==='b'?-1:0);const midi=(+m[3]+1)*12+base;return 440*Math.pow(2,(midi-69)/12)}
+/* audio clips for song questions: a built-in melody or a sound file, cut off after a few seconds */
+const Clip={timer:null,el:null,bus:null,playing:false,
+  play(m){this.stop();if(!m)return;const len=Math.min(20,Math.max(2,+m.length||8));this.playing=true;if(Music.on)Music.stop();
+    if(m.audio){try{const el=new Audio(m.audio);this.el=el;const go=()=>{try{el.currentTime=+m.start||0}catch{}el.play().catch(()=>{})};el.addEventListener('loadedmetadata',go,{once:true});el.load()}catch{}}
+    else if(m.melody){const ac=audio();if(ac){this.bus=ac.createGain();this.bus.gain.value=1;this.bus.connect(ac.destination);const beat=60/(+m.bpm||100);let t=ac.currentTime+0.08;
+      for(const tok of String(m.melody).trim().split(/\s+/)){const [n,d]=tok.split(':');const dur=(parseFloat(d)||1)*beat;const f=noteFreq(n);
+        if(f){tone(ac,f,t,Math.max(.08,dur*.92),'triangle',.42,this.bus);tone(ac,f*2,t,Math.max(.06,dur*.4),'sine',.05,this.bus)}t+=dur;if(t-ac.currentTime>len)break}}}
+    this.timer=setTimeout(()=>this.stop(),len*1000)},
+  stop(){clearTimeout(this.timer);this.timer=null;if(this.el){try{this.el.pause()}catch{}this.el=null}try{this.bus&&this.bus.disconnect()}catch{}this.bus=null;const was=this.playing;this.playing=false;if(was){hostAudio();displayAudio()}}};
+let hostClipN=null;
+function hostClip(){if(view!=='host'||!S||!S.clip)return;if(S.clip.n===hostClipN)return;hostClipN=S.clip.n;if(displayOn()||S.sound===false)return;if(S.clip.act==='play'){const cl=curClue();cl&&cl.m&&Clip.play(cl.m)}else Clip.stop()}
+function clipCmd(act){S.clip={n:(S.clip?.n||0)+1,act}}
+function setMusic(want){if(Clip.playing)want=false;if(want&&!Music.on)Music.start();else if(!want&&Music.on)Music.stop()}
 const displayOn=()=>[...conns.values()].some(v=>v.role==='display');
 function fire(kind){S.fx={n:(S.fx?.n||0)+1,k:kind};if(!displayOn()&&S.sound!==false)sfx(kind)}
 function hostAudio(){if(view==='host'&&S)setMusic(!!S.music&&!displayOn()&&S.sound!==false)}
@@ -322,26 +339,31 @@ const teamIdx=id=>S.teams.findIndex(t=>t.id===id);
 function members(i){const id=S.teams[i]?.id;return Object.entries(S.members).filter(([,m])=>m.team===id).map(([pid,m])=>({pid,name:m.name}))}
 function pTeam(pid){const m=S.members[pid];if(!m||!m.team)return null;const i=teamIdx(m.team);return i<0?null:i}
 function nameTaken(name,exceptId){return S.teams.some(t=>t.id!==exceptId&&t.custom!==false&&t.name.toLowerCase()===name.toLowerCase())}
-function addTeam(name){name=short(name,24);if(S.teams.length>=12||(name&&nameTaken(name)))return null;const t={id:uid(),name:name||'',custom:!!name,score:0};S.teams.push(t);syncNames();return t}
+function addTeam(name,auto){name=short(name,24);if(S.teams.length>=16||(name&&nameTaken(name)))return null;const t={id:uid(),name:name||'',custom:!!name,auto:!!auto,score:0};S.teams.push(t);syncNames();return t}
 function renameTeam(id,name){const t=S.teams.find(x=>x.id===id);if(!t)return false;name=short(name,24);if(name&&nameTaken(name,id))return false;t.custom=!!name;if(name)t.name=name;syncNames();return true}
-/* a team without a custom name is named after its players ("Ana" or "Ana & Ben") */
-function syncNames(){if(!S)return;S.teams.forEach((t,i)=>{if(t.custom===false){const ms=members(i);t.name=ms.length?ms.map(m=>m.name).join(' & '):'Open team'}})}
-const needName=i=>S.teams[i].custom===false&&members(i).length>=3;
-const startProblem=()=>S.teams.length<2?'Add at least 2 teams to start (a team can be just 1 player).':S.teams.some((_,i)=>needName(i))?'Teams with 3 or more players need a team name.':'';
+/* teams without a custom name are called Team 1, Team 2, ... in the order they were made */
+function syncNames(){if(!S)return;S.teams.forEach((t,i)=>{if(t.custom===false)t.name='Team '+(i+1)})}
+const needName=()=>false;
+/* in the lobby, empty teams that players made (or were given) disappear */
+function pruneTeams(all){if(!S||S.phase!=='lobby')return;const used=new Set(Object.values(S.members).map(m=>m.team));const before=S.teams.length;
+  S.teams=S.teams.filter(t=>used.has(t.id)||(!all&&!t.auto));if(S.teams.length!==before&&S.turn>=S.teams.length)S.turn=0}
+function soloTeam(pid){const t=addTeam('',true);if(t)S.members[pid].team=t.id;return t}
+const startProblem=()=>S.teams.length<2?'You need at least 2 teams to start (a team can be just 1 player).':'';
 function openTeams(){const cap=S.settings.cap;return S.teams.map((t,i)=>i).filter(i=>!cap||members(i).length<cap)}
 function mixTeams(n){
   const ps=shuffle(Object.keys(S.members));
   if(n){while(S.teams.length<n){let k=S.teams.length+1;while(nameTaken('Team '+k))k++;addTeam('Team '+k)}}
   const k=n?Math.min(n,S.teams.length):S.teams.length;if(!k)return;const off=Math.floor(Math.random()*k);
   ps.forEach((pid,i)=>{S.members[pid].team=S.teams[(i+off)%k].id});
+  pruneTeams(true);
 }
-function netChanged(){if(!S)return;syncNames();hostAudio();saveHost();broadcastSoon();refreshParts();updateConn()}
+function netChanged(){if(!S)return;pruneTeams();syncNames();hostAudio();saveHost();broadcastSoon();refreshParts();updateConn()}
 function onMsg(c,m){
   if(!S||!m||typeof m!=='object')return;
   const info=conns.get(c);if(!info)return;
   if(m.t==='hello'){
     if(m.role==='display'){info.role='display'}
-    else{const pid=short(m.pid,16);if(!pid)return;info.role='player';info.pid=pid;const ex=S.members[pid];S.members[pid]={name:short(m.name,20)||ex?.name||'Player',team:ex?.team&&teamIdx(ex.team)>=0?ex.team:null}}
+    else{const pid=short(m.pid,16);if(!pid)return;info.role='player';info.pid=pid;const ex=S.members[pid];S.members[pid]={name:short(m.name,20)||ex?.name||'Player',team:ex?.team&&teamIdx(ex.team)>=0?ex.team:null};if(!S.members[pid].team)soloTeam(pid)}
     sendTo(c);netChanged();return;
   }
   if(info.role!=='player'||!info.pid||!S.members[info.pid])return;
@@ -350,9 +372,11 @@ function onMsg(c,m){
     case 'name':me.name=short(m.name,20)||me.name;break;
     case 'join':{const i=teamIdx(m.id);if(i<0)return;const cap=S.settings.cap;if(cap&&members(i).length>=cap&&me.team!==m.id)return;me.team=m.id;break}
     case 'random':{const open=openTeams().filter(i=>S.teams[i].id!==me.team);if(!open.length)return;const min=Math.min(...open.map(i=>members(i).length));me.team=S.teams[rnd(open.filter(i=>members(i).length===min))].id;break}
-    case 'create':{if(!S.settings.playersCreate||S.phase!=='lobby')return;const t=addTeam(m.name);if(t)me.team=t.id;break}
+    case 'create':{if(!S.settings.playersCreate||S.phase!=='lobby')return;const t=addTeam(m.name,true);if(t)me.team=t.id;break}
+    case 'solo':{if(S.phase!=='lobby'||(myT!=null&&members(myT).length===1))return;soloTeam(pid);break}
     case 'rename':{if(S.phase!=='lobby'||!me.team)return;renameTeam(me.team,m.name);break}
     case 'leave':me.team=null;break;
+    case 'pick':{if(S.phase!=='board'||myT!==S.turn)return;const c=+m.c,r=+m.r;if(!(c>=0&&c<5&&r>=0&&r<5)||S.used[c][r])return;openTile(c,r);return}
     case 'buzz':{if(S.phase!=='clue'||S.settings.mode!=='buzz'||!S.buzzOpen||m.e!==S.epoch||myT==null||S.tried.includes(myT)||S.answering!=null)return;
       if(!S.inbox.buzz.includes(pid))S.inbox.buzz.push(pid);
       if(S.answering==null){S.answering=myT;S.buzzOpen=false;resetTimer(S.settings.autoTimer);full=true}break}
@@ -389,10 +413,10 @@ function openTile(c,r){
   S.cur={c,r};S.revealed=false;S.hint=false;peek=false;newEpoch();S.scored={};S.tried=[];S.ddWager='';
   S.answering=S.settings.mode==='turns'?S.turn:null;S.ddTeam=S.turn;
   if(isDD()){S.phase='dd';S.buzzOpen=false;resetTimer(false);}
-  else{S.phase='clue';S.buzzOpen=S.settings.mode==='buzz';resetTimer(S.settings.autoTimer)}
-  commit();
+  else{S.phase='clue';S.buzzOpen=S.settings.mode==='buzz';resetTimer(S.settings.autoTimer);if(curClue().m)clipCmd('play')}
+  S.passes=0;commit();
 }
-function closeTile(){if(S.cur)S.used[S.cur.c][S.cur.r]=1;S.cur=null;S.phase='board';S.buzzOpen=false;S.tmr.run=false;S.turn=(S.turn+1)%S.teams.length;commit()}
+function closeTile(){if(S.cur&&curClue()?.m)clipCmd('stop');if(S.cur)S.used[S.cur.c][S.cur.r]=1;S.cur=null;S.phase='board';S.buzzOpen=false;S.tmr.run=false;S.turn=(S.turn+1)%S.teams.length;commit()}
 function scoreTeam(i,sign,val,book){const prev=book[i]||0;S.teams[i].score-=prev*val;if(prev===sign){delete book[i]}else{S.teams[i].score+=sign*val;book[i]=sign}}
 function markClue(i,sign){
   const val=clueValue(),prev=S.scored[i]||0,free=!S.settings.wrongLose&&!isDD();
@@ -401,6 +425,12 @@ function markClue(i,sign){
   scoreTeam(i,sign,val,S.scored);
   if(S.scored[i]===sign)fire(sign===1?'ok':'no');
   if(sign===1&&S.scored[i]===1){S.tmr.left=tLeft();S.tmr.run=false;S.revealed=true;S.buzzOpen=false;}
+}
+function passTo(t){
+  if(S.answering!=null&&!S.tried.includes(S.answering))S.tried.push(S.answering);
+  S.passes=(S.passes||0)+1;newEpoch();
+  if(t==null){S.answering=null;S.buzzOpen=true}else S.answering=t;
+  resetTimer(S.settings.autoTimer);
 }
 function nextTeam(){
   if(S.answering!=null&&!S.tried.includes(S.answering))S.tried.push(S.answering);
@@ -420,16 +450,16 @@ function autoJudge(){
   if(ok)markClue(t,1);else{markClue(t,-1);}
   return true;
 }
-function commit(){syncNames();saveHost();broadcast();render();hostAudio()}
+function commit(){pruneTeams();syncNames();saveHost();broadcast();render();hostAudio();hostClip()}
 function publicState(){
   const g=S.game,ph=S.phase,cl=curClue(),on=new Set(onlinePids());
   const st={ph,code:S.code,title:short(g.title,60),cats:g.cats.map(x=>short(x.name,40)),used:S.used,
     teams:S.teams.map((t,i)=>({id:t.id,name:t.name,named:t.custom!==false,need:needName(i),score:t.score,m:members(i).map(m=>({p:m.pid,n:m.name,on:on.has(m.pid)}))})),
     loose:Object.entries(S.members).filter(([,m])=>!m.team||teamIdx(m.team)<0).map(([p,m])=>({p,n:m.name})),
     cap:S.settings.cap,create:S.settings.playersCreate,mode:S.settings.mode,ans:S.settings.answers,turn:S.turn,epoch:S.epoch,open:!!S.buzzOpen,
-    tm:{left:tLeft(),run:!!S.tmr.run,len:S.tmr.len},music:!!S.music,fx:S.fx||null};
+    tm:{left:tLeft(),run:!!S.tmr.run,len:S.tmr.len},music:!!S.music,fx:S.fx||null,clip:S.clip||null,hi:activeTeam()};
   if(S.cur&&cl){st.clue={cat:g.cats[S.cur.c].name,val:clueValue(),dd:isDD(),
-    q:ph==='clue'?cl.q:null,h:S.hint&&ph==='clue'?cl.h:null,a:S.revealed?cl.a:null,
+    q:ph==='clue'?cl.q:null,h:S.hint&&ph==='clue'?cl.h:null,a:S.revealed?cl.a:null,m:ph==='clue'&&cl.m?cl.m:null,
     who:S.answering,tried:S.tried,res:S.scored,queue:S.inbox.buzz.slice(0,6).map(p=>S.members[p]?.name||'Player')}}
   if(ph.startsWith('final')||ph==='over')st.fin={cat:g.final.cat,q:ph!=='final-cat'?g.final.q:null,h:S.hint&&ph==='final-clue'?g.final.h:null,a:(ph==='final-reveal'||ph==='over')?g.final.a:null,res:S.final.marks};
   return st;
@@ -444,13 +474,14 @@ setInterval(()=>{
 function paintTimer(left,len){const bar=$('#tbar'),tx=$('#ttext');if(bar){bar.style.width=(100*left/(len||1))+'%';bar.classList.toggle('low',left<=5000)}if(tx)tx.textContent=Math.ceil(left/1000)+'s'}
 
 /* ---------- client: receiving state ---------- */
-let lastFx=null;
+let lastFx=null,lastClip=null;
 function displayAudio(){if(view==='display')setMusic(!!(PS&&PS.music)&&!D.mute&&D.step==='live')}
 function myTeamIdx(st){return st?st.teams.findIndex(t=>(t.m||[]).some(m=>m.p===P.pid)):-1}
 function applyState(st){
   if(!st||typeof st!=='object'||!Array.isArray(st.teams))return;
   if(st.tm)pTimer={left:st.tm.left,run:st.tm.run,len:st.tm.len||1,end:Date.now()+st.tm.left};
-  if(view==='display'){const n=st.fx?st.fx.n:0;if(lastFx!=null&&n!==lastFx&&st.fx&&!D.mute)sfx(st.fx.k);lastFx=n;PS=st;displayAudio()}
+  if(view==='display'){const n=st.fx?st.fx.n:0;if(lastFx!=null&&n!==lastFx&&st.fx&&!D.mute)sfx(st.fx.k);lastFx=n;
+    const cn=st.clip?st.clip.n:0;if(lastClip!=null&&cn!==lastClip&&st.clip&&!D.mute){if(st.clip.act==='play'&&st.clue&&st.clue.m)Clip.play(st.clue.m);else Clip.stop()}lastClip=cn;PS=st;displayAudio()}
   const k=JSON.stringify(Object.assign({},st,{tm:{run:st.tm?.run,left:st.tm?.run?0:st.tm?.left}}));
   if(k===PSkey)return;
   const newEp=!PS||PS.epoch!==st.epoch;PS=st;PSkey=k;
@@ -505,8 +536,8 @@ function setupHTML(){
   </div>
   <div class="card">
     <h2>2. Teams</h2>
-    <span class="note">Players join on their own phones and pick a team in the lobby. You can also add teams, move players and shuffle everyone there.</span>
-    <label class="toggle"><input type="checkbox" id="opt-pc" data-opt="playersCreate" ${st.playersCreate?'checked':''}>Players can create their own teams</label>
+    <span class="note">Each player starts on their own team when they join. In the lobby they can join someone else’s team, and you can move players or shuffle everyone.</span>
+    <label class="toggle"><input type="checkbox" id="opt-pc" data-opt="playersCreate" ${st.playersCreate?'checked':''}>Players can rename teams and go back to playing solo</label>
     <div class="opt"><span class="lbl">Spots per team</span>${segHTML('cap',[[0,'No limit'],[2,'2'],[3,'3'],[4,'4'],[5,'5'],[6,'6'],[8,'8']])}</div>
   </div>
   <div class="card">
@@ -544,15 +575,16 @@ function editorHTML(){
   ${editFrom==='host'?'<button data-act="ed-apply">Use in this game only</button>':''}<button class="btn-gold" data-act="ed-save">${editFrom==='host'?'Use & save to my games':'Save game'}</button></div>`;
 }
 
+function activeTeam(){if(!S||S.phase==='lobby')return -1;if((S.phase==='clue'||S.phase==='dd')&&S.answering!=null)return S.answering;return S.turn}
 function scoresInner(host){
   if(!S.teams.length)return '<span class="note">No teams yet.</span>';
-  return S.teams.map((t,i)=>{const ms=members(i),turn=S.phase!=='lobby'&&S.turn===i;return `<div class="team ${turn?'turn':''}">${turn?'<span class="badge">Their turn</span>':''}<span class="nm">${esc(t.name)}</span><span class="sc ${t.score<0?'neg':''}">${t.score}</span>
+  const hi=activeTeam(),ansNow=S.phase==='clue'&&S.answering!=null;return S.teams.map((t,i)=>{const ms=members(i),turn=hi===i;return `<div class="team ${turn?'turn':''}">${turn?`<span class="badge">${ansNow?'Answering':'Their turn'}</span>`:''}<span class="nm">${esc(t.name)}</span><span class="sc ${t.score<0?'neg':''}">${t.score}</span>
   <span class="mem">${ms.length?esc(ms.map(m=>m.name).join(', ')):'No players yet'}</span>
   ${host?`<div class="row" style="gap:6px"><button class="btn-sm" data-act="adj" data-i="${i}" data-v="-100" aria-label="Take 100 from ${esc(t.name)}">−100</button><button class="btn-sm" data-act="adj" data-i="${i}" data-v="100" aria-label="Give 100 to ${esc(t.name)}">+100</button>${S.turn!==i?`<button class="btn-sm btn-ghost" data-act="setturn" data-i="${i}">Their turn</button>`:''}</div>`:''}</div>`}).join('');
 }
-function boardHTML(cats,used,host){
+function boardHTML(cats,used,host){const act=host===true?'tile':host||'';
   return `<div class="board">${cats.map(c=>`<div class="cat">${esc(typeof c==='string'?c:c.name)}</div>`).join('')}
-  ${VALUES.map((v,r)=>cats.map((cc,c)=>{const nm=typeof cc==='string'?cc:cc.name;return `<button class="tile" ${host?`data-act="tile" data-c="${c}" data-r="${r}"`:'tabindex="-1"'} ${used[c][r]?'disabled aria-label="Used"':`aria-label="${esc(nm)} for ${v}"`}>${v}</button>`}).join('')).join('')}</div>`;
+  ${VALUES.map((v,r)=>cats.map((cc,c)=>{const nm=typeof cc==='string'?cc:cc.name;return `<button class="tile" ${act?`data-act="${act}" data-c="${c}" data-r="${r}"`:'tabindex="-1"'} ${used[c][r]?'disabled aria-label="Used"':`aria-label="${esc(nm)} for ${v}"`}>${v}</button>`}).join('')).join('')}</div>`;
 }
 function playersHTML(){
   const all=Object.keys(S.members),on=onlinePids();
@@ -570,9 +602,9 @@ function lobbyTeamsHTML(){
   const loose=Object.entries(S.members).filter(([p])=>pTeam(p)==null);
   return `${S.teams.length?`<div class="grid2">${S.teams.map((t,i)=>{const ms=members(i);return `<div class="spot ${needName(i)?'mine':''}"><div class="row"><h3 style="flex:1;min-width:0">${esc(t.name)}</h3><button class="btn-sm btn-ghost" data-act="rm-team" data-id="${t.id}" aria-label="Delete ${esc(t.name)}">Delete</button></div>
     <span class="muted">${ms.length}${cap?` / ${cap}`:''} player${ms.length===1?'':'s'}${needName(i)?' · <span class="no">needs a team name</span>':''}</span>
-    <input id="tn-${t.id}" data-rename="${t.id}" maxlength="24" value="${t.custom===false?'':esc(t.name)}" placeholder="${ms.length>=3?'Team name (required)':'Team name (optional)'}" aria-label="Team name">
+    <input id="tn-${t.id}" data-rename="${t.id}" maxlength="24" value="${t.custom===false?'':esc(t.name)}" placeholder="Rename (optional)" aria-label="Team name">
     <div class="row" style="gap:6px">${ms.length?ms.map(m=>playerChip(m.pid,m.name)).join(''):'<span class="muted">Waiting for players…</span>'}</div></div>`}).join('')}</div>`
-    :'<span class="note">No teams yet. Players can play solo or create teams on their phones, or you can add teams below or shuffle everyone into teams.</span>'}
+    :'<span class="note">No teams yet. Each player gets their own team when they join.</span>'}
   ${loose.length?`<div class="col"><span class="lbl">Not on a team yet</span><div class="row" style="gap:6px">${loose.map(([p,m])=>playerChip(p,m.name)).join('')}</div></div>`:''}
   <div id="plist">${playersHTML()}</div>`;
 }
@@ -588,8 +620,8 @@ function lobbyHTML(inOverlay){
       <button class="btn-sm" data-act="mix" data-n="0" ${S.teams.length>=2?'':'disabled'}>Shuffle players across these teams</button>
       <button class="btn-sm" data-act="mix" data-n="2">Make 2 random teams</button><button class="btn-sm" data-act="mix" data-n="3">Make 3</button><button class="btn-sm" data-act="mix" data-n="4">Make 4</button></div>
     <div id="lobbyteams" class="col">${lobbyTeamsHTML()}</div>
-    <div class="row"><input id="newteam" maxlength="24" placeholder="New team name (optional)" style="flex:1;min-width:0" aria-label="New team name"><button class="btn-sm" data-act="add-team">Add team</button></div>
-    <span class="note">Teams can be any size, even 1 player. Teams of 1 or 2 don’t need a name; teams of 3 or more do. Players can join a team, ${S.settings.playersCreate?'play solo, create a new team, ':''}or ask to be placed on any team.</span></div>
+    <div class="row"><input id="newteam" maxlength="24" placeholder="Add an empty team (name optional)" style="flex:1;min-width:0" aria-label="New team name"><button class="btn-sm" data-act="add-team">Add team</button></div>
+    <span class="note">Every player starts on their own team (Team 1, Team 2, ...). Teams can be any size, and players can leave their team to join another. Renaming a team is optional.</span></div>
   <div class="row">${inOverlay?'<button class="btn-gold" data-act="hide-lobby">Back to the board</button>':`<button class="btn-ghost" data-act="go-setup">Change setup</button><div class="spacer"></div><span class="note">${esc(startProblem())}</span><button class="btn-bad btn-sm" data-act="end-game">End game</button><button class="btn-gold" data-act="begin" ${startProblem()?'disabled':''}>Start the game</button>`}</div>
   ${confirmEnd?endConfirmHTML():''}`;
 }
@@ -664,7 +696,8 @@ function clueOverlay(){
   return `<div class="overlay" role="dialog" aria-label="Clue"><div class="ov-in">
     <div class="row"><span class="eyebrow">${esc(g.cats[c.c].name)} · ${dd?'Daily Double · wager '+val:val+' points'}${cl.from?` · from ${esc(cl.from)}`:''}</span><div class="spacer"></div>
       ${!S.revealed&&!dd?'<button class="btn-sm btn-ghost" data-act="swap">Swap for a random question</button>':''}<button class="btn-gold" data-act="close">Back to board</button></div>
-    <div class="cluebox"><div class="clue">${esc(cl.q)}</div>${S.hint&&cl.h?`<div class="hint">Hint: ${esc(cl.h)}</div>`:''}</div>
+    <div class="cluebox">${cl.m?'<div class="cliptag">♪ Audio clip</div>':''}<div class="clue">${clueText(cl.q)}</div>${S.hint&&cl.h?`<div class="hint">Hint: ${esc(cl.h)}</div>`:''}</div>
+    ${cl.m?`<div class="row"><span class="note" style="flex:1;min-width:0">♪ This clue has an audio clip. It plays ${displayOn()?'on the TV board':'on this device'} when the clue opens.</span><button class="btn-sm btn-gold" data-act="clip-play">Play clip again</button><button class="btn-sm" data-act="clip-stop">Stop</button></div>`:''}
     ${hintRow(cl.h)}
     ${answerBox(cl.a)}
     ${timerHTML()}
@@ -672,7 +705,9 @@ function clueOverlay(){
       ${ans!=null?`<span class="eyebrow">Answering now</span><span class="answering">${esc(S.teams[ans].name)}</span>
         <div class="row"><button class="btn-good ${S.scored[ans]===1?'on-good':''}" data-act="mark" data-i="${ans}" data-s="1">Correct +${val}</button>
         <button class="btn-bad ${S.scored[ans]===-1?'on-good':''}" data-act="mark" data-i="${ans}" data-s="-1">Wrong${S.settings.wrongLose||dd?' −'+val:''}</button>
-        ${!dd&&!S.revealed&&(mode==='buzz'||left.length)?`<button data-act="next-team">${mode==='turns'?`Pass to ${esc(S.teams[left[0]]?.name||'next team')}`:'Reopen buzzers for other teams'}</button>`:''}</div>
+</div>
+        ${!dd&&!S.revealed&&!(S.passes>0)&&left.length?(mode==='turns'?`<span class="eyebrow">Pass this question to (one pass per question)</span><div class="row">${left.map(i=>`<button class="btn-sm" data-act="pass" data-i="${i}">${esc(S.teams[i].name)}</button>`).join('')}</div>`:'<div class="row"><button data-act="pass" data-i="-1">Reopen buzzers for other teams (one time)</button></div>'):''}
+        ${S.passes>0&&!S.revealed&&!dd?'<span class="note">This question has already been passed once.</span>':''}
         ${S.judged[ans]?`<span class="${S.judged[ans]===1?'ok':'no'}">${S.settings.auto?'Auto-scored':'Typed answer looks'} ${S.judged[ans]===1?'correct':'wrong'}${S.settings.auto?'. Tap a button to change it.':''}</span>`:''}`
       :mode==='buzz'?`<span class="eyebrow">Buzz order</span><div id="buzzq">${queueHTML()}</div><div class="row">${S.buzzOpen?'<button class="btn-sm" data-act="buzz-close">Close buzzers</button>':'<button class="btn-sm" data-act="buzz-open">Open buzzers</button>'}<button class="btn-sm" data-act="buzz-reset">Clear buzzes</button></div>
         <span class="note">No phones? Tap the team that answers first:</span><div class="row">${S.teams.map((t,i)=>S.tried.includes(i)?'':`<button class="btn-sm" data-act="set-ans" data-i="${i}">${esc(t.name)}</button>`).join('')}</div>`
@@ -722,20 +757,19 @@ function finalOverlay(){
 function timerP(){return PS&&PS.tm&&(PS.tm.run||PS.tm.left<PS.tm.len)?`<div class="row"><div class="timer"><i id="tbar"></i></div><span class="ttext" id="ttext"></span>${!PS.tm.run?'<span class="muted">Paused</span>':''}</div>`:''}
 function netNote(){return net==='nogame'?'<div class="note no">No game with that code is running yet. Check the code; this keeps trying.</div>':net==='nolib'?'<div class="note no">Couldn’t load the connection library. Check your internet connection and reload.</div>':''}
 function playerLobbyHTML(st,mi){
-  const my=st.teams[mi],total=st.teams.reduce((n,t)=>n+(t.m||[]).length,0)+(st.loose||[]).length;
+  const my=st.teams[mi],n=my?(my.m||[]).length:0,total=st.teams.reduce((k,t)=>k+(t.m||[]).length,0)+(st.loose||[]).length;
   return `<div class="row"><div style="min-width:0"><div class="eyebrow">Lobby · game ${esc(P.code)}</div><h2>${esc(P.name)}${my?` <span class="muted" style="font-weight:400">· ${esc(my.name)}</span>`:''}</h2></div><div class="spacer"></div><div id="conn">${connHTML()}</div></div>
-  <div class="card">${my?`<span class="big-status">You’re on ${esc(my.name)}</span><div class="status muted">Waiting for the host to start the game…</div>`:'<span class="big-status">Pick a team</span><div class="status muted">Join a team below, play solo, or create a team.</div>'}
-    ${my&&my.need?'<div class="status no">Your team has 3 or more players, so it needs a name.</div>':''}
-    ${my&&(my.m||[]).length>=2?`<div class="row"><input id="p-rename" maxlength="24" value="${esc(my.named?my.name:(pDraft.rename||''))}" data-pd="rename" placeholder="${(my.m||[]).length>=3?'Team name (required)':'Team name (optional)'}" style="flex:1;min-width:0" aria-label="Team name"><button class="btn-sm" data-act="p-rename">Save name</button></div>`:''}
+  <div class="card">${my?`<span class="big-status">You’re on ${esc(my.name)}</span><div class="status muted">${n===1?'It’s just you for now. Join another team below, or wait for others to join yours.':'Teammates: '+esc(my.m.map(m=>m.n).join(', '))}</div><div class="status muted">Waiting for the host to start the game…</div>`:'<span class="big-status">Pick a team</span>'}
+    ${my&&st.create?`<div class="row"><input id="p-rename" maxlength="24" value="${esc(my.named?my.name:(pDraft.rename||''))}" data-pd="rename" placeholder="Rename your team (optional)" style="flex:1;min-width:0" aria-label="Team name"><button class="btn-sm" data-act="p-rename">Save name</button></div>`:''}
+    ${my&&n>1&&st.create?'<div class="row" style="justify-content:center"><button class="btn-sm" data-act="p-solo">Leave and play solo</button></div>':''}
   </div>
-  <div class="card"><div class="row"><h2>Teams</h2><div class="spacer"></div><span class="muted">${total} player${total===1?'':'s'} in the lobby</span></div>
-    ${st.teams.length?`<div class="grid2">${st.teams.map((t,i)=>{const n=(t.m||[]).length,full=st.cap&&n>=st.cap&&i!==mi;return `<div class="spot ${i===mi?'mine':''}"><h3>${esc(t.name)}</h3>
-      <span class="muted">${n}${st.cap?` / ${st.cap} spots`:''} player${n===1?'':'s'}${t.need?' · needs a name':''}</span>
-      <span>${n?esc(t.m.map(m=>m.n).join(', ')):'<span class="muted">Empty</span>'}</span>
-      ${i===mi?'<span class="badge">Your team</span>':`<button class="btn-sm" data-act="p-team" data-id="${esc(t.id)}" ${full?'disabled':''}>${full?'Full':'Join'}</button>`}</div>`}).join('')}</div>`:'<span class="note">No teams yet. Be the first!</span>'}
-    ${(st.loose||[]).length?`<span class="note">Still choosing: ${esc(st.loose.map(m=>m.n).join(', '))}</span>`:''}
-    <div class="row">${st.teams.length?'<button data-act="p-random">Put me on any team</button>':''}${st.create?'<button data-act="p-solo">Play solo</button>':''}</div>
-    ${st.create?`<div class="row"><input id="p-newteam" maxlength="24" value="${esc(pDraft.team)}" data-pd="team" placeholder="New team name (optional for 1–2 players)" style="flex:1;min-width:0" aria-label="New team name"><button data-act="p-create">Create team</button></div>`:''}
+  <div class="card"><div class="row"><h2>All teams</h2><div class="spacer"></div><span class="muted">${total} player${total===1?'':'s'} in the lobby</span></div>
+    ${st.teams.length?`<div class="grid2">${st.teams.map((t,i)=>{const k=(t.m||[]).length,full=st.cap&&k>=st.cap&&i!==mi;return `<div class="spot ${i===mi?'mine':''}"><h3>${esc(t.name)}</h3>
+      <span class="muted">${k}${st.cap?` / ${st.cap} spots`:''} player${k===1?'':'s'}</span>
+      <span>${k?esc(t.m.map(m=>m.n).join(', ')):'<span class="muted">Empty</span>'}</span>
+      ${i===mi?'<span class="badge">Your team</span>':`<button class="btn-sm" data-act="p-team" data-id="${esc(t.id)}" ${full?'disabled':''}>${full?'Full':'Join this team'}</button>`}</div>`}).join('')}</div>`:'<span class="note">No teams yet.</span>'}
+    ${(st.loose||[]).length?`<span class="note">Not on a team: ${esc(st.loose.map(m=>m.n).join(', '))}</span>`:''}
+    ${st.teams.length>1?'<div class="row"><button data-act="p-random">Put me on a random team</button></div>':''}
   </div>
   <div><button class="btn-ghost btn-sm" data-act="p-leave">Leave game</button></div>`;
 }
@@ -745,7 +779,7 @@ function playerHTML(){
       <label for="p-code">Game code</label><input id="p-code" class="codeinput" maxlength="4" value="${esc(P.code)}" data-p="code" autocomplete="off" autocapitalize="characters" placeholder="ABCD">
       <label for="p-name">Your name</label><input id="p-name" maxlength="20" value="${esc(P.name)}" data-p="name" autocomplete="nickname">
       <button class="btn-gold" data-act="p-join">Join</button>
-      <span class="note">The 4-letter code is on the TV or the host’s screen.</span>
+      <span class="note">The 4-letter code is on the TV or the host’s screen. You’ll start on your own team, and you can join another team in the lobby.</span>
       <button class="btn-ghost btn-sm" data-act="go-role">Back</button></div>`;
   const st=PS;
   if(!st)return `${header('Game '+P.code)}<div class="card status">${net==='live'?'Joining…':'Connecting to the game…'}${netNote()}</div><button class="btn-ghost btn-sm" data-act="p-leave">Use a different code</button>`;
@@ -756,7 +790,7 @@ function playerHTML(){
     <button class="btn-gold" data-act="p-random">Put me on any team (random)</button>`:'<div class="card status">No teams yet. Ask the host to add one.</div>'}
     <button class="btn-ghost btn-sm" data-act="p-leave">Leave game</button>`;
   let main='';
-  if(st.ph==='board')main=`<div class="card"><span class="big-status">${st.turn===mi?'Your team picks!':esc(st.teams[st.turn]?.name)+' is picking'}</span><div class="status muted">${st.turn===mi?'Tell the host a category and points.':'Get ready…'}</div></div>${boardHTML(st.cats,st.used,false)}`;
+  if(st.ph==='board')main=`<div class="card"><span class="big-status">${st.turn===mi?'Your team picks!':esc(st.teams[st.turn]?.name)+' is picking'}</span><div class="status muted">${st.turn===mi?'Anyone on your team can tap a clue below.':'Get ready…'}</div></div>${boardHTML(st.cats,st.used,st.turn===mi?'p-pick':false)}`;
   else if(st.ph==='dd')main=`<div class="cluebox"><div class="eyebrow" style="text-align:center">${esc(st.clue?.cat)}</div><div class="dd">Daily Double!</div><div class="status">One team plays this clue and sets a wager.</div></div>`;
   else if(st.ph==='clue'&&st.clue){
     const c=st.clue,who=c.who,mine=who===mi,tried=(c.tried||[]).includes(mi),res=c.res||{};let act='';
@@ -765,7 +799,7 @@ function playerHTML(){
     else if(st.mode==='buzz'&&who==null){const buzzed=pSent.buzz===st.epoch;act=tried?`<div class="status muted">Your team already tried this one.</div>`:`<button class="buzz" data-act="p-buzz" ${!st.open||buzzed?'disabled':''}>${buzzed?'IN!':'BUZZ'}</button><div class="status muted">${buzzed?'Buzzed! Waiting…':st.open?'Tap BUZZ when your team knows it.':'Buzzers are closed.'}</div>`}
     else act=`<div class="status"><b>${esc(who!=null?st.teams[who]?.name:'Another team')}</b> is answering.${tried?' Your team already tried.':''}</div>`;
     main=`<div class="eyebrow">${esc(c.cat)} · ${c.dd?'Daily Double':c.val+' points'}</div>
-    <div class="cluebox" style="min-height:130px"><div class="clue" style="font-size:clamp(20px,5.5vw,34px)">${esc(c.q||'')}</div>${c.h?`<div class="hint">Hint: ${esc(c.h)}</div>`:''}</div>
+    <div class="cluebox" style="min-height:130px">${c.m?'<div class="cliptag">♪ Listen to the clip on the TV</div>':''}<div class="clue" style="font-size:clamp(20px,5.5vw,34px)">${clueText(c.q||'')}</div>${c.h?`<div class="hint">Hint: ${esc(c.h)}</div>`:''}</div>
     ${!c.a?timerP():''}${act}`;
   }else if(st.fin){
     const f=st.fin;
@@ -780,7 +814,7 @@ function playerHTML(){
   }
   return `<div class="row"><div style="min-width:0"><div class="eyebrow">${esc(st.title)} · ${esc(P.code)}</div><h2>${esc(P.name)} <span class="muted" style="font-weight:400">· ${esc(myTeam.name)}</span></h2></div><div class="spacer"></div><div id="conn">${connHTML()}</div></div>
   ${main}
-  <div class="scores">${st.teams.map((t,i)=>`<div class="team ${i===mi?'turn':''}"><span class="nm">${esc(t.name)}</span><span class="sc ${t.score<0?'neg':''}">${t.score}</span><span class="mem">${esc((t.m||[]).map(m=>m.n).join(', '))}</span></div>`).join('')}</div>
+  <div class="scores">${st.teams.map((t,i)=>`<div class="team ${st.hi===i?'turn':''}">${st.hi===i?`<span class="badge">${st.ph==='clue'&&st.clue&&st.clue.who===i?'Answering':'Picking'}</span>`:''}<span class="nm">${esc(t.name)}${i===mi?' <span class="muted">(you)</span>':''}</span><span class="sc ${t.score<0?'neg':''}">${t.score}</span><span class="mem">${esc((t.m||[]).map(m=>m.n).join(', '))}</span></div>`).join('')}</div>
   <div><button class="btn-ghost btn-sm" data-act="p-leave">Leave game</button></div>`;
 }
 
@@ -796,7 +830,7 @@ function displayHTML(){
   const bar=`<div class="row"><span class="eyebrow">${esc(st?.title||'Scripture Showdown')} · Join with code <b style="color:var(--gold)">${esc(D.code)}</b></span><div class="spacer"></div><div id="conn">${connHTML()}</div>
     <button class="btn-sm btn-ghost" data-act="d-sound">${D.mute?'Sound: off':'Sound: on'}</button><button class="btn-sm btn-ghost" data-act="d-full">Full screen</button><button class="btn-sm btn-ghost" data-act="d-leave">Exit</button></div>`;
   if(!st)return `${bar}<div class="tvbox"><div class="big-status">${net==='live'?'Loading…':'Connecting to the host…'}</div>${netNote()}</div>`;
-  const scores=`<div class="scores">${st.teams.map((t,i)=>`<div class="team ${st.ph!=='lobby'&&st.turn===i?'turn':''}">${st.ph==='board'&&st.turn===i?'<span class="badge">Picking</span>':''}<span class="nm">${esc(t.name)}</span><span class="sc ${t.score<0?'neg':''}">${t.score}</span><span class="mem">${esc((t.m||[]).map(m=>m.n).join(', '))}</span></div>`).join('')}</div>`;
+  const scores=`<div class="scores">${st.teams.map((t,i)=>`<div class="team ${st.hi===i?'turn':''}">${st.hi===i?`<span class="badge">${st.ph==='clue'&&st.clue&&st.clue.who===i?'Answering':st.ph==='board'?'Picking':'Their turn'}</span>`:''}<span class="nm">${esc(t.name)}</span><span class="sc ${t.score<0?'neg':''}">${t.score}</span><span class="mem">${esc((t.m||[]).map(m=>m.n).join(', '))}</span></div>`).join('')}</div>`;
   let main='';
   if(st.ph==='lobby')return `${bar}<div class="card"><div class="lobby"><div class="qr" id="qr" aria-label="QR code to join"></div>
       <div class="col"><span class="eyebrow">Scan to join, or enter this code</span><div class="tvcode">${esc(st.code)}</div><span class="muted" style="font-size:18px">Open the game on your phone, tap <b>Join a game</b>, then pick or create a team.</span></div></div></div>
@@ -807,7 +841,7 @@ function displayHTML(){
   else if(st.ph==='clue'&&st.clue){
     const c=st.clue,who=c.who,res=c.res||{},r=who!=null?res[who]:null;
     main=`<div class="row"><span class="eyebrow" style="font-size:15px">${esc(c.cat)} · ${c.dd?'Daily Double · '+c.val:c.val+' points'}</span><div class="spacer"></div>${who!=null?`<span class="answering">${esc(st.teams[who]?.name)} answering</span>`:''}</div>
-    <div class="tvbox"><div class="tvclue">${esc(c.q||'')}</div>${c.h?`<div class="hint" style="font-size:clamp(18px,2.6vw,30px)">Hint: ${esc(c.h)}</div>`:''}</div>
+    <div class="tvbox">${c.m?'<div class="cliptag" style="font-size:18px">♪ Listen</div>':''}<div class="tvclue">${clueText(c.q||'')}</div>${c.h?`<div class="hint" style="font-size:clamp(18px,2.6vw,30px)">Hint: ${esc(c.h)}</div>`:''}</div>
     ${!c.a?timerP():''}
     ${r===1?`<div class="result ok">Correct! ${esc(st.teams[who]?.name)} +${c.val}</div>`:r===-1&&!c.a?'<div class="result no">Not quite</div>':''}
     ${c.a?`<div class="answer revealed"><span class="eyebrow">Answer</span><span class="a" style="font-size:clamp(22px,3.4vw,44px)">${esc(c.a)}</span></div>`:''}
@@ -879,6 +913,8 @@ document.addEventListener('click',e=>{
     case 'tv':S.tv=!S.tv;peek=false;commit();break;
     case 'sound':S.sound=S.sound===false;commit();break;
     case 'music':S.music=!S.music;commit();break;
+    case 'clip-play':clipCmd('play');commit();break;
+    case 'clip-stop':clipCmd('stop');commit();break;
     case 'music-builtin':Music.file(null);render();break;
     case 'd-sound':D.mute=!D.mute;saveDisplay();displayAudio();render();break;
     case 'peek':peek=!peek;render();break;
@@ -888,18 +924,19 @@ document.addEventListener('click',e=>{
     case 't-pause':S.tmr.left=tLeft();S.tmr.run=false;commit();break;
     case 't-resume':S.tmr.end=Date.now()+S.tmr.left;S.tmr.run=true;S.timeUp=false;commit();break;
     case 't-reset':resetTimer(false);commit();break;
-    case 'swap':{const c=S.cur,cat=S.game.cats[c.c],d=c.r+1,curQ=curClue().q;let pool=[];
+    case 'swap':{if(curClue()?.m)clipCmd('stop');const c=S.cur,cat=S.game.cats[c.c],d=c.r+1,curQ=curClue().q;let pool=[];
       const b0=cat.bank&&BANK.find(x=>x.id===cat.bank);if(b0)pool=b0.q.filter(q=>q[0]===d&&q[1]!==curQ).map(q=>({x:q,from:null}));
       if(!pool.length)BANK.forEach(bk=>bk.q.forEach(q=>{if(q[0]===d&&q[1]!==curQ)pool.push({x:q,from:bk.name})}));
-      const pk=rnd(pool);const nc=mkClue(pk.x);if(pk.from&&pk.from!==cat.name)nc.from=pk.from;cat.clues[c.r]=nc;S.hint=false;newEpoch();S.scored={};resetTimer(S.settings.autoTimer);commit();break}
+      const pk=rnd(pool);const nc=mkClue(pk.x);if(pk.from&&pk.from!==cat.name)nc.from=pk.from;cat.clues[c.r]=nc;S.hint=false;newEpoch();S.scored={};resetTimer(S.settings.autoTimer);if(nc.m)clipCmd('play');commit();break}
     case 'buzz-open':S.buzzOpen=true;commit();break;
     case 'buzz-close':S.buzzOpen=false;commit();break;
     case 'buzz-reset':newEpoch();S.buzzOpen=true;commit();break;
     case 'set-ans':S.answering=i;S.buzzOpen=false;resetTimer(S.settings.autoTimer);commit();break;
     case 'mark':markClue(i,+b.dataset.s);commit();break;
     case 'next-team':nextTeam();commit();break;
+    case 'pass':{if(S.passes>0)return;passTo(i<0?null:i);commit();break}
     case 'dd-team':S.ddTeam=i;commit();break;
-    case 'dd-go':{const t=S.ddTeam,max=Math.max(500,S.teams[t].score);let w=parseInt(S.ddWager,10);if(!(w>=5))w=Math.min(500,max);S.ddWager=String(Math.min(w,max));S.answering=t;S.phase='clue';resetTimer(S.settings.autoTimer);commit();break}
+    case 'dd-go':{const t=S.ddTeam,max=Math.max(500,S.teams[t].score);let w=parseInt(S.ddWager,10);if(!(w>=5))w=Math.min(500,max);S.ddWager=String(Math.min(w,max));S.answering=t;S.phase='clue';resetTimer(S.settings.autoTimer);if(curClue().m)clipCmd('play');commit();break}
     case 'final':S.phase='final-cat';newEpoch();S.hint=false;S.final={wagers:{},marks:{}};S.tmr.run=false;peek=false;commit();break;
     case 'final-cancel':S.phase='board';commit();break;
     case 'use-wagers':inboxList('wag').forEach(x=>{S.final.wagers[x.team]=x.v});saveHost();render();break;
@@ -914,10 +951,11 @@ document.addEventListener('click',e=>{
     case 'p-join':{const c=String(P.code||'').toUpperCase().replace(/[^A-Z]/g,'');if(c.length!==4){$('#p-code')?.focus();return}if(!short(P.name,20)){$('#p-name')?.focus();return}
       P.code=c;P.name=short(P.name,20);P.step='in';ended=false;savePlayer();PS=null;PSkey='';clientOpen(c,'player');render();break}
     case 'p-leave':send({t:'leave'});P.step='code';savePlayer();netClose();PS=null;PSkey='';render();break;
+    case 'p-pick':if(!PS||PS.ph!=='board')return;send({t:'pick',c:+b.dataset.c,r:+b.dataset.r});break;
     case 'p-team':send({t:'join',id:b.dataset.id});break;
     case 'p-random':send({t:'random'});break;
     case 'p-create':{send({t:'create',name:short(pDraft.team,24)});pDraft.team='';break}
-    case 'p-solo':send({t:'create',name:''});break;
+    case 'p-solo':send({t:'solo'});break;
     case 'p-rename':send({t:'rename',name:short(pDraft.rename,24)});break;
     case 'p-buzz':if(!PS)return;pSent.buzz=PS.epoch;send({t:'buzz',e:PS.epoch});try{navigator.vibrate&&navigator.vibrate(60)}catch{}render();break;
     case 'p-ans':if(!PS||!short(pDraft.ans,80))return;pSent.ans=PS.epoch;send({t:'ans',e:PS.epoch,text:pDraft.ans});render();break;
@@ -925,7 +963,7 @@ document.addEventListener('click',e=>{
     case 'p-fans':if(!PS||!short(pDraft.fans,80))return;pSent.fans=PS.epoch;send({t:'fans',e:PS.epoch,text:pDraft.fans});render();break;
     /* display */
     case 'd-code':{ended=false;const c=String(D.code||'').toUpperCase().replace(/[^A-Z]/g,'');if(c.length!==4){$('#d-code')?.focus();return}D.code=c;D.step='live';saveDisplay();PS=null;PSkey='';clientOpen(c,'display');keepAwake();render();break}
-    case 'd-leave':D.step='code';saveDisplay();netClose();Music.stop();lastFx=null;PS=null;PSkey='';view='role';render();break;
+    case 'd-leave':D.step='code';saveDisplay();netClose();Music.stop();Clip.stop();lastFx=null;lastClip=null;PS=null;PSkey='';view='role';render();break;
     case 'd-full':try{const r=document.documentElement.requestFullscreen?.();r&&r.catch&&r.catch(()=>{})}catch{}break;
   }
 });
@@ -959,7 +997,18 @@ document.addEventListener('keydown',e=>{
 });
 /* resume as a player or board after a reload */
 if(view==='role'&&D.step==='live'&&D.code&&!S){/* wait for a tap; avoid auto-joining */}
-if(view==='player'&&P.step!=='code'&&P.code){clientOpen(P.code,'player')}
+/* a scanned QR code or shared link always opens that game, even if this phone was in another game before */
+function handleHash(){
+  const h=(location.hash||'').replace('#','').toUpperCase();if(!/^[A-Z]{4}$/.test(h))return false;
+  if(view==='host'||view==='display'||view==='setup'||view==='editor')return false;
+  if(view==='player'&&P.step!=='code'&&P.code===h&&net!=='off')return true;
+  netClose();PS=null;PSkey='';ended=false;P.code=h;view='player';
+  if(short(P.name,20)){P.step='in';savePlayer();clientOpen(h,'player')}else{P.step='code';savePlayer()}
+  render();return true;
+}
+window.addEventListener('hashchange',handleHash);
+window.addEventListener('pageshow',e=>{if(e.persisted)handleHash()});
+if(!handleHash()&&view==='player'&&P.step!=='code'&&P.code){clientOpen(P.code,'player')}
 render();
 </script>
 </body>
