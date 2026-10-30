@@ -330,7 +330,7 @@ setup.skip=(setup.skip||[]).filter(n=>BANK.some(b=>b.name===n));
 setup.settings=Object.assign(clone(DEF_SET),setup.settings||{});
 if(!PRESETS.some(p=>p.id===setup.preset))setup.preset='random';
 setup.pick=(setup.pick||[]).filter(id=>BANK.some(b=>b.id===id));
-let showSpot=false;let view='role',edit=null,editFrom='setup',confirmDel=false,peek=false,showLobby=false,confirmNew=false,confirmRm=null,confirmEnd=false,ended=false;
+let showSpot=false,hostHideSpot=false,cidDraft='';let view='role',edit=null,editFrom='setup',confirmDel=false,peek=false,showLobby=false,confirmNew=false,confirmRm=null,confirmEnd=false,ended=false;
 let P=Object.assign({pid:uid(),name:'',code:'',step:'code'},store.get('ssw.player',{}));
 let D=Object.assign({code:'',step:'code'},store.get('ssw.display',{}));
 let PS=null,PSkey='',pDraft={wager:'',ans:'',fans:'',team:''},pTimer={end:0,left:0,run:false,len:1},pSent={buzz:-1,ans:-1,wager:-1,fans:-1};
@@ -415,9 +415,9 @@ const SpotSDK={player:null,dev:null,state:'off',token:null,loading:false,repeatS
       pl.addListener('initialization_error',()=>{this.report('unsupported')});pl.addListener('playback_error',()=>{});
       pl.connect()}catch{this.report('unsupported')}};
     if(window.Spotify&&window.Spotify.Player)go();else{window.onSpotifyWebPlaybackSDKReady=go;const sc=document.createElement('script');sc.src='https://sdk.scdn.co/spotify-player.js';sc.onerror=()=>{this.loading=false;this.report('blocked')};document.head.appendChild(sc)}},
-  async getToken(){if(view==='host'){const t=await SpotAuth.fresh();return t?t.access:''}return this.token||''},
+  async getToken(){if(SpotAuth.linked()){const t=await SpotAuth.fresh();if(t)return t.access}return view==='host'?'':this.token||''},
   ready(){return this.state==='ready'&&!!this.dev},
-  report(st){this.state=st;if(st!=='ready')this.dev=st==='offline'?null:this.dev;if(view==='display')send({t:'spotsdk',st});else if(view==='host'&&S){S.hostSdk=st;render()}if(st!=='ready')themeSourceChanged()},
+  report(st){this.state=st;if(st!=='ready')this.dev=st==='offline'?null:this.dev;if(view==='display'){send({t:'spotsdk',st});render()}else if(view==='host'&&S){S.hostSdk=st;render()}if(st!=='ready')themeSourceChanged()},
   async api(path,method,body){const tk=await this.getToken();if(!tk)return false;try{const r=await fetch('https://api.spotify.com/v1/me/player'+path,{method,headers:{Authorization:'Bearer '+tk,'Content-Type':'application/json'},body:body?JSON.stringify(body):undefined});return r.ok||r.status===204}catch{return false}},
   /* play the theme from the top, on repeat (Spotify loops it itself) */
   async play(){this.want=true;const id=ThemeSpot.id();if(!this.ready()||!id)return;try{this.player.activateElement&&this.player.activateElement()}catch{}
@@ -434,8 +434,10 @@ async function shareSpotToken(force){if(view!=='host'||!S||!SpotAuth.linked())re
   conns.forEach((inf,c)=>{if(inf.role==='display'&&(force||inf.spotTok!==t.access)){inf.spotTok=t.access;try{c.send({t:'spottoken',a:t.access})}catch{}}});
   if(!displayOn()&&sdkSupported()&&!SpotSDK.player)SpotSDK.init()}
 setInterval(()=>{shareSpotToken(false)},60000);
-window.addEventListener('storage',e=>{if(e.key==='ssw.spot.tok'||e.key===null){if(view==='host'&&S){shareSpotToken(true);render()}}});
-document.addEventListener('visibilitychange',()=>{if(!document.hidden&&view==='host'&&S){shareSpotToken(false);render()}});
+window.addEventListener('storage',e=>{if(e.key==='ssw.spot.tok'||e.key===null){if(view==='host'&&S){shareSpotToken(true);render()}if(view==='display')tvSpotLinked()}});
+/* TV board linked to Spotify Premium on its own (the laptop logged in itself) */
+function tvSpotLinked(){if(view!=='display')return;if(SpotAuth.linked()&&!SpotSDK.player)SpotSDK.init();render()}
+document.addEventListener('visibilitychange',()=>{if(!document.hidden&&view==='host'&&S){shareSpotToken(false);render()}if(!document.hidden&&view==='display')tvSpotLinked()});
 /* "Full song only": don't play Spotify's 30-second mid-song preview */
 const fullOnlyNow=()=>view==='display'?!(PS&&PS.fullOnly===false):!(S&&S.fullOnly===false);
 const ThemeSpot={ctl:null,want:false,made:false,played:false,ok:false,pos:0,dur:0,playingAt:0,lastPos:0,kicked:0,
@@ -600,21 +602,22 @@ function paintSongPos(){paintPlayer();const el=$('#songpos'),tx=$('#songtime');i
   if(tx){const v=dragging()&&el?+el.value:pos;tx.textContent=`${fmtT(Math.floor(v))} / ${dur?fmtT(Math.floor(dur)):'—:——'}`}}
 setInterval(()=>{if(view==='host'&&S&&S.phase==='clue')paintSongPos();if(renderHeld&&!dragging()){renderHeld=false;songDrag=false;render()}},500);
 function soundBlocked(){return !actx||actx.state!=='running'}
-function previewChanged(){if(view==='display'){sendSpotStat();return}const el=$('#spotcard');if(el&&view==='host')render()}
+function previewChanged(){if(view==='display'){sendSpotStat();render();return}const el=$('#spotcard');if(el&&view==='host')render()}
 let sentPv=null;function sendSpotStat(){if(view!=='display'||ThemeSpot.preview==null||sentPv===ThemeSpot.preview)return;sentPv=ThemeSpot.preview;send({t:'spotstat',pv:ThemeSpot.preview})}
 function spotState(){if(Music.buf&&!displayOn())return 'file';if(!ThemeSpot.id())return 'none';if((displayOn()?S.tvSdk:S.hostSdk)==='ready')return 'premium';const pv=displayOn()?S.tvSpot:ThemeSpot.preview;return pv==null?'checking':pv?'preview':'full'}
 const isiOS=()=>/iPhone|iPad|iPod/.test(navigator.userAgent||'')||(/Macintosh/.test(navigator.userAgent||'')&&navigator.maxTouchPoints>1);
 /* host only: is the Jeopardy theme able to play the whole song on the screen that plays sound? */
-function premiumHTML(){const cid=SpotAuth.cid(),linked=SpotAuth.linked(),tv=displayOn(),sdk=tv?S.tvSdk:S.hostSdk;
+function premiumHTML(onTV){const cid=SpotAuth.cid(),linked=SpotAuth.linked(),tv=onTV?false:displayOn(),sdk=onTV?SpotSDK.state:tv?S.tvSdk:S.hostSdk;
+  if(!onTV&&tv&&S.tvSdk==='ready'&&!linked)return `<div class="eyebrow" style="margin-top:4px">⭐ Spotify Premium</div><span class="note"><b class="ok">✓ The TV board is linked to Spotify Premium</b> and plays the whole theme on repeat.</span>`;
   const head=`<div class="eyebrow" style="margin-top:4px">⭐ Spotify Premium link <span class="muted" style="text-transform:none;letter-spacing:0">· needs Spotify Premium</span></div>`;
-  if(!cid)return `${head}<span class="note">Link your Premium account once and the TV board plays the whole theme on repeat, even though you log in here on the host. Your Spotify details stay on this device only and are never added to the game’s files or repo.</span>
+  if(!cid)return `${head}<span class="note">${onTV?'Link your Premium account on this TV board and it plays the whole theme on repeat.':'Link your Premium account once and the TV board plays the whole theme on repeat, even though you log in here on the host.'} Your Spotify details stay on this device only and are never added to the game’s files or repo.</span>
     <details class="card" style="gap:6px"><summary class="eyebrow" style="cursor:pointer">One-time setup (about 5 minutes)</summary>
       <ol class="steps"><li>On a computer or here, go to <b>developer.spotify.com/dashboard</b> and log in with your Spotify Premium account.</li>
       <li>Tap <b>Create app</b>. Give it any name and description, like “Jeopardy Showdown.”</li>
       <li>Under <b>Redirect URIs</b>, paste exactly:<div class="row" style="margin:4px 0"><code class="pill" id="spot-uri" style="user-select:all;word-break:break-all">${esc(spotRedirect())}</code><button class="btn-sm" data-act="spot-copyuri">Copy</button></div></li>
       <li>Under “Which API/SDKs are you planning to use?”, check <b>Web API</b> and <b>Web Playback SDK</b>. Agree to the terms and tap <b>Save</b>.</li>
       <li>Open the app’s <b>Settings</b>, copy the <b>Client ID</b>, and paste it in the box below.</li></ol></details>
-    <label for="spot-cid">Paste your Client ID here</label><input id="spot-cid" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="32 letters and numbers">
+    <label for="spot-cid">Paste your Client ID here</label><input id="spot-cid" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="32 letters and numbers" value="${esc(cidDraft)}" data-cid>
     <div class="row"><button class="btn btn-gold" data-act="spot-cid">Save on this device</button></div>
     <span class="note">Saved only in this browser. To use another host device, paste the same Client ID there.</span>`;
   if(!linked)return `${head}<span class="note">Setup is done on this device. Log in with your Spotify Premium account to link it.</span>
@@ -622,25 +625,37 @@ function premiumHTML(){const cid=SpotAuth.cid(),linked=SpotAuth.linked(),tv=disp
   const msg=sdk==='ready'?`<b class="ok">✓ Linked.</b> The ${tv?'TV board':'game'} plays the whole theme through your Premium account, on repeat.`
     :sdk==='premium'?'<b class="no">This Spotify account isn’t Premium.</b> Spotify only lets Premium accounts play full songs this way. Unlink and log in with a Premium account.'
     :sdk==='auth'?'<b class="no">The Spotify login expired.</b> Tap Log in with Spotify again.'
-    :sdk==='unsupported'?`<b class="no">${tv?'The TV board’s browser':'This device'} can’t run Spotify’s player.</b> ${tv?'Use Chrome, Edge, Firefox or Safari on the TV laptop.':'Phones and tablets can’t. Connect a TV board on a computer and it will play there.'}`
+    :sdk==='unsupported'?`<b class="no">${tv?'The TV board’s browser':'This device'} can’t run Spotify’s player.</b> ${tv||onTV?'Use Chrome, Edge, Firefox or Safari on a computer.':'Phones and tablets can’t. Connect a TV board on a computer and link Spotify there instead.'}`
     :sdk==='blocked'?`<b class="no">${tv?'The TV board’s browser':'This browser'} blocked Spotify’s player.</b> Turn off ad or content blockers for this site.`
-    :tv?'<b>Linked.</b> Connecting the TV board to Spotify…':!sdkSupported()?'<b>Linked.</b> Phones and tablets can’t run Spotify’s player, so connect a TV board on a computer and it plays there.':'<b>Linked.</b> Starting Spotify’s player…';
+    :tv?'<b>Linked.</b> Connecting the TV board to Spotify…':!sdkSupported()?'<b>Linked.</b> Phones and tablets can’t run Spotify’s player. Connect a TV board on a computer, or link Spotify on the TV board itself.':'<b>Linked.</b> Starting Spotify’s player…';
   return `${head}<span class="note">${msg}</span><div class="row">${sdk==='auth'?'<button class="btn-sm btn-gold" data-act="spot-login">Log in with Spotify</button>':''}<button class="btn-sm btn-ghost" data-act="spot-unlink">Unlink Spotify</button></div>`}
 /* host only: is the Jeopardy theme able to play the whole song on the screen that plays sound? */
 function spotifyCardHTML(alertOnly){const st=spotState(),tv=displayOn(),where=tv?'the TV board':'this device',fo=S.fullOnly!==false;
-  if(st==='none'||st==='file'||(alertOnly&&st!=='preview'))return '';
-  if(st==='premium')return `<div class="card spotcard" id="spotcard" style="gap:8px"><div class="eyebrow">🎵 Theme music · Spotify <span class="muted" style="text-transform:none;letter-spacing:0">(only you see this)</span></div>${premiumHTML()}</div>`;
+  if(st==='none'||st==='file'||(alertOnly&&(st!=='preview'||hostHideSpot)))return '';
+  const x='<button class="btn-sm btn-ghost spotx" data-act="spot-hide" aria-label="Close">✕</button>';
+  if(st==='premium')return `<div class="card spotcard" id="spotcard" style="gap:8px"><div class="row"><div class="eyebrow" style="flex:1">🎵 Theme music · Spotify <span class="muted" style="text-transform:none;letter-spacing:0">(only you see this)</span></div>${x}</div>${premiumHTML()}</div>`;
   const head=st==='full'?`<b class="ok">✓ Spotify is logged in on ${where}.</b> <span class="note">The whole theme song plays and loops.</span>`
     :st==='checking'?`<b>Checking Spotify on ${where}…</b> <span class="note">This takes a few seconds after the theme loads.</span>`
     :`<b class="no">Spotify isn’t logged in on ${where}.</b> <span class="note">Without a login, Spotify only plays a 30-second preview from the middle of the song. ${fo?'The theme stays off until it’s fixed (Full song only is on).':'The preview is playing for now.'}</span>`;
-  const how=st==='full'?'':tv?`<span class="note">Fix it with the Spotify Premium link below, or on the TV laptop open <b>open.spotify.com</b> in the same browser that shows the board, log in, then tap <b>Check again</b>.</span>`
+  const how=st==='full'?'':tv?`<span class="note">Fix it on the TV laptop: the board has its own <b>🎵 Spotify</b> button where you can log in or link Premium there. Or link Premium below from this device. Then tap <b>Check again</b>.</span>`
     :`<span class="note">Tap <b>Log in on this device</b>, log in on the page that opens (free accounts work), come back and tap <b>Check again</b>.${isiOS()?' On iPhone and iPad, also turn off Settings › Apps › Safari › Prevent Cross-Site Tracking, or Safari hides the login from the game.':''}</span>`;
-  return `<div class="card spotcard" id="spotcard" style="gap:8px;${st==='preview'?'border-color:var(--bad)':''}"><div class="eyebrow">🎵 Theme music · Spotify <span class="muted" style="text-transform:none;letter-spacing:0">(only you see this)</span></div>
+  return `<div class="card spotcard" id="spotcard" style="gap:8px;${st==='preview'?'border-color:var(--bad)':''}"><div class="row"><div class="eyebrow" style="flex:1">🎵 Theme music · Spotify <span class="muted" style="text-transform:none;letter-spacing:0">(only you see this)</span></div>${x}</div>
     <div>${head}</div>${how}
     <div class="row">${!tv&&st!=='full'?`<a class="btn btn-sm" href="${SPOT_LOGIN}" target="_blank" rel="noopener">Log in on this device</a>`:''}${st!=='full'?'<button class="btn-sm" data-act="spot-check">Check again</button>':''}
       <button class="btn-sm" data-act="spot-full" aria-pressed="${fo}">Full song only: ${fo?'on':'off'}</button></div>
     <span class="note">${fo?'Full song only is on: the theme never plays Spotify’s 30-second preview.':'Full song only is off: if Spotify isn’t logged in, the 30-second preview plays.'}</span>
     ${premiumHTML()}</div>`}
+function tvSpotCardHTML(){if(view!=='display'||D.hideSpot||!ThemeSpot.id()||Music.buf)return '';
+  if(SpotSDK.state==='ready')return '';const pv=ThemeSpot.preview;
+  const head=pv===false?'<b class="ok">✓ Spotify is logged in here.</b> <span class="note">The whole theme plays and loops.</span>'
+    :pv===true?'<b class="no">Spotify isn’t logged in on this TV board.</b> <span class="note">Without a login, Spotify only plays a 30-second preview from the middle of the song.</span>'
+    :'<b>Spotify on this TV board</b> <span class="note">Log in here so the theme plays the whole song.</span>';
+  return `<div class="card spotcard" id="tvspot" style="gap:8px;${pv===true?'border-color:var(--bad)':''}"><div class="row"><div class="eyebrow" style="flex:1">🎵 Theme music · Spotify</div><button class="btn-sm btn-ghost" data-act="spot-hide" aria-label="Close">✕ Close</button></div>
+    <div>${head}</div>
+    ${pv===false?'':`<span class="note">Free account: tap <b>Log in to Spotify</b>, log in on the page that opens, come back here and tap <b>Check again</b>.</span>
+    <div class="row"><a class="btn btn-sm" href="${SPOT_LOGIN}" target="_blank" rel="noopener">Log in to Spotify</a><button class="btn-sm" data-act="spot-check">Check again</button></div>`}
+    ${premiumHTML(true)}
+    <span class="note">Everyone watching the TV can see this card. Close it with ✕, and reopen it with 🎵 Spotify at the top.</span></div>`}
 function updateSoundWarn(){const el=$('#sndwarn');if(!el)return;const show=view==='display'&&D.step==='live'&&!D.mute&&soundBlocked()&&!Clip.paused;
   el.innerHTML=show?'<button class="btn-sm btn-gold" data-act="d-unlock">🔊 Click to turn on sound</button>':''}
 setInterval(()=>{updateSoundWarn();if(view==='host'&&S&&S.clip){const el=$('#clipstat');if(el){const t=clipStatusText();if(el.textContent!==t)el.textContent=t;
@@ -932,6 +947,7 @@ function render(){
   document.body.classList.toggle('tv',view==='display');
   document.body.classList.toggle('tuning',view==='tuner');if(view!=='tuner')Tuner.close();
   if(spotDone){$('#app').innerHTML=spotDoneHTML();return}
+  if(view==='display'&&document.activeElement&&document.activeElement.id==='spot-cid'){renderHeld=true;return}
   $('#app').innerHTML=view==='tuner'?tunerHTML():view==='role'?roleHTML():view==='setup'?setupHTML():view==='editor'?editorHTML():view==='host'?hostHTML():view==='display'?displayHTML():playerHTML();
   if(view==='host'&&S&&(S.phase==='lobby'||showLobby))drawQR(joinLink(S.code),200);
   if(view==='display'&&PS&&PS.ph==='lobby')drawQR(joinLink(PS.code),260);
@@ -1147,7 +1163,7 @@ function lobbyHTML(inOverlay){
 }
 function hostHTML(){
   const g=S.game;
-  if(S.phase==='lobby')return `<div class="row"><div><div class="eyebrow">Jeopardy Showdown · lobby</div><h1 style="font-family:var(--f-display);font-weight:400;font-size:clamp(24px,4vw,38px);text-transform:uppercase">${esc(g.title)}</h1></div><div class="spacer"></div><div id="conn">${connHTML()}</div></div>${spotifyCardHTML(false)}${lobbyHTML(false)}`;
+  if(S.phase==='lobby')return `<div class="row"><div><div class="eyebrow">Jeopardy Showdown · lobby</div><h1 style="font-family:var(--f-display);font-weight:400;font-size:clamp(24px,4vw,38px);text-transform:uppercase">${esc(g.title)}</h1></div><div class="spacer"></div><div id="conn">${connHTML()}</div></div>${hostHideSpot&&!showSpot?'<div class="row"><button class="btn-sm" data-act="spot-panel">🎵 Spotify</button></div>':spotifyCardHTML(false)}${lobbyHTML(false)}`;
   const allUsed=S.used.every(c=>c.every(Boolean));
   return `<div class="row"><div><div class="eyebrow">Jeopardy Showdown · host</div><h1 style="font-family:var(--f-display);font-weight:400;font-size:clamp(24px,4vw,38px);letter-spacing:.02em;text-transform:uppercase">${esc(g.title)}</h1></div><div class="spacer"></div>
     <button class="btn-sm" data-act="show-lobby">Code ${esc(S.code)} · teams & QR</button><button class="btn-sm ${spotState()==='premium'?'':'btn-gold'}" data-act="spot-panel" aria-expanded="${!!showSpot}">🎵 Spotify${spotState()==='premium'?' ✓':''}</button><div id="conn">${connHTML()}</div></div>
@@ -1412,7 +1428,7 @@ function displayHTML(){
       <button class="btn-ghost btn-sm" data-act="go-role">Back</button></div>`;
   const st=PS;
   const bar=`<div class="row"><span class="eyebrow">${esc(st?.title||'Jeopardy Showdown')} · Join with code <b style="color:var(--gold)">${esc(D.code)}</b></span><div class="spacer"></div><div id="conn">${connHTML()}</div>
-    <span id="sndwarn"></span><button class="btn-sm btn-ghost" data-act="d-sound">${D.mute?'Sound: off':'Sound: on'}</button><button class="btn-sm btn-ghost" data-act="d-full">Full screen</button><button class="btn-sm btn-ghost" data-act="d-leave">Exit</button></div>`;
+    <span id="sndwarn"></span><button class="btn-sm btn-ghost" data-act="d-sound">${D.mute?'Sound: off':'Sound: on'}</button><button class="btn-sm btn-ghost" data-act="d-full">Full screen</button><button class="btn-sm btn-ghost" data-act="spot-panel" aria-label="Spotify">🎵${SpotSDK.state==='ready'?' ✓':''}</button><button class="btn-sm btn-ghost" data-act="d-leave">Exit</button></div>${tvSpotCardHTML()}`;
   if(!st)return `${bar}<div class="tvbox"><div class="big-status">${net==='live'?'Loading…':'Connecting to the host…'}</div>${netNote()}</div>`;
   const scores=`<div class="scores">${st.teams.map((t,i)=>`<div class="team ${st.hi===i?'turn':''}">${st.hi===i?`<span class="badge">${st.ph==='clue'&&st.clue&&st.clue.who===i?'Answering':st.ph==='board'?'Picking':'Their turn'}</span>`:''}<span class="nm">${esc(t.name)}</span><span class="sc ${t.score<0?'neg':''}">${t.score}</span><span class="mem">${esc((t.m||[]).map(m=>m.n).join(', '))}</span></div>`).join('')}</div>`;
   let main='';
@@ -1515,14 +1531,15 @@ document.addEventListener('click',e=>{
     case 'tv':S.tv=!S.tv;peek=false;commit();break;
     case 'sound':S.sound=S.sound===false;commit();break;
     case 'music':S.music=!S.music;commit();break;
-    case 'spot-cid':{const v=String(($('#spot-cid')||{}).value||'').trim();if(!/^[a-z0-9]{32}$/i.test(v)){alertNote('That doesn’t look like a Client ID. It’s 32 letters and numbers.');return}SpotAuth.setCid(v);render();break}
+    case 'spot-cid':{const v=String(($('#spot-cid')||{}).value||cidDraft||'').trim();cidDraft='';if(!/^[a-z0-9]{32}$/i.test(v)){alertNote('That doesn’t look like a Client ID. It’s 32 letters and numbers.');return}SpotAuth.setCid(v);render();break}
     case 'spot-cid-clear':SpotAuth.setCid('');SpotAuth.unlink();render();break;
     case 'spot-copyuri':{try{navigator.clipboard.writeText(spotRedirect());alertNote('Copied.')}catch{}break}
     case 'spot-login':{const w=window.open('about:blank','_blank');SpotAuth.login().then(u=>{if(!u)return;if(w)w.location.href=u;else location.href=u});break}
-    case 'spot-unlink':SpotAuth.unlink();SpotSDK.stopAll();S.hostSdk='';conns.forEach((inf,c)=>{if(inf.role==='display'){inf.spotTok=null;try{c.send({t:'spottoken',a:''})}catch{}}});themeSourceChanged();render();break;
-    case 'spot-panel':showSpot=!showSpot;render();if(showSpot)setTimeout(()=>{const c=$('#spotcard');c&&c.scrollIntoView({behavior:'smooth',block:'start'})},50);break;
+    case 'spot-unlink':SpotAuth.unlink();SpotSDK.stopAll();if(view==='display'){SpotSDK.report('off');themeSourceChanged();render();break}S.hostSdk='';conns.forEach((inf,c)=>{if(inf.role==='display'){inf.spotTok=null;try{c.send({t:'spottoken',a:''})}catch{}}});themeSourceChanged();render();break;
+    case 'spot-hide':if(view==='display'){D.hideSpot=true;saveDisplay()}else{showSpot=false;hostHideSpot=true}render();break;
+    case 'spot-panel':if(view==='display'){D.hideSpot=!D.hideSpot;saveDisplay();render();break}if(hostHideSpot){hostHideSpot=false;showSpot=true}else showSpot=!showSpot;render();if(showSpot)setTimeout(()=>{const c=$('#spotcard');c&&c.scrollIntoView({behavior:'smooth',block:'start'})},50);break;
     case 'spot-full':S.fullOnly=S.fullOnly===false;commit();if(!displayOn())ThemeSpot.kick();break;
-    case 'spot-check':if(displayOn()){S.tvSpot=null;S.spotCheck=(S.spotCheck||0)+1;commit()}else{resetSpotify();render()}break;
+    case 'spot-check':if(view==='display'){sentPv=null;resetSpotify();render();break}if(displayOn()){S.tvSpot=null;S.spotCheck=(S.spotCheck||0)+1;commit()}else{resetSpotify();render()}break;
     case 'autoplay':S.settings.autoplay=!S.settings.autoplay;setup.settings.autoplay=S.settings.autoplay;saveSetup();commit();break;
     case 'tmusic':S.tmusic=S.tmusic===false;commit();break;
     case 'clip-play':clipCmd('play');commit();break;
@@ -1587,13 +1604,14 @@ document.addEventListener('click',e=>{
     case 'p-wager':if(!PS)return;pSent.wager=PS.epoch;send({t:'wager',e:PS.epoch,v:pDraft.wager});render();break;
     case 'p-fans':if(!PS||!short(pDraft.fans,80))return;pSent.fans=PS.epoch;send({t:'fans',e:PS.epoch,text:pDraft.fans});render();break;
     /* display */
-    case 'd-code':{ended=false;const c=String(D.code||'').toUpperCase().replace(/[^A-Z]/g,'');if(c.length!==4){$('#d-code')?.focus();return}D.code=c;D.step='live';saveDisplay();PS=null;PSkey='';clientOpen(c,'display');keepAwake();render();break}
+    case 'd-code':{ended=false;setTimeout(tvSpotLinked,0);const c=String(D.code||'').toUpperCase().replace(/[^A-Z]/g,'');if(c.length!==4){$('#d-code')?.focus();return}D.code=c;D.step='live';saveDisplay();PS=null;PSkey='';clientOpen(c,'display');keepAwake();render();break}
     case 'd-leave':D.step='code';saveDisplay();netClose();Music.stop();Clip.stop();lastFx=null;lastClip=null;PS=null;PSkey='';view='role';render();break;
     case 'd-full':try{const r=document.documentElement.requestFullscreen?.();r&&r.catch&&r.catch(()=>{})}catch{}break;
   }
 });
 document.addEventListener('input',e=>{
   const t=e.target,d=t.dataset;
+  if(d.cid!==undefined){cidDraft=t.value;return}
   if(d.bind==='ddWager'){S.ddWager=t.value;S.ddBy='';saveHost();broadcastSoon()}
   else if(d.fw!==undefined){S.final.wagers[+d.fw]=t.value;saveHost()}
   else if(d.p){P[d.p]=d.p==='code'?t.value.toUpperCase():t.value;if(d.p==='code')t.value=P.code}
