@@ -10,6 +10,7 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=Fraunces:opsz,wght@9..144,500;9..144,700&family=Figtree:wght@400;600;800&display=swap">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+<script src="images.js"></script>
 <script src="questions.js"></script>
 <style>
 html{{-webkit-text-size-adjust:100%}}
@@ -166,6 +167,12 @@ body.tuning{padding-bottom:62vh}
 @keyframes fxpop{0%{transform:scale(.6)}70%{transform:scale(1.08)}100%{transform:scale(1)}}
 .bigtime{font-family:var(--f-display);font-size:clamp(56px,11vw,140px);line-height:1;color:var(--gold);text-align:center;font-variant-numeric:tabular-nums}
 .bigtime.low{color:var(--bad)}
+.artbox{position:relative;overflow:hidden;border-radius:14px;width:100%;max-width:560px;margin:0 auto;aspect-ratio:4/3;background:var(--panel);box-shadow:0 10px 30px rgba(0,0,0,.35)}
+.artbox.tvsize{max-width:min(900px,100%)}
+.artbox svg,.artbox img{display:block;width:100%;height:100%;object-fit:cover}
+.artbox.zoom svg,.artbox.zoom img{transform-origin:var(--fx) var(--fy);animation:zoomout 28s cubic-bezier(.2,.6,.3,1) forwards;animation-delay:var(--zd,0s)}
+@keyframes zoomout{from{transform:scale(var(--z))}to{transform:scale(1)}}
+.emojiq{font-size:clamp(40px,8vw,96px)!important;line-height:1.25;letter-spacing:.06em;font-family:"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}.fxflash{animation:fxfade 1.7s linear forwards!important}}
 </style>
 </head>
@@ -180,7 +187,7 @@ const spotifyId=v=>{const m=/(?:track[\/:])([A-Za-z0-9]{22})/.exec(String(v||'')
 const media=q=>(q.audio||q.melody||spotifyId(q.spotify))?{spotify:spotifyId(q.spotify),audio:q.audio?String(q.audio):'',start:+q.start||0,length:Math.min(20,Math.max(2,+q.length||8)),melody:q.melody?String(q.melody):'',bpm:+q.bpm||100}:null;
 const acc=x=>(Array.isArray(x)?x:String(x||'').split('|')).map(v=>String(v).trim()).filter(Boolean).join('|');
 const BANK=(QB.categories||[]).filter(c=>c&&c.name&&Array.isArray(c.questions)).map((c,i)=>({id:String(c.name).toLowerCase().replace(/[^a-z0-9]+/g,'-')+'-'+i,name:String(c.name),
-  q:c.questions.filter(q=>q&&q.question&&q.answer&&!('spotify' in q&&!spotifyId(q.spotify))).map(q=>[Math.min(7,Math.max(1,parseInt(q.level,10)||3)),String(q.question),String(q.answer),String(q.hint||''),acc(q.accept),media(q)])})).filter(c=>c.q.length);
+  q:c.questions.filter(q=>q&&q.question&&q.answer&&!('spotify' in q&&!spotifyId(q.spotify))).map(q=>[Math.min(7,Math.max(1,parseInt(q.level,10)||3)),String(q.question),String(q.answer),String(q.hint||''),acc(q.accept),media(q),(q.image||c.style==='emoji')?{img:q.image?String(q.image):'',emoji:c.style==='emoji'}:null])})).filter(c=>c.q.length);
 const FINALS=(QB.finals||[]).filter(f=>f&&f.question&&f.answer).map(f=>[String(f.category||'Final Round'),String(f.question),String(f.answer),String(f.hint||''),acc(f.accept)]);
 if(!FINALS.length)FINALS.push(['The Disciples','Before following Jesus, this disciple was a tax collector. The first Gospel carries his name.','Matthew','He was also called Levi.','matthew|levi']);
 /* Spotify categories built from your playlists (questions.js: spotify). Links are matched by playlist position. */
@@ -235,7 +242,15 @@ const clone=o=>JSON.parse(JSON.stringify(o));
 const $=s=>document.querySelector(s);
 const rnd=a=>a[Math.floor(Math.random()*a.length)];
 const shuffle=a=>{a=[...a];for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
-const mkClue=x=>Object.assign({q:x[1],a:x[2],h:x[3]||'',alt:x[4]||''},x[5]?{m:x[5]}:{});
+const mkClue=x=>Object.assign({q:x[1],a:x[2],h:x[3]||'',alt:x[4]||''},x[5]?{m:x[5]}:{},x[6]?{img:x[6].img||'',emoji:!!x[6].emoji}:{});
+/* pictures for Scripture Snapshots: "art:key" uses a built-in drawing (images.js), anything else is an image file */
+const zoomSeen={};
+function picHTML(img,zoom,ep,size){if(!img)return '';let inner,fx=50,fy=50;
+  if(String(img).startsWith('art:')){const a=(window.BIBLE_ART||{})[String(img).slice(4)];if(!a)return '';inner=a.svg;fx=a.fx;fy=a.fy}
+  else inner=`<img src="${esc(img)}" alt="Picture clue">`;
+  let style=`--fx:${fx}%;--fy:${fy}%;--z:${zoom>=4?3.2:2.4}`;
+  if(zoom){const k=ep+':'+img;zoomSeen[k]=zoomSeen[k]||Date.now();style+=`;--zd:-${((Date.now()-zoomSeen[k])/1000).toFixed(2)}s`}
+  return `<div class="artbox ${zoom?'zoom':''} ${size||''}" style="${style}" role="img" aria-label="Picture clue">${inner}</div>`}
 /* lyric blanks: ___ shows as an underlined gap */
 const clueText=q=>esc(q).replace(/_{3,}/g,'<span class="blank" aria-label="blank"></span>');
 const short=(s,n)=>String(s??'').trim().slice(0,n);
@@ -638,7 +653,7 @@ function publicState(){
     cap:S.settings.cap,create:S.settings.playersCreate,mode:S.settings.mode,ans:S.settings.answers,turn:S.turn,epoch:S.epoch,open:!!S.buzzOpen,
     tm:{left:tLeft(),run:!!S.tmr.run,len:S.tmr.len},music:!!S.music,tmusic:S.tmusic!==false,snd:S.sound!==false,fx:S.fx||null,clip:S.clip?{n:S.clip.n,act:S.clip.act,at:S.clip.at||0}:null,hi:activeTeam()};
   if(S.cur&&cl){st.clue={cat:g.cats[S.cur.c].name,val:clueValue(),dd:isDD(),
-    q:ph==='clue'?cl.q:null,h:S.hint&&ph==='clue'?cl.h:null,a:S.revealed?(cl.a||(cl.song?'':null)):null,rev:!!S.revealed,m:ph==='clue'&&cl.m?cl.m:null,
+    q:ph==='clue'?cl.q:null,h:S.hint&&ph==='clue'?cl.h:null,a:S.revealed?(cl.a||(cl.song?'':null)):null,rev:!!S.revealed,m:ph==='clue'&&cl.m?cl.m:null,img:ph==='clue'&&cl.img?cl.img:null,emoji:!!cl.emoji,zoom:ph==='clue'&&cl.img&&!S.revealed&&S.cur.r>=3?S.cur.r:0,ep:S.epoch,
     who:S.answering,tried:S.tried,res:S.scored,queue:S.inbox.buzz.slice(0,6).map(p=>S.members[p]?.name||'Player')}}
   if(ph.startsWith('final')||ph==='over')st.fin={cat:g.final.cat,q:ph!=='final-cat'?g.final.q:null,h:S.hint&&ph==='final-clue'?g.final.h:null,a:(ph==='final-reveal'||ph==='over')?g.final.a:null,res:S.final.marks};
   return st;
@@ -942,7 +957,8 @@ function clueOverlay(){
   return `<div class="overlay" role="dialog" aria-label="Clue"><div class="ov-in">
     <div class="row"><span class="eyebrow">${esc(g.cats[c.c].name)} · ${dd?'Daily Double · wager '+val:val+' points'}${cl.from?` · from ${esc(cl.from)}`:''}</span><div class="spacer"></div>
       ${!S.revealed&&!dd?'<button class="btn-sm btn-ghost" data-act="swap">Swap for a random question</button>':''}<button class="btn-gold" data-act="close">Back to board</button></div>
-    <div class="cluebox">${cl.m?'<div class="cliptag">♪ Audio clip</div>':''}<div class="clue">${clueText(cl.q)}</div>${S.hint&&cl.h?`<div class="hint">Hint: ${esc(cl.h)}</div>`:''}</div>
+    ${cl.img?picHTML(cl.img,0,0):''}
+    <div class="cluebox">${cl.m?'<div class="cliptag">♪ Audio clip</div>':''}<div class="clue ${cl.emoji?'emojiq':''}">${clueText(cl.q)}</div>${cl.img&&S.cur.r>=3&&!S.revealed?'<div class="note" style="text-align:center">The TV starts zoomed in on this picture and slowly zooms out.</div>':''}${S.hint&&cl.h?`<div class="hint">Hint: ${esc(cl.h)}</div>`:''}</div>
     ${cl.m?`<div class="row"><span class="note" style="flex:1;min-width:0">♪ This clue has ${cl.m.spotify?'a Spotify clip':'an audio clip'}. Tap Play clip when you’re ready; it plays ${displayOn()?'on the TV board':'on this device'}.${cl.m.spotify?' The TV board’s browser should be logged into Spotify for full songs.':''}</span></div><div class="row"><span class="pill" id="clipstat" aria-live="polite">${esc(clipStatusText())}</span>
       ${clipState()==='playing'?'<button class="btn-sm" data-act="clip-pause">❚❚ Pause</button>':clipState()==='paused'?'<button class="btn-sm btn-gold" data-act="clip-resume">▶ Resume</button>':''}
       <button class="btn-sm ${clipState()==='idle'?'btn-gold':''}" data-act="clip-play">${clipState()==='idle'?'▶ Play clip':'↺ Play from the start'}</button><button class="btn-sm" data-act="clip-stop">■ Stop</button></div>
@@ -1058,7 +1074,8 @@ function playerHTML(){
     else if(st.mode==='buzz'&&who==null){const buzzed=pSent.buzz===st.epoch;act=tried?`<div class="status muted">Your team already tried this one.</div>`:`<button class="buzz" data-act="p-buzz" ${!st.open||buzzed?'disabled':''}>${buzzed?'IN!':'BUZZ'}</button><div class="status muted">${buzzed?'Buzzed! Waiting…':st.open?'Tap BUZZ when your team knows it.':'Buzzers are closed.'}</div>`}
     else act=`<div class="status"><b>${esc(who!=null?st.teams[who]?.name:'Another team')}</b> is answering.${tried?' Your team already tried.':''}</div>`;
     main=`<div class="eyebrow">${esc(c.cat)} · ${c.dd?'Daily Double':c.val+' points'}</div>
-    <div class="cluebox" style="min-height:130px">${c.m?'<div class="cliptag">♪ Listen to the clip on the TV</div>':''}<div class="clue" style="font-size:clamp(20px,5.5vw,34px)">${clueText(c.q||'')}</div>${c.h?`<div class="hint">Hint: ${esc(c.h)}</div>`:''}</div>
+    ${c.img?picHTML(c.img,c.zoom,c.ep):''}
+    <div class="cluebox" style="min-height:130px">${c.m?'<div class="cliptag">♪ Listen to the clip on the TV</div>':''}<div class="clue ${c.emoji?'emojiq':''}" style="${c.emoji?'':'font-size:clamp(20px,5.5vw,34px)'}">${clueText(c.q||'')}</div>${c.h?`<div class="hint">Hint: ${esc(c.h)}</div>`:''}</div>
     ${!c.a?timerP():''}${act}`;
   }else if(st.fin){
     const f=st.fin;
@@ -1100,7 +1117,8 @@ function displayHTML(){
   else if(st.ph==='clue'&&st.clue){
     const c=st.clue,who=c.who,res=c.res||{},r=who!=null?res[who]:null;
     main=`<div class="row"><span class="eyebrow" style="font-size:15px">${esc(c.cat)} · ${c.dd?'Daily Double · '+c.val:c.val+' points'}</span><div class="spacer"></div>${who!=null?`<span class="answering">${esc(st.teams[who]?.name)} answering</span>`:''}</div>
-    <div class="tvbox">${c.m?`<div class="cliptag" style="font-size:18px">♪ Listen${c.m.spotify?' · playing from Spotify':''}</div>`:''}<div class="tvclue">${clueText(c.q||'')}</div>${c.h?`<div class="hint" style="font-size:clamp(18px,2.6vw,30px)">Hint: ${esc(c.h)}</div>`:''}</div>
+    ${c.img?picHTML(c.img,c.zoom,c.ep,'tvsize'):''}
+    <div class="tvbox" style="${c.img?'min-height:0':''}">${c.m?`<div class="cliptag" style="font-size:18px">♪ Listen${c.m.spotify?' · playing from Spotify':''}</div>`:''}<div class="tvclue ${c.emoji?'emojiq':''}">${clueText(c.q||'')}</div>${c.h?`<div class="hint" style="font-size:clamp(18px,2.6vw,30px)">Hint: ${esc(c.h)}</div>`:''}</div>
     ${!c.a?timerP(true):''}
     ${r===1?`<div class="result ok">Correct! ${esc(st.teams[who]?.name)} +${c.val}</div>`:r===-1&&!c.a?'<div class="result no">Not quite</div>':''}
     ${c.a||(c.rev&&c.m&&c.m.spotify)?`<div class="answer revealed"><span class="eyebrow">Answer</span><span class="a" style="font-size:clamp(22px,3.4vw,44px)">${esc(c.a||'')}</span></div>${c.m&&c.m.spotify?songCard(c.m.spotify,152):''}`:''}

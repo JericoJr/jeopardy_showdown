@@ -5,7 +5,7 @@ A free Bible quiz game show for youth groups and young adults. The host runs the
 ## Put it online with GitHub Pages (free)
 
 1. Sign in at github.com and create a new **public** repository, for example `jeopardy_showdown`.
-2. Click **Add file → Upload files**, upload `index.html` and `questions.js`, then click **Commit changes**.
+2. Click **Add file → Upload files**, upload `index.html`, `questions.js` and `images.js`, then click **Commit changes**.
 3. Go to **Settings → Pages**. Under "Build and deployment", set **Source** to "Deploy from a branch", choose the `main` branch and the `/ (root)` folder, then click **Save**.
 4. Wait a minute or two. Your game is live at `https://<githubusername>.github.io/jeopardy_showdown/`.
 
@@ -50,6 +50,12 @@ In every mode, higher points always means a harder question.
 - **Sound effects and animations:** correct answers get a chime and a green **Correct!** flash; wrong answers get a buzz and a red **Wrong!** shake. They show on the TV board, the host screen and players' phones.
 - Turning **Sounds** off on the host also mutes the TV board.
 - Browsers can block sound until someone clicks the page. If the TV board shows **Click to turn on sound**, click it once on the laptop.
+
+### Picture and emoji categories
+
+- **Scripture Snapshots:** an original illustration appears, like a burning bush or a ladder of angels, and players name the Bible story. Easy rows show iconic scenes (Noah's ark, David and Goliath); expert rows show subtler ones (Aaron's budding rod, Ezekiel's wheels). On the 400 and 500 rows, the TV and phones start **zoomed in** on part of the picture and slowly zoom out. The host always sees the whole picture.
+- **Emoji Testament:** a Bible story told in emojis, like 🐋🙏🏙️ for Jonah, from Noah's ark at 100 to Ehud and King Eglon at expert.
+- The drawings live in `images.js`. To use your own picture, upload it to the repo and add `image: "images/your-photo.jpg"` to a question in `questions.js`. Use pictures you have the right to show.
 
 ### Song categories
 

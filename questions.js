@@ -30,6 +30,10 @@
     start      where the sound file starts, in seconds (default 0)
     length     how many seconds to play (default 8)
 
+  Pictures: add image: "art:burning-bush" to use a built-in drawing (see images.js),
+  or image: "images/your-photo.jpg" for your own picture uploaded to the repo.
+  Emoji categories: add style: "emoji" to a category and write the emojis as the question.
+
   Lyric questions: write three or more underscores ___ where the missing word
   goes, and the game shows an underlined blank.
 
@@ -457,6 +461,77 @@ window.QUESTION_BANK = {
         { level: 4, question: "\"Hark! The herald angels sing, glory to the newborn ___\"", answer: "King", hint: "The carol is \"Hark! The Herald Angels Sing.\"", accept: ["king"], melody: "C4:1 F4:1 F4:1.5 E4:0.5 F4:1 A4:1 A4:1 G4:1 C5:1 C5:1 C5:1.5 Bb4:0.5 A4:1 G4:1 A4:2", bpm: 112, length: 10 },
         { level: 5, question: "\"Praise God, from whom all ___ flow\"", answer: "Blessings", hint: "This is \"The Doxology.\"", accept: ["blessings"], melody: "G4:2 G4:1 F#4:1 E4:1 D4:2 G4:1 A4:1 B4:2 B4:1 B4:1 A4:1 G4:1 C5:1 B4:1 A4:2", bpm: 92, length: 10 },
         { level: 5, question: "\"When peace like a ___ attendeth my way\"", answer: "River", hint: "The hymn is \"It Is Well with My Soul.\"", accept: ["river"] }
+      ]
+    },
+    {
+      name: "Scripture Snapshots",
+      questions: [
+        { level: 1, question: "What Bible story does this picture show?", image: "art:burning-bush", answer: "Moses and the burning bush", hint: "God spoke to him from it (Exodus 3).", accept: ["moses", "burning bush", "moses and the burning bush"] },
+        { level: 1, question: "What Bible story does this picture show?", image: "art:noahs-ark", answer: "Noah’s ark", hint: "God set a rainbow in the sky afterward (Genesis 9).", accept: ["noah", "noahs ark", "noah s ark", "the flood", "noah and the ark"] },
+        { level: 1, question: "What Bible story does this picture show?", image: "art:big-fish", answer: "Jonah and the big fish", hint: "He spent three days inside it (Jonah 1).", accept: ["jonah", "jonah and the whale", "jonah and the big fish"] },
+        { level: 1, question: "What Bible story does this picture show?", image: "art:manger-star", answer: "The birth of Jesus", hint: "It happened in Bethlehem (Luke 2).", accept: ["jesus birth", "birth of jesus", "christmas", "nativity", "jesus in the manger", "baby jesus"] },
+        { level: 1, question: "What Bible story does this picture show?", image: "art:sling-stones", answer: "David and Goliath", hint: "A shepherd boy faced a giant (1 Samuel 17).", accept: ["david and goliath", "david", "goliath"] },
+        { level: 2, question: "What Bible story does this picture show?", image: "art:lions-den", answer: "Daniel in the lions’ den", hint: "He kept praying three times a day (Daniel 6).", accept: ["daniel", "daniel in the lions den", "lions den"] },
+        { level: 2, question: "What Bible story does this picture show?", image: "art:tower-babel", answer: "The Tower of Babel", hint: "God confused their language (Genesis 11).", accept: ["tower of babel", "babel"] },
+        { level: 2, question: "What Bible story does this picture show?", image: "art:empty-tomb", answer: "Jesus’ resurrection (the empty tomb)", hint: "The stone was rolled away (Matthew 28).", accept: ["resurrection", "empty tomb", "easter", "jesus rose", "the resurrection"] },
+        { level: 2, question: "What Bible story does this picture show?", image: "art:loaves-fishes", answer: "Feeding of the 5,000", hint: "Five loaves and two fish (John 6).", accept: ["feeding of the 5000", "feeding the 5000", "feeding of the five thousand", "five loaves and two fish", "loaves and fishes"] },
+        { level: 2, question: "What Bible story does this picture show?", image: "art:tree-serpent", answer: "Adam and Eve and the forbidden fruit", hint: "It happened in the Garden of Eden (Genesis 3).", accept: ["adam and eve", "the fall", "forbidden fruit", "garden of eden", "eve and the serpent"] },
+        { level: 2, question: "What Bible story does this picture show?", image: "art:red-sea", answer: "Parting of the Red Sea", hint: "Israel crossed on dry ground (Exodus 14).", accept: ["red sea", "parting of the red sea", "crossing the red sea", "moses parts the red sea"] },
+        { level: 3, question: "What Bible story does this picture show?", image: "art:coat-colors", answer: "Joseph’s coat of many colors", hint: "A gift from his father Jacob (Genesis 37).", accept: ["joseph", "josephs coat", "coat of many colors", "joseph s coat"] },
+        { level: 3, question: "What Bible story does this picture show?", image: "art:stone-tablets", answer: "The Ten Commandments", hint: "Moses brought them down from Mount Sinai (Exodus 20).", accept: ["ten commandments", "10 commandments", "the law", "moses"] },
+        { level: 3, question: "What Bible story does this picture show?", image: "art:ram-thicket", answer: "Abraham and Isaac (the ram in the thicket)", hint: "God provided a sacrifice (Genesis 22).", accept: ["abraham and isaac", "abraham", "isaac", "ram in the thicket", "abraham sacrifices isaac"] },
+        { level: 3, question: "What Bible story does this picture show?", image: "art:jericho-walls", answer: "The walls of Jericho", hint: "Joshua’s army marched and blew trumpets (Joshua 6).", accept: ["jericho", "walls of jericho", "battle of jericho", "joshua"] },
+        { level: 3, question: "What Bible story does this picture show?", image: "art:water-wine", answer: "Jesus turns water into wine", hint: "His first miracle, at a wedding in Cana (John 2).", accept: ["water into wine", "wedding at cana", "cana", "turning water into wine"] },
+        { level: 4, question: "What Bible story does this picture show?", image: "art:golden-calf", answer: "The golden calf", hint: "The people made it while Moses was on the mountain (Exodus 32).", accept: ["golden calf", "the golden calf", "aaron"] },
+        { level: 4, question: "What Bible story does this picture show?", image: "art:fiery-furnace", answer: "The fiery furnace", hint: "A fourth figure appeared with the three friends (Daniel 3).", accept: ["fiery furnace", "shadrach meshach and abednego", "shadrach", "meshach", "abednego", "the furnace"] },
+        { level: 4, question: "What Bible story does this picture show?", image: "art:samson-pillars", answer: "Samson pushing down the pillars", hint: "His strength returned one last time (Judges 16).", accept: ["samson", "samson and the pillars", "samson and delilah"] },
+        { level: 5, question: "What Bible story does this picture show?", image: "art:gideon-fleece", answer: "Gideon’s fleece", hint: "He asked God for a sign with dew (Judges 6).", accept: ["gideon", "gideons fleece", "gideon s fleece", "the fleece"] },
+        { level: 5, question: "What Bible story does this picture show?", image: "art:zacchaeus-tree", answer: "Zacchaeus in the sycamore tree", hint: "A short tax collector wanted to see Jesus (Luke 19).", accept: ["zacchaeus", "zaccheus"] },
+        { level: 5, question: "What Bible story does this picture show?", image: "art:jacobs-ladder", answer: "Jacob’s ladder", hint: "He dreamed of angels going up and down (Genesis 28).", accept: ["jacobs ladder", "jacob s ladder", "jacob", "jacobs dream"] },
+        { level: 5, question: "What Bible story does this picture show?", image: "art:bronze-serpent", answer: "The bronze serpent", hint: "People who looked at it were healed (Numbers 21).", accept: ["bronze serpent", "bronze snake", "brass serpent", "moses and the bronze serpent"] },
+        { level: 5, question: "What Bible story does this picture show?", image: "art:chariot-fire", answer: "Elijah taken up in a chariot of fire", hint: "Elisha watched him go (2 Kings 2).", accept: ["elijah", "chariot of fire", "elijah and the chariot", "elijah taken to heaven"] },
+        { level: 6, question: "What Bible story does this picture show?", image: "art:handwriting-wall", answer: "The writing on the wall", hint: "King Belshazzar’s feast (Daniel 5).", accept: ["writing on the wall", "handwriting on the wall", "belshazzar", "mene mene tekel", "belshazzars feast"] },
+        { level: 6, question: "What Bible story does this picture show?", image: "art:balaam-donkey", answer: "Balaam’s talking donkey", hint: "An angel stood in the road with a sword (Numbers 22).", accept: ["balaam", "balaams donkey", "balaam s donkey", "talking donkey"] },
+        { level: 6, question: "What Bible story does this picture show?", image: "art:floating-axe", answer: "Elisha and the floating axe head", hint: "A borrowed tool fell into the Jordan (2 Kings 6).", accept: ["floating axe", "elisha", "floating axe head", "axe head"] },
+        { level: 7, question: "What Bible story does this picture show?", image: "art:ezekiel-wheels", answer: "Ezekiel’s vision of the wheels", hint: "The rims were full of eyes (Ezekiel 1).", accept: ["ezekiel", "ezekiels wheels", "ezekiel s wheels", "wheel in a wheel", "ezekiels vision"] },
+        { level: 7, question: "What Bible story does this picture show?", image: "art:aarons-rod", answer: "Aaron’s rod that budded", hint: "It sprouted, blossomed and grew almonds (Numbers 17).", accept: ["aarons rod", "aaron s rod", "aaron", "aarons staff", "the budding rod"] }
+      ]
+    },
+    {
+      name: "Emoji Testament",
+      style: "emoji",
+      questions: [
+        { level: 1, question: "🌧️🚢🐘🦒🐑🌈", answer: "Noah’s ark", hint: "Genesis 6–9.", accept: ["noahs ark", "noah", "the flood"] },
+        { level: 1, question: "🐋🙏🏙️", answer: "Jonah and the big fish", hint: "He ran from God but ended up in Nineveh.", accept: ["jonah", "jonah and the whale", "jonah and the big fish"] },
+        { level: 1, question: "👶⭐🐑🐄🎁🎁🎁", answer: "The birth of Jesus", hint: "Luke 2.", accept: ["birth of jesus", "christmas", "nativity", "jesus birth"] },
+        { level: 1, question: "👦🪨➡️🧔‍♂️⬆️⬆️😵", answer: "David and Goliath", hint: "1 Samuel 17.", accept: ["david and goliath", "david", "goliath"] },
+        { level: 1, question: "👫🌳🍎🐍", answer: "Adam and Eve", hint: "The first sin, in the garden.", accept: ["adam and eve", "the fall", "garden of eden"] },
+        { level: 2, question: "🙏🦁🦁🦁😇", answer: "Daniel in the lions’ den", hint: "Daniel 6.", accept: ["daniel", "lions den", "daniel in the lions den"] },
+        { level: 2, question: "🍞🍞🍞🍞🍞🐟🐟➡️👨‍👩‍👧‍👦✖️5️⃣0️⃣0️⃣0️⃣", answer: "Feeding of the 5,000", hint: "Everyone ate and there were leftovers.", accept: ["feeding of the 5000", "feeding the 5000", "loaves and fishes"] },
+        { level: 2, question: "🌊🪄🌊🚶‍♂️🚶‍♀️🚶", answer: "Parting of the Red Sea", hint: "Exodus 14.", accept: ["red sea", "parting of the red sea", "crossing the red sea"] },
+        { level: 2, question: "🧱🧱🏗️☁️🗣️❓", answer: "The Tower of Babel", hint: "Genesis 11.", accept: ["tower of babel", "babel"] },
+        { level: 2, question: "🪨➡️🚪✝️😇🌅", answer: "The resurrection", hint: "Early on the first day of the week.", accept: ["resurrection", "easter", "empty tomb", "jesus rose"] },
+        { level: 3, question: "🎺🎺🎺🔄7️⃣🧱💥", answer: "The walls of Jericho", hint: "Joshua 6.", accept: ["jericho", "walls of jericho", "battle of jericho"] },
+        { level: 3, question: "👦💰➡️🎉🐖😢➡️🏠🤗", answer: "The prodigal son", hint: "A father welcomes a son home (Luke 15).", accept: ["prodigal son", "the prodigal son", "lost son"] },
+        { level: 3, question: "🤕🛣️🚶😒🚶😒🫏🤝", answer: "The Good Samaritan", hint: "Luke 10.", accept: ["good samaritan", "the good samaritan"] },
+        { level: 3, question: "💍🎉🏺💧➡️🍷", answer: "Water into wine", hint: "The wedding at Cana (John 2).", accept: ["water into wine", "wedding at cana", "cana"] },
+        { level: 3, question: "🪦4️⃣📅➡️🗣️🚶‍♂️", answer: "Jesus raises Lazarus", hint: "John 11.", accept: ["lazarus", "raising of lazarus", "jesus raises lazarus"] },
+        { level: 4, question: "💪💇‍♂️✂️😩🏛️💥", answer: "Samson", hint: "Delilah was involved (Judges 16).", accept: ["samson", "samson and delilah"] },
+        { level: 4, question: "🤏🧔🌳👀➡️🏠🍽️", answer: "Zacchaeus", hint: "A tax collector climbed up to see Jesus (Luke 19).", accept: ["zacchaeus", "zaccheus"] },
+        { level: 4, question: "🔥🔥🔥🧍🧍🧍➕😇", answer: "The fiery furnace", hint: "Daniel 3.", accept: ["fiery furnace", "shadrach meshach and abednego"] },
+        { level: 4, question: "🔥🌳🗣️👞⬇️", answer: "Moses and the burning bush", hint: "God told him to take off his sandals.", accept: ["burning bush", "moses"] },
+        { level: 4, question: "🌊🚶‍♂️👀😨🫴", answer: "Peter walks on water", hint: "Matthew 14.", accept: ["peter walks on water", "walking on water", "peter"] },
+        { level: 5, question: "😴🪨🪜👼👼", answer: "Jacob’s ladder", hint: "Genesis 28.", accept: ["jacobs ladder", "jacob", "jacob s ladder"] },
+        { level: 5, question: "🐑🧶💧☀️", answer: "Gideon’s fleece", hint: "Judges 6.", accept: ["gideon", "gideons fleece", "gideon s fleece"] },
+        { level: 5, question: "🔥🐎🛞🌪️⬆️", answer: "Elijah taken up to heaven", hint: "2 Kings 2.", accept: ["elijah", "chariot of fire"] },
+        { level: 5, question: "👑👸🙏🎉🪢", answer: "Esther saves her people", hint: "Esther 7.", accept: ["esther", "queen esther"] },
+        { level: 6, question: "🫏🗣️⚔️👼", answer: "Balaam’s donkey", hint: "Numbers 22.", accept: ["balaam", "balaams donkey", "talking donkey"] },
+        { level: 6, question: "🍷👑✋✍️🧱😱", answer: "The writing on the wall", hint: "Daniel 5.", accept: ["writing on the wall", "belshazzar", "handwriting on the wall"] },
+        { level: 6, question: "⛓️😴👼🔓🚪➡️🚪✊😮", answer: "Peter freed from prison", hint: "Rhoda was too excited to open the door (Acts 12).", accept: ["peter freed from prison", "peter in prison", "peter escapes prison"] },
+        { level: 6, question: "🌾👩‍🌾👣👵🤝🧔", answer: "Ruth and Boaz", hint: "She gleaned in his field (Ruth 2).", accept: ["ruth", "ruth and boaz", "ruth and naomi"] },
+        { level: 7, question: "🫲🗡️🫃👑", answer: "Ehud and King Eglon", hint: "A left-handed judge (Judges 3).", accept: ["ehud", "ehud and eglon"] },
+        { level: 7, question: "🪓🌊⬇️🪵➡️⬆️🙌", answer: "Elisha and the floating axe head", hint: "2 Kings 6.", accept: ["floating axe", "elisha", "axe head"] },
+        { level: 7, question: "😴🪟⬇️💀🙏😮", answer: "Eutychus", hint: "He fell asleep during Paul’s long sermon (Acts 20).", accept: ["eutychus"] }
       ]
     }
   ],
