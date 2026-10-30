@@ -189,6 +189,10 @@ body.tuning{padding-bottom:62vh}
 .ddwager b{font-family:var(--f-display);font-weight:400;font-size:clamp(40px,9vw,96px);color:var(--gold);line-height:1}
 .catpick button.off{opacity:.5;text-decoration:line-through}
 .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--panel);border:1px solid var(--gold);border-radius:10px;padding:10px 14px;z-index:60;max-width:90vw}
+.spotdd>summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:8px;font-weight:600;min-height:28px}
+.spotdd>summary::-webkit-details-marker{display:none}
+.spotdd:not([open]){padding-top:10px;padding-bottom:10px;gap:0}
+.spotdd .spotsum{flex:1;min-width:0}.spotdd .spotchev{transition:transform .2s;opacity:.7}.spotdd[open] .spotchev{transform:rotate(180deg)}
 .steps{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:6px}
 .order{display:flex;align-items:center;justify-content:center;gap:6px 8px;flex-wrap:wrap;background:var(--panel);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:8px 10px}
 .order .olab{width:100%;text-align:center;margin-bottom:-2px}
@@ -330,7 +334,14 @@ setup.skip=(setup.skip||[]).filter(n=>BANK.some(b=>b.name===n));
 setup.settings=Object.assign(clone(DEF_SET),setup.settings||{});
 if(!PRESETS.some(p=>p.id===setup.preset))setup.preset='random';
 setup.pick=(setup.pick||[]).filter(id=>BANK.some(b=>b.id===id));
-let showSpot=false,hostHideSpot=false,cidDraft='';let view='role',edit=null,editFrom='setup',confirmDel=false,peek=false,showLobby=false,confirmNew=false,confirmRm=null,confirmEnd=false,ended=false;
+let spotOpen=false,cidDraft='';
+/* full screen (not available on iPhone; iPad and computers are fine) */
+const canFull=()=>!!(document.fullscreenEnabled||document.webkitFullscreenEnabled);
+const isFull=()=>!!(document.fullscreenElement||document.webkitFullscreenElement);
+function toggleFull(){const d=document,el=d.documentElement;try{if(isFull()){const x=d.exitFullscreen||d.webkitExitFullscreen;x&&x.call(d)}else{const r=el.requestFullscreen||el.webkitRequestFullscreen;const pr=r&&r.call(el);pr&&pr.catch&&pr.catch(()=>{})}}catch{}}
+document.addEventListener('fullscreenchange',()=>render());document.addEventListener('webkitfullscreenchange',()=>render());
+/* remember whether the Spotify dropdown is open, so it stays that way when the screen updates */
+document.addEventListener('toggle',e=>{const t=e.target;if(!t||!t.id)return;if(t.id==='spotcard')spotOpen=t.open;if(t.id==='tvspot'){D.spotOpen=t.open;saveDisplay()}},true);let view='role',edit=null,editFrom='setup',confirmDel=false,peek=false,showLobby=false,confirmNew=false,confirmRm=null,confirmEnd=false,ended=false;
 let P=Object.assign({pid:uid(),name:'',code:'',step:'code'},store.get('ssw.player',{}));
 let D=Object.assign({code:'',step:'code'},store.get('ssw.display',{}));
 let PS=null,PSkey='',pDraft={wager:'',ans:'',fans:'',team:''},pTimer={end:0,left:0,run:false,len:1},pSent={buzz:-1,ans:-1,wager:-1,fans:-1};
@@ -630,32 +641,34 @@ function premiumHTML(onTV){const cid=SpotAuth.cid(),linked=SpotAuth.linked(),tv=
     :tv?'<b>Linked.</b> Connecting the TV board to Spotify…':!sdkSupported()?'<b>Linked.</b> Phones and tablets can’t run Spotify’s player. Connect a TV board on a computer, or link Spotify on the TV board itself.':'<b>Linked.</b> Starting Spotify’s player…';
   return `${head}<span class="note">${msg}</span><div class="row">${sdk==='auth'?'<button class="btn-sm btn-gold" data-act="spot-login">Log in with Spotify</button>':''}<button class="btn-sm btn-ghost" data-act="spot-unlink">Unlink Spotify</button></div>`}
 /* host only: is the Jeopardy theme able to play the whole song on the screen that plays sound? */
-function spotifyCardHTML(alertOnly){const st=spotState(),tv=displayOn(),where=tv?'the TV board':'this device',fo=S.fullOnly!==false;
-  if(st==='none'||st==='file'||(alertOnly&&(st!=='preview'||hostHideSpot)))return '';
-  const x='<button class="btn-sm btn-ghost spotx" data-act="spot-hide" aria-label="Close">✕</button>';
-  if(st==='premium')return `<div class="card spotcard" id="spotcard" style="gap:8px"><div class="row"><div class="eyebrow" style="flex:1">🎵 Theme music · Spotify <span class="muted" style="text-transform:none;letter-spacing:0">(only you see this)</span></div>${x}</div>${premiumHTML()}</div>`;
+/* the Spotify dropdown: a one-line summary that opens to the details */
+function spotDD(id,open,summary,bad,body){return `<details class="card spotcard spotdd" id="${id}" ${open?'open':''} style="gap:8px;${bad?'border-color:var(--bad)':''}"><summary><span class="spotsum">${summary}</span><span class="spotchev" aria-hidden="true">▾</span></summary><div class="col" style="gap:8px;margin-top:8px">${body}</div></details>`}
+function spotifyCardHTML(){const st=spotState(),tv=displayOn(),where=tv?'the TV board':'this device',fo=S.fullOnly!==false;
+  if(st==='none'||st==='file')return '';
+  const tag='<span class="muted" style="font-weight:400"> · only you see this</span>';
+  if(st==='premium')return spotDD('spotcard',spotOpen,`🎵 Spotify <b class="ok">✓ Premium linked</b>${tag}`,false,premiumHTML());
+  const sum=st==='full'?`🎵 Spotify <b class="ok">✓ logged in on ${tv?'the TV board':'this device'}</b>`:st==='checking'?'🎵 Spotify · checking…':`🎵 Spotify <b class="no">⚠ not linked: tap to fix</b>`;
   const head=st==='full'?`<b class="ok">✓ Spotify is logged in on ${where}.</b> <span class="note">The whole theme song plays and loops.</span>`
     :st==='checking'?`<b>Checking Spotify on ${where}…</b> <span class="note">This takes a few seconds after the theme loads.</span>`
     :`<b class="no">Spotify isn’t logged in on ${where}.</b> <span class="note">Without a login, Spotify only plays a 30-second preview from the middle of the song. ${fo?'The theme stays off until it’s fixed (Full song only is on).':'The preview is playing for now.'}</span>`;
-  const how=st==='full'?'':tv?`<span class="note">Fix it on the TV laptop: the board has its own <b>🎵 Spotify</b> button where you can log in or link Premium there. Or link Premium below from this device. Then tap <b>Check again</b>.</span>`
+  const how=st==='full'?'':tv?`<span class="note">Fix it on the TV laptop: open the board’s <b>🎵 Spotify</b> dropdown and log in or link Premium there. Or link Premium below from this device. Then tap <b>Check again</b>.</span>`
     :`<span class="note">Tap <b>Log in on this device</b>, log in on the page that opens (free accounts work), come back and tap <b>Check again</b>.${isiOS()?' On iPhone and iPad, also turn off Settings › Apps › Safari › Prevent Cross-Site Tracking, or Safari hides the login from the game.':''}</span>`;
-  return `<div class="card spotcard" id="spotcard" style="gap:8px;${st==='preview'?'border-color:var(--bad)':''}"><div class="row"><div class="eyebrow" style="flex:1">🎵 Theme music · Spotify <span class="muted" style="text-transform:none;letter-spacing:0">(only you see this)</span></div>${x}</div>
-    <div>${head}</div>${how}
+  return spotDD('spotcard',spotOpen,sum+tag,st==='preview',`<div>${head}</div>${how}
     <div class="row">${!tv&&st!=='full'?`<a class="btn btn-sm" href="${SPOT_LOGIN}" target="_blank" rel="noopener">Log in on this device</a>`:''}${st!=='full'?'<button class="btn-sm" data-act="spot-check">Check again</button>':''}
       <button class="btn-sm" data-act="spot-full" aria-pressed="${fo}">Full song only: ${fo?'on':'off'}</button></div>
     <span class="note">${fo?'Full song only is on: the theme never plays Spotify’s 30-second preview.':'Full song only is off: if Spotify isn’t logged in, the 30-second preview plays.'}</span>
-    ${premiumHTML()}</div>`}
-function tvSpotCardHTML(){if(view!=='display'||D.hideSpot||!ThemeSpot.id()||Music.buf)return '';
-  if(SpotSDK.state==='ready')return '';const pv=ThemeSpot.preview;
-  const head=pv===false?'<b class="ok">✓ Spotify is logged in here.</b> <span class="note">The whole theme plays and loops.</span>'
+    ${premiumHTML()}`)}
+function tvSpotCardHTML(){if(view!=='display'||!ThemeSpot.id()||Music.buf)return '';const pv=ThemeSpot.preview,ready=SpotSDK.state==='ready';
+  const sum=ready?'🎵 Spotify <b class="ok">✓ Premium linked</b>':pv===false?'🎵 Spotify <b class="ok">✓ logged in</b>':pv===true?'🎵 Spotify <b class="no">⚠ not logged in</b>':'🎵 Spotify';
+  const head=ready?'<b class="ok">✓ Linked to Spotify Premium.</b> <span class="note">The whole theme plays on repeat.</span>'
+    :pv===false?'<b class="ok">✓ Spotify is logged in here.</b> <span class="note">The whole theme plays and loops.</span>'
     :pv===true?'<b class="no">Spotify isn’t logged in on this TV board.</b> <span class="note">Without a login, Spotify only plays a 30-second preview from the middle of the song.</span>'
-    :'<b>Spotify on this TV board</b> <span class="note">Log in here so the theme plays the whole song.</span>';
-  return `<div class="card spotcard" id="tvspot" style="gap:8px;${pv===true?'border-color:var(--bad)':''}"><div class="row"><div class="eyebrow" style="flex:1">🎵 Theme music · Spotify</div><button class="btn-sm btn-ghost" data-act="spot-hide" aria-label="Close">✕ Close</button></div>
-    <div>${head}</div>
-    ${pv===false?'':`<span class="note">Free account: tap <b>Log in to Spotify</b>, log in on the page that opens, come back here and tap <b>Check again</b>.</span>
+    :'<span class="note">Log in here so the theme plays the whole song.</span>';
+  return spotDD('tvspot',!!D.spotOpen,sum,pv===true&&!ready,`<div>${head}</div>
+    ${pv===false||ready?'':`<span class="note">Free account: tap <b>Log in to Spotify</b>, log in on the page that opens, come back here and tap <b>Check again</b>.</span>
     <div class="row"><a class="btn btn-sm" href="${SPOT_LOGIN}" target="_blank" rel="noopener">Log in to Spotify</a><button class="btn-sm" data-act="spot-check">Check again</button></div>`}
     ${premiumHTML(true)}
-    <span class="note">Everyone watching the TV can see this card. Close it with ✕, and reopen it with 🎵 Spotify at the top.</span></div>`}
+    <span class="note">Everyone watching the TV can see this. Tap 🎵 Spotify to close it.</span>`)}
 function updateSoundWarn(){const el=$('#sndwarn');if(!el)return;const show=view==='display'&&D.step==='live'&&!D.mute&&soundBlocked()&&!Clip.paused;
   el.innerHTML=show?'<button class="btn-sm btn-gold" data-act="d-unlock">🔊 Click to turn on sound</button>':''}
 setInterval(()=>{updateSoundWarn();if(view==='host'&&S&&S.clip){const el=$('#clipstat');if(el){const t=clipStatusText();if(el.textContent!==t)el.textContent=t;
@@ -1163,10 +1176,11 @@ function lobbyHTML(inOverlay){
 }
 function hostHTML(){
   const g=S.game;
-  if(S.phase==='lobby')return `<div class="row"><div><div class="eyebrow">Jeopardy Showdown · lobby</div><h1 style="font-family:var(--f-display);font-weight:400;font-size:clamp(24px,4vw,38px);text-transform:uppercase">${esc(g.title)}</h1></div><div class="spacer"></div><div id="conn">${connHTML()}</div></div>${hostHideSpot&&!showSpot?'<div class="row"><button class="btn-sm" data-act="spot-panel">🎵 Spotify</button></div>':spotifyCardHTML(false)}${lobbyHTML(false)}`;
+  if(S.phase==='lobby')return `<div class="row"><div><div class="eyebrow">Jeopardy Showdown · lobby</div><h1 style="font-family:var(--f-display);font-weight:400;font-size:clamp(24px,4vw,38px);text-transform:uppercase">${esc(g.title)}</h1></div><div class="spacer"></div>${canFull()?`<button class="btn-sm" data-act="fs">${isFull()?'Exit full screen':'⛶ Full screen'}</button>`:''}<div id="conn">${connHTML()}</div></div>${spotifyCardHTML()}${lobbyHTML(false)}`;
   const allUsed=S.used.every(c=>c.every(Boolean));
   return `<div class="row"><div><div class="eyebrow">Jeopardy Showdown · host</div><h1 style="font-family:var(--f-display);font-weight:400;font-size:clamp(24px,4vw,38px);letter-spacing:.02em;text-transform:uppercase">${esc(g.title)}</h1></div><div class="spacer"></div>
-    <button class="btn-sm" data-act="show-lobby">Code ${esc(S.code)} · teams & QR</button><button class="btn-sm ${spotState()==='premium'?'':'btn-gold'}" data-act="spot-panel" aria-expanded="${!!showSpot}">🎵 Spotify${spotState()==='premium'?' ✓':''}</button><div id="conn">${connHTML()}</div></div>
+    <button class="btn-sm" data-act="show-lobby">Code ${esc(S.code)} · teams & QR</button>${canFull()?`<button class="btn-sm" data-act="fs">${isFull()?'Exit full screen':'⛶ Full screen'}</button>`:''}<div id="conn">${connHTML()}</div></div>
+  ${spotifyCardHTML()}
   ${orderHTML(orderState())}
   <div class="turnbar"><span class="eyebrow">${classic()?'In control':'Picking now'}</span><b>${esc(S.teams[S.turn]?.name||'No teams yet')}</b><span class="spacer"></span><span class="note">${classic()?'Classic Jeopardy':'Team Order'} · ${esc(LEVEL_NAMES[S.settings.level]||'All levels')} · ${S.settings.mode==='turns'?'next team steals':'buzz-in'} · ${S.settings.answers==='typed'?'typed answers'+(S.settings.auto?', auto-scored':''):'answers out loud'}</span></div>
   <div class="scores" id="scores">${scoresInner(true)}</div>
@@ -1185,10 +1199,9 @@ function hostHTML(){
   </div>
   ${confirmEnd?endConfirmHTML():''}
   <div class="note">${S.tv?'Answers and hints are hidden on this screen until you reveal them. Use “Peek” to check privately.':'Answers show on this screen. If this screen is ever on the TV, turn on “Hide answers”.'}${S.dds.length?` ${S.dds.length===1?'A Daily Double is':'Two Daily Doubles are'} hidden on the board.`:''}</div>
-  ${showSpot?spotifyCardHTML(false):spotifyCardHTML(true)}
   <details class="card"><summary class="eyebrow" style="cursor:pointer">Music & sounds</summary>
     <span class="note">${displayOn()?'The TV board is connected, so music and sounds play there.':'No TV board is connected, so music and sounds play on this device.'} The theme plays on the board, and suspenseful timer music plays while the timer runs. The only sound effects are for correct and wrong answers.</span>
-    ${spotifyCardHTML(false)}${displayOn()?'':musicControlsHTML()}</details>
+    ${displayOn()?'':musicControlsHTML()}</details>
   <div class="card" style="gap:6px"><div class="eyebrow">Players</div><div id="plist">${playersHTML()}</div></div>
   ${showLobby?`<div class="overlay" role="dialog" aria-label="Teams and join info"><div class="ov-in">${lobbyHTML(true)}</div></div>`:''}
   ${S.phase==='clue'||S.phase==='dd'?clueOverlay():''}
@@ -1405,7 +1418,7 @@ function playerHTML(){
     else if(st.ph==='final-reveal')main=`<span class="eyebrow">Final round · ${esc(f.cat)}</span><div class="cluebox" style="min-height:120px"><div class="clue" style="font-size:clamp(20px,5.5vw,30px)">${esc(f.q)}</div></div><div class="answer revealed"><span class="eyebrow">Answer</span><span class="a">${esc(f.a)}</span></div>${f.res&&f.res[mi]===1?'<div class="big-status" style="color:var(--good)">Your team got it!</div>':f.res&&f.res[mi]===-1?'<div class="status no">Not this time.</div>':''}`;
     else{const max=st.teams.length?Math.max(...st.teams.map(t=>t.score)):0;const won=myTeam.score===max;main=`<div class="cluebox"><div class="eyebrow" style="text-align:center">Winner</div><div class="banner">${st.teams.filter(t=>t.score===max).map(t=>esc(t.name)).join(' & ')}</div>${won?'<div class="status">That’s your team. Well played!</div>':''}</div>`}
   }
-  return `<div class="row"><div style="min-width:0"><div class="eyebrow">${esc(st.title)} · ${esc(P.code)}</div><h2>${esc(P.name)} <span class="muted" style="font-weight:400">· ${esc(myTeam.name)}</span></h2></div><div class="spacer"></div><div id="conn">${connHTML()}</div></div>
+  return `<div class="row"><div style="min-width:0"><div class="eyebrow">${esc(st.title)} · ${esc(P.code)}</div><h2>${esc(P.name)} <span class="muted" style="font-weight:400">· ${esc(myTeam.name)}</span></h2></div><div class="spacer"></div>${canFull()?`<button class="btn-sm btn-ghost" data-act="fs" aria-label="Full screen">${isFull()?'Exit full screen':'⛶'}</button>`:''}<div id="conn">${connHTML()}</div></div>
   ${main}
   <div class="scores">${st.teams.map((t,i)=>`<div class="team ${st.hi===i?'turn':''}">${st.hi===i?`<span class="badge">${st.ph==='clue'&&st.clue&&st.clue.who===i?'Answering':'Picking'}</span>`:''}<span class="nm">${esc(t.name)}${i===mi?' <span class="muted">(you)</span>':''}</span><span class="sc ${t.score<0?'neg':''}">${t.score}</span><span class="mem">${esc((t.m||[]).map(m=>m.n).join(', '))}</span></div>`).join('')}</div>
   <div><button class="btn-ghost btn-sm" data-act="p-leave">Leave game</button></div>`;
@@ -1428,7 +1441,7 @@ function displayHTML(){
       <button class="btn-ghost btn-sm" data-act="go-role">Back</button></div>`;
   const st=PS;
   const bar=`<div class="row"><span class="eyebrow">${esc(st?.title||'Jeopardy Showdown')} · Join with code <b style="color:var(--gold)">${esc(D.code)}</b></span><div class="spacer"></div><div id="conn">${connHTML()}</div>
-    <span id="sndwarn"></span><button class="btn-sm btn-ghost" data-act="d-sound">${D.mute?'Sound: off':'Sound: on'}</button><button class="btn-sm btn-ghost" data-act="d-full">Full screen</button><button class="btn-sm btn-ghost" data-act="spot-panel" aria-label="Spotify">🎵${SpotSDK.state==='ready'?' ✓':''}</button><button class="btn-sm btn-ghost" data-act="d-leave">Exit</button></div>${tvSpotCardHTML()}`;
+    <span id="sndwarn"></span><button class="btn-sm btn-ghost" data-act="d-sound">${D.mute?'Sound: off':'Sound: on'}</button>${canFull()?`<button class="btn-sm btn-ghost" data-act="fs">${isFull()?'Exit full screen':'⛶ Full screen'}</button>`:''}<button class="btn-sm btn-ghost" data-act="d-leave">Exit</button></div>${tvSpotCardHTML()}`;
   if(!st)return `${bar}<div class="tvbox"><div class="big-status">${net==='live'?'Loading…':'Connecting to the host…'}</div>${netNote()}</div>`;
   const scores=`<div class="scores">${st.teams.map((t,i)=>`<div class="team ${st.hi===i?'turn':''}">${st.hi===i?`<span class="badge">${st.ph==='clue'&&st.clue&&st.clue.who===i?'Answering':st.ph==='board'?'Picking':'Their turn'}</span>`:''}<span class="nm">${esc(t.name)}</span><span class="sc ${t.score<0?'neg':''}">${t.score}</span><span class="mem">${esc((t.m||[]).map(m=>m.n).join(', '))}</span></div>`).join('')}</div>`;
   let main='';
@@ -1536,8 +1549,7 @@ document.addEventListener('click',e=>{
     case 'spot-copyuri':{try{navigator.clipboard.writeText(spotRedirect());alertNote('Copied.')}catch{}break}
     case 'spot-login':{const w=window.open('about:blank','_blank');SpotAuth.login().then(u=>{if(!u)return;if(w)w.location.href=u;else location.href=u});break}
     case 'spot-unlink':SpotAuth.unlink();SpotSDK.stopAll();if(view==='display'){SpotSDK.report('off');themeSourceChanged();render();break}S.hostSdk='';conns.forEach((inf,c)=>{if(inf.role==='display'){inf.spotTok=null;try{c.send({t:'spottoken',a:''})}catch{}}});themeSourceChanged();render();break;
-    case 'spot-hide':if(view==='display'){D.hideSpot=true;saveDisplay()}else{showSpot=false;hostHideSpot=true}render();break;
-    case 'spot-panel':if(view==='display'){D.hideSpot=!D.hideSpot;saveDisplay();render();break}if(hostHideSpot){hostHideSpot=false;showSpot=true}else showSpot=!showSpot;render();if(showSpot)setTimeout(()=>{const c=$('#spotcard');c&&c.scrollIntoView({behavior:'smooth',block:'start'})},50);break;
+    case 'fs':toggleFull();break;
     case 'spot-full':S.fullOnly=S.fullOnly===false;commit();if(!displayOn())ThemeSpot.kick();break;
     case 'spot-check':if(view==='display'){sentPv=null;resetSpotify();render();break}if(displayOn()){S.tvSpot=null;S.spotCheck=(S.spotCheck||0)+1;commit()}else{resetSpotify();render()}break;
     case 'autoplay':S.settings.autoplay=!S.settings.autoplay;setup.settings.autoplay=S.settings.autoplay;saveSetup();commit();break;
@@ -1606,7 +1618,7 @@ document.addEventListener('click',e=>{
     /* display */
     case 'd-code':{ended=false;setTimeout(tvSpotLinked,0);const c=String(D.code||'').toUpperCase().replace(/[^A-Z]/g,'');if(c.length!==4){$('#d-code')?.focus();return}D.code=c;D.step='live';saveDisplay();PS=null;PSkey='';clientOpen(c,'display');keepAwake();render();break}
     case 'd-leave':D.step='code';saveDisplay();netClose();Music.stop();Clip.stop();lastFx=null;lastClip=null;PS=null;PSkey='';view='role';render();break;
-    case 'd-full':try{const r=document.documentElement.requestFullscreen?.();r&&r.catch&&r.catch(()=>{})}catch{}break;
+    case 'd-full':toggleFull();break;
   }
 });
 document.addEventListener('input',e=>{

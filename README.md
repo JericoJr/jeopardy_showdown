@@ -59,8 +59,8 @@ In both styles, any player on the picking team can tap a clue on their phone to 
 - **Spotify Premium link (recommended, needs Spotify Premium):** log in once on the host device and the TV board plays the whole theme on repeat through your account, with no login needed on the TV.
   - One-time setup on the host device: go to developer.spotify.com/dashboard, tap **Create app**, paste the **Redirect URI** the card shows (for example `https://<githubusername>.github.io/jeopardy_showdown/`), check **Web API** and **Web Playback SDK**, save, then copy the app's **Client ID** into the card. Then tap **Log in with Spotify**.
   - Your Client ID and login are saved only in that device's browser. Nothing is added to the repo or the game's files, and players' phones never receive them.
-  - **Or link Spotify on the TV board itself:** the TV board has its own **🎵** button (top right) that opens its Spotify card. Log in there (free account) or set up the Premium link on the laptop, with the same steps. This is the way to go when the host is an iPad or iPhone that can't connect to Spotify: the iPad hosts and the laptop plays the full theme. The host's Spotify card shows ✓ once the TV board is linked.
-  - Both Spotify cards can be closed with **✕** and reopened with **🎵 Spotify** (host) or **🎵** (TV board). Everyone watching the TV can see the TV board's card, so close it before the game starts.
+  - **Or link Spotify on the TV board itself:** the TV board has its own **🎵 Spotify** dropdown at the top. Log in there (free account) or set up the Premium link on the laptop, with the same steps. This is the way to go when the host is an iPad or iPhone that can't connect to Spotify: the iPad hosts and the laptop plays the full theme. The host's Spotify card shows ✓ once the TV board is linked.
+  - On both the host and the TV board, Spotify is a dropdown: one line that shows whether it's linked (✓ or ⚠). Tap it to open or close the details. Everyone watching the TV can see the TV board's dropdown line, so keep it closed during the game.
   - The TV board needs a computer browser (Chrome, Edge, Firefox or Safari). Phones and tablets can't run Spotify's player, so with no TV board connected, an iPhone or iPad host uses the regular Spotify player below.
 - **Without Premium:** the screen playing sound must be logged into Spotify (open.spotify.com in the same browser), or Spotify only plays a 30-second preview from the middle of the song.
   - Sound on the host's device: tap **Log in on this device**, log in (free accounts work), come back and tap **Check again**. On iPhone and iPad, also turn off Settings › Apps › Safari › Prevent Cross-Site Tracking.
@@ -129,6 +129,8 @@ Each category looks like this:
 You can also edit the questions for a single game from the host screen with **Edit questions**, and save those games on your device.
 
 ## Good to know
+
+- **Full screen:** the host, the TV board and players' phones have a **⛶ Full screen** button during the game (tap again to exit). iPhones don't allow web pages to go full screen, so the button doesn't show there; iPads, Android phones and computers are fine.
 
 - **AirPlay to a TV (for example a Roku TV):** on a Mac, mirroring sends the picture but keeps the sound on the Mac until you pick the TV: open **Control Center › Sound** and choose your TV. On iPhone or iPad, turn the volume up; the game plays sound even when the silent switch is on. On a Roku TV, make sure AirPlay is turned on and the TV volume is up. The TV board's code screen has these tips too.
 
