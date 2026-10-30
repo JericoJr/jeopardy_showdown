@@ -632,7 +632,7 @@ window.QUESTION_BANK = {
   */
   spotify: {
     /* Theme song: plays on a loop in the lobby and on the board (not during questions).
-       Paste any Spotify song link here, or set it to "" to use the built-in theme. */
+       Paste any Spotify song link here to use a different theme song. */
     theme: "https://open.spotify.com/track/4qkYiZablQoG7f0Qu4Nd1c",
 
     worshipLinks: `
