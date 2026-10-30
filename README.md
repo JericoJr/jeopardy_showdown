@@ -34,11 +34,20 @@ In every mode, higher points always means a harder question.
 - Renaming a team is optional. Any player on the team, or the host, can do it.
 - The host can also add or delete teams, move or remove players, and shuffle everyone into random teams.
 
-### Taking turns
+### Game styles
 
-- Any player on the team whose turn it is can tap a clue on their phone to open it, or the host can tap it.
-- The scoreboard highlights the team that's answering, and the highlight moves when a question is passed.
-- If a team misses, the host can pass the question to any other team, once per question.
+Pick one in setup:
+
+- **Classic Jeopardy** (default): the real show's rules. A right answer earns the points, and that team picks the next clue. A wrong answer loses the points, and the clue passes to the next team that hasn't tried it yet. If nobody gets it right, the team that picked keeps control.
+- **Team Order:** teams take turns in order (Team 1, Team 2, Team 3, then back to Team 1), no matter who answers right. Wrong answers don't lose points unless the host turns that on. If a team misses, the host can pass the clue to any other team, once per clue.
+
+In both styles, any player on the picking team can tap a clue on their phone to open it, or the host can tap it. The scoreboard highlights the team that's answering, and the highlight moves when the clue passes.
+
+### Daily Double
+
+- One hidden clue each game is a Daily Double. It always goes to the team that picked it, and only that team answers.
+- Before seeing the clue, the team bets between 5 points and its score, or up to 500 points if its score is lower than that.
+- A right answer adds the bet, and a wrong answer subtracts it. The clue's face value doesn't count.
 
 ### Music and sounds
 
@@ -70,7 +79,7 @@ In every mode, higher points always means a harder question.
   - **Guess That Song** and **Name the Hymn:** a 10-second clip of the song plays on the TV board.
   - **Who Sings It?:** a clip plays and players name the artist.
 - **Where clips start:** songs you haven't tuned start where the most upbeat part usually is: worship songs about 45% of the way in (typically the fuller second chorus), hymns about a third of the way in. This is a guess based on how most songs are built; for an exact spot, save one or use the Song Tuner.
-- **Song player in every song question:** next to the question, answer and hint, the host screen shows a Spotify-style player for the whole song: a big **▶ / ❚❚** button, **⟲ 10** and **10 ⟳** to skip, **■** to stop, and a timeline to drag to any part of the song. It shows the song's length as soon as the question opens. This is separate from the 10-second clip, for when the clip isn't enough. The TV board plays from there with no cut-off until the host pauses or stops, and the slider follows along.
+- **Song player in every song question:** next to the question, answer and hint, the host screen shows a Spotify-style player for the whole song: a big **▶ / ❚❚** button, **⟲ 10** and **10 ⟳** to skip, **■** to stop, and a timeline to drag to any part of the song. It shows the song's length as soon as the question opens. This is separate from the 10-second clip, for when the clip isn't enough. The TV board plays from there with no cut-off until the host pauses or stops, and the slider follows along. When you drag, the slider stays where you let go, and the TV board checks that the song actually jumped there.
 - **Saved spots:** in the Full song panel, tap **Save this spot** while a song plays and name it (Chorus, Verse, Bridge, Intro, Ending or Best part). Saved spots show as buttons: tap one to jump there on the TV, or tap **Set as clip start** so that song's clips begin there in every future game. **Use this spot as the clip start** does the same for wherever the song is right now. Spots are saved on the host device and included in the Song Tuner's **Copy all my times**; to keep them for good, add them to the song in `questions.js` as `marks: ["1:05 Chorus"]`.
 - **Song Tuner** (in setup and on the host screen): play each song and tap **Chorus starts here** so clips play the part everyone knows. Times are saved on that device and used right away. To keep them for every device, tap **Copy all my times** and add them to `questions.js` as `start`.
 - The host sees the song title as the answer on the iPad, and no song audio or video plays on the iPad while a TV board is connected. When the host reveals the answer, the TV board shows the Spotify song card.

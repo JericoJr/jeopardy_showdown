@@ -289,7 +289,7 @@ function judge(text,clue){
 }
 
 /* ---------- local state ---------- */
-const DEF_SET={autoplay:false,level:'all',mode:'turns',answers:'voice',auto:true,timer:30,autoTimer:true,hintHalf:true,wrongLose:false,cap:0,dd:1,playersCreate:true};
+const DEF_SET={rules:'classic',autoplay:false,level:'all',mode:'turns',answers:'voice',auto:true,timer:30,autoTimer:true,hintHalf:true,wrongLose:false,cap:0,dd:1,playersCreate:true};
 let custom=store.get('ssw.custom',[]);
 let S=store.get('ssw.host',null);
 let setup=Object.assign({preset:'random',pick:[],source:'bank',customId:null,settings:clone(DEF_SET)},store.get('ssw.setup',{}));
@@ -407,14 +407,15 @@ const Spot={api:null,ctl:null,waiting:[],loading:false,p:null,seeked:false,t:nul
   update(e){const p=this.p,d=(e&&e.data)||{};this.pos=(d.position||0)/1000;if(d.duration){const was=this.dur;this.dur=d.duration/1000;if(!p&&this.onDur&&Math.abs(was-this.dur)>1)this.onDur(this.dur)}if(this.onPos&&p&&this.seeked)this.onPos(this.pos,this.dur,!!d.isPaused);
     if(!p||this.seeked||d.isPaused||d.isBuffering)return;this.seeked=true;
     if(p.auto&&this.dur>60)p.start=Math.max(30,Math.min(this.dur-15,Math.round(this.dur*p.frac)));
-    if(p.start>0)try{this.ctl.seek(p.start)}catch{};if(p.full)return;clearTimeout(this.t);const ms=(p.len+(p.start>0?0.7:0))*1000;this.endAt=Date.now()+ms;this.t=setTimeout(()=>this.stop(),ms)},
+    if(p.start>0){try{this.ctl.seek(p.start)}catch{};const tgt=p.start;setTimeout(()=>{if(this.p===p&&Math.abs(this.pos-tgt)>3){try{this.ctl.seek(tgt)}catch{}}},1200)}if(p.full)return;clearTimeout(this.t);const ms=(p.len+(p.start>0?0.7:0))*1000;this.endAt=Date.now()+ms;this.t=setTimeout(()=>this.stop(),ms)},
   pause(){if(!this.p)return;clearTimeout(this.t);this.left=this.seeked?Math.max(300,this.endAt-Date.now()):0;try{this.ctl&&this.ctl.pause()}catch{}},
   resume(){if(!this.p||!this.ctl)return;try{this.ctl.resume?this.ctl.resume():this.ctl.togglePlay()}catch{}if(this.seeked){clearTimeout(this.t);this.endAt=Date.now()+this.left;this.t=setTimeout(()=>this.stop(),this.left)}},
   stop(){clearTimeout(this.t);this.t=null;this.p=null;try{this.ctl&&this.ctl.pause()}catch{}}};
 let hostClipN=null,songDrag=false,lastPosSend=0;
 let posTrail=null;
 Spot.onDur=dur=>{if(view==='display')send({t:'pos',pos:0,dur,paused:true});if(view==='host'&&S&&!displayOn()){S.spos=Object.assign({},S.spos,{dur});paintSongPos()}};
-Spot.onPos=(pos,dur,paused)=>{if(view==='display'&&Clip.playing){const go=()=>{lastPosSend=Date.now();send({t:'pos',pos:Spot.pos,dur:Spot.dur,paused})};clearTimeout(posTrail);if(Date.now()-lastPosSend>450)go();else posTrail=setTimeout(go,460)}
+let playingN=0;
+Spot.onPos=(pos,dur,paused)=>{if(view==='display'&&Clip.playing){const go=()=>{lastPosSend=Date.now();send({t:'pos',pos:Spot.pos,dur:Spot.dur,paused,n:playingN})};clearTimeout(posTrail);if(Date.now()-lastPosSend>450)go();else posTrail=setTimeout(go,460)}
   if(view==='host'&&S&&!displayOn()){S.spos={pos,dur,paused,at:Date.now()};paintSongPos()}};
 /* where the song is right now: the TV's reported position, or the slider if nothing is playing */
 function currentSongPos(){const sp=(S&&S.spos)||{},c=(S&&S.clip)||{},el=$('#songpos');
@@ -569,7 +570,7 @@ function netChanged(){if(!S)return;pruneTeams();syncNames();routeAudio();hostAud
 function onMsg(c,m){
   if(!S||!m||typeof m!=='object')return;
   const info=conns.get(c);if(!info)return;
-  if(info.role==='display'&&m.t==='pos'){const full=S.clip&&S.clip.full&&clipState()!=='idle';S.spos=full||!S.spos?{pos:+m.pos||0,dur:+m.dur||0,paused:!!m.paused,at:Date.now()}:Object.assign({},S.spos,{dur:+m.dur||S.spos.dur||0});paintSongPos();return}
+  if(info.role==='display'&&m.t==='pos'){if(m.n!=null&&S.clip&&m.n!==S.clip.n){if(m.dur&&S.spos)S.spos.dur=+m.dur;return}const full=S.clip&&S.clip.full&&clipState()!=='idle';S.spos=full||!S.spos?{pos:+m.pos||0,dur:+m.dur||0,paused:!!m.paused,at:Date.now()}:Object.assign({},S.spos,{dur:+m.dur||S.spos.dur||0});paintSongPos();return}
   if(m.t==='hello'){
     if(m.role==='display'){info.role='display'}
     else{const pid=short(m.pid,16);if(!pid)return;info.role='player';info.pid=pid;const ex=S.members[pid];S.members[pid]={name:short(m.name,20)||ex?.name||'Player',team:ex?.team&&teamIdx(ex.team)>=0?ex.team:null};if(!S.members[pid].team)soloTeam(pid)}
@@ -630,10 +631,11 @@ function openTile(c,r){setTimeout(hostCue,0);
   else{S.phase='clue';S.buzzOpen=S.settings.mode==='buzz';resetTimer(S.settings.autoTimer);if(curClue().m&&S.settings.autoplay)clipCmd('play')}
   S.passes=0;commit();
 }
-function closeTile(){if(S.cur&&curClue()?.m)clipCmd('stop');if(S.cur)S.used[S.cur.c][S.cur.r]=1;S.cur=null;S.phase='board';S.buzzOpen=false;S.tmr.run=false;S.turn=S.teams.length?(S.turn+1)%S.teams.length:0;commit()}
+function closeTile(){S.lastScored=Object.assign({},S.scored);if(S.cur&&curClue()?.m)clipCmd('stop');if(S.cur)S.used[S.cur.c][S.cur.r]=1;S.cur=null;S.phase='board';S.buzzOpen=false;S.tmr.run=false;if(!S.teams.length)S.turn=0;else if(classic()){const w=Object.keys(S.lastScored||{}).find(k=>S.lastScored[k]===1);if(w!=null)S.turn=+w}else S.turn=(S.turn+1)%S.teams.length;S.lastScored=null;commit()}
 function scoreTeam(i,sign,val,book){const prev=book[i]||0;S.teams[i].score-=prev*val;if(prev===sign){delete book[i]}else{S.teams[i].score+=sign*val;book[i]=sign}}
+const classic=()=>S&&S.settings.rules!=='order';
 function markClue(i,sign){
-  const val=clueValue(),prev=S.scored[i]||0,free=!S.settings.wrongLose&&!isDD();
+  const val=clueValue(),prev=S.scored[i]||0,free=!classic()&&!S.settings.wrongLose&&!isDD();
   if(sign===-1&&free){if(prev===1)S.teams[i].score-=val;if(prev===-1)delete S.scored[i];else{S.scored[i]=-1;fire('no')}return}
   if(prev===-1&&free)delete S.scored[i];
   scoreTeam(i,sign,val,S.scored);
@@ -661,7 +663,7 @@ function autoJudge(){
   const ok=judge(first.t,curClue());S.judged[t]=ok?1:-1;
   if(!S.settings.auto)return true;
   S.tmr.left=tLeft();S.tmr.run=false;
-  if(ok)markClue(t,1);else{markClue(t,-1);}
+  if(ok)markClue(t,1);else{markClue(t,-1);if(classic()&&!isDD()){const left=S.teams.map((_,k)=>k).filter(k=>k!==t&&!S.tried.includes(k));if(left.length)nextTeam()}}
   return true;
 }
 function commit(){pruneTeams();syncNames();saveHost();broadcast();render();hostAudio();hostClip()}
@@ -695,7 +697,7 @@ function applyState(st){
   if(!st||typeof st!=='object'||!Array.isArray(st.teams))return;
   if(st.tm)pTimer={left:st.tm.left,run:st.tm.run,len:st.tm.len||1,end:Date.now()+st.tm.left};
   if(view==='display'){const n=st.fx?st.fx.n:0;if(lastFx!=null&&n!==lastFx&&st.fx){if(!D.mute&&st.snd!==false)sfx(st.fx.k);flash(st.fx.k)}lastFx=n;
-    const on=!D.mute&&st.snd!==false,cn=st.clip?st.clip.n:0;if(lastClip!=null&&cn!==lastClip&&st.clip){if(on)runClip(st.clip.act,st.clue&&st.clue.m,st.clip.at,st.clue&&st.clue.full);else Clip.stop()}lastClip=cn;
+    const on=!D.mute&&st.snd!==false,cn=st.clip?st.clip.n:0;playingN=cn;if(lastClip!=null&&cn!==lastClip&&st.clip){if(on)runClip(st.clip.act,st.clue&&st.clue.m,st.clip.at,st.clue&&st.clue.full);else Clip.stop()}lastClip=cn;
     if(!on&&Clip.playing)Clip.stop();if(st.ph==='clue'&&st.clue&&st.clue.m&&st.clue.m.spotify&&!Clip.playing)Spot.cue(st.clue.m.spotify);if(st.ph!=='clue'&&Clip.playing)Clip.stop();PS=st;displayAudio()}
   const k=JSON.stringify(Object.assign({},st,{tm:{run:st.tm?.run,left:st.tm?.run?0:st.tm?.left}}));
   if(k===PSkey)return;
@@ -818,7 +820,9 @@ function setupHTML(){
     <h2>3. How to play</h2>
     <div class="opt"><span class="lbl">Difficulty</span>${segHTML('level',[['all','All levels'],['inter','Intermediate'],['expert','Expert']])}
       <span class="note">${st.level==='expert'?'Hard to expert questions on every row: deep-cut names, places and verses for Bible buffs.':st.level==='inter'?'Starts at easy-medium and climbs to expert at 500. Good for teens who know their Bible.':'100 is easy, 300 is medium and 500 is hard. Good for mixed groups and newcomers.'}</span></div>
-    <div class="opt"><span class="lbl">Who answers</span>${segHTML('mode',[['turns','Teams take turns'],['buzz','Buzz in (fastest team)']])}
+    <div class="opt"><span class="lbl">Game style</span>${segHTML('rules',[['classic','Classic Jeopardy'],['order','Team Order']])}
+      <span class="note">${st.rules==='order'?'<b>Team Order:</b> teams take turns picking in order, no matter who answers. If a team misses, you can pass the question once. Wrong answers only lose points if you turn that on below.':'<b>Classic Jeopardy:</b> the real show’s rules. Right answers earn the points and that team picks next. Wrong answers lose the points and the question moves to the next team. If nobody gets it, the team that picked keeps control.'}</span></div>
+    <div class="opt"><span class="lbl">Who answers first</span>${segHTML('mode',[['turns','Teams take turns'],['buzz','Buzz in (fastest team)']])}
       <span class="note">${st.mode==='turns'?'The team whose turn it is picks a clue and answers. If they miss, pass it to the next team to steal.':'Everyone can buzz in. The first team to buzz answers; if they miss, the other teams can buzz again.'}</span></div>
     <div class="opt"><span class="lbl">How players answer</span>${segHTML('answers',[['voice','Say it out loud, host scores'],['typed','Type it on a phone']])}</div>
     ${st.answers==='typed'?`<label class="toggle"><input type="checkbox" id="opt-auto" data-opt="auto" ${st.auto?'checked':''}>Score typed answers automatically (you can still override)</label>`:''}
@@ -826,7 +830,7 @@ function setupHTML(){
     <label class="toggle"><input type="checkbox" id="opt-ap" data-opt="autoplay" ${st.autoplay?'checked':''}>Play song clips automatically when a clue opens (off: the host taps Play clip)</label>
     <label class="toggle"><input type="checkbox" id="opt-at" data-opt="autoTimer" ${st.autoTimer?'checked':''}>Start the timer when a clue opens</label>
     <label class="toggle"><input type="checkbox" id="opt-hh" data-opt="hintHalf" ${st.hintHalf?'checked':''}>Using a hint makes the clue worth half</label>
-    <label class="toggle"><input type="checkbox" id="opt-wl" data-opt="wrongLose" ${st.wrongLose?'checked':''}>Wrong answers lose points</label>
+    ${st.rules==='order'?`<label class="toggle"><input type="checkbox" id="opt-wl" data-opt="wrongLose" ${st.wrongLose?'checked':''}>Wrong answers lose points</label>`:''}
     <div class="opt"><span class="lbl">Daily Doubles</span>${segHTML('dd',[[0,'None'],[1,'1'],[2,'2']])}</div>
   </div>
   ${confirmNew?`<div class="confirm row"><span style="flex:1">This ends the game in progress. Start a new one?</span><button class="btn-sm" data-act="new-no">Keep playing</button><button class="btn-sm btn-bad" data-act="new-yes">Start new game</button></div>`:''}
@@ -908,7 +912,7 @@ function hostHTML(){
   const allUsed=S.used.every(c=>c.every(Boolean));
   return `<div class="row"><div><div class="eyebrow">Jeopardy Showdown · host</div><h1 style="font-family:var(--f-display);font-weight:400;font-size:clamp(24px,4vw,38px);letter-spacing:.02em;text-transform:uppercase">${esc(g.title)}</h1></div><div class="spacer"></div>
     <button class="btn-sm" data-act="show-lobby">Code ${esc(S.code)} · teams & QR</button><div id="conn">${connHTML()}</div></div>
-  <div class="turnbar"><span class="eyebrow">${S.settings.mode==='turns'?'Picking now':'Picks the next clue'}</span><b>${esc(S.teams[S.turn]?.name||'No teams yet')}</b><span class="spacer"></span><span class="note">${esc(LEVEL_NAMES[S.settings.level]||'All levels')} · ${S.settings.mode==='turns'?'Teams take turns':'Buzz-in mode'} · ${S.settings.answers==='typed'?'typed answers'+(S.settings.auto?', auto-scored':''):'answers out loud'}</span></div>
+  <div class="turnbar"><span class="eyebrow">${classic()?'In control':'Picking now'}</span><b>${esc(S.teams[S.turn]?.name||'No teams yet')}</b><span class="spacer"></span><span class="note">${classic()?'Classic Jeopardy':'Team Order'} · ${esc(LEVEL_NAMES[S.settings.level]||'All levels')} · ${S.settings.mode==='turns'?'next team steals':'buzz-in'} · ${S.settings.answers==='typed'?'typed answers'+(S.settings.auto?', auto-scored':''):'answers out loud'}</span></div>
   <div class="scores" id="scores">${scoresInner(true)}</div>
   ${boardHTML(g.cats,S.used,true)}
   <div class="row">
@@ -999,8 +1003,8 @@ function clueOverlay(){
     const t=S.ddTeam,max=Math.max(500,t!=null?S.teams[t].score:0);
     return `<div class="overlay" role="dialog" aria-label="Daily Double"><div class="ov-in">
     <div class="cluebox"><div class="eyebrow" style="text-align:center">${esc(g.cats[c.c].name)}</div><div class="dd">Daily Double!</div></div>
-    <div class="card"><h3>Which team plays it?</h3>
-      <div class="row">${S.teams.map((tm,i)=>`<button class="${t===i?'btn-gold':''}" data-act="dd-team" data-i="${i}">${esc(tm.name)}</button>`).join('')}</div>
+    <div class="card"><h3>${t!=null?esc(S.teams[t].name)+' found it!':'No team to play it'}</h3>
+      <span class="note">Only the team that picked the Daily Double answers. They wager 5 up to ${max} (their score, or 500 if that’s higher). Right adds the wager, wrong subtracts it. The clue’s ${VALUES[c.r]} points don’t count.</span>
       ${t!=null?`<label for="ddw">Wager (5 to ${max})</label><input id="ddw" type="number" inputmode="numeric" min="5" max="${max}" value="${esc(S.ddWager)}" data-bind="ddWager">`:''}
       <div class="row"><button class="btn-ghost" data-act="close-nouse">Cancel</button><div class="spacer"></div><button class="btn-gold" data-act="dd-go" ${t==null?'disabled':''}>Show the clue</button></div></div>
     </div></div>`;
@@ -1024,10 +1028,11 @@ function clueOverlay(){
     <div class="card" style="gap:10px">
       ${ans!=null?`<span class="eyebrow">Answering now</span><span class="answering">${esc(S.teams[ans].name)}</span>
         <div class="row"><button class="btn-good ${S.scored[ans]===1?'on-good':''}" data-act="mark" data-i="${ans}" data-s="1">Correct +${val}</button>
-        <button class="btn-bad ${S.scored[ans]===-1?'on-good':''}" data-act="mark" data-i="${ans}" data-s="-1">Wrong${S.settings.wrongLose||dd?' −'+val:''}</button>
+        <button class="btn-bad ${S.scored[ans]===-1?'on-good':''}" data-act="mark" data-i="${ans}" data-s="-1">Wrong${S.settings.wrongLose||dd||classic()?' −'+val:''}</button>
 </div>
-        ${!dd&&!S.revealed&&!(S.passes>0)&&left.length?(mode==='turns'?`<span class="eyebrow">Pass this question to (one pass per question)</span><div class="row">${left.map(i=>`<button class="btn-sm" data-act="pass" data-i="${i}">${esc(S.teams[i].name)}</button>`).join('')}</div>`:'<div class="row"><button data-act="pass" data-i="-1">Reopen buzzers for other teams (one time)</button></div>'):''}
-        ${S.passes>0&&!S.revealed&&!dd?'<span class="note">This question has already been passed once.</span>':''}
+        ${classic()&&!dd&&!S.revealed?`<span class="note">Classic rules: a wrong answer loses ${val} points and ${mode==='turns'?(left.length?`the question goes to ${esc(S.teams[left[0]]?.name||'the next team')}`:'there are no teams left to try'):'the other teams can buzz in'}. A right answer earns ${val} and picks next.</span>`:''}
+        ${!classic()&&!dd&&!S.revealed&&!(S.passes>0)&&left.length?(mode==='turns'?`<span class="eyebrow">Pass this question to (one pass per question)</span><div class="row">${left.map(i=>`<button class="btn-sm" data-act="pass" data-i="${i}">${esc(S.teams[i].name)}</button>`).join('')}</div>`:'<div class="row"><button data-act="pass" data-i="-1">Reopen buzzers for other teams (one time)</button></div>'):''}
+        ${!classic()&&S.passes>0&&!S.revealed&&!dd?'<span class="note">This question has already been passed once.</span>':''}
         ${S.judged[ans]?`<span class="${S.judged[ans]===1?'ok':'no'}">${S.settings.auto?'Auto-scored':'Typed answer looks'} ${S.judged[ans]===1?'correct':'wrong'}${S.settings.auto?'. Tap a button to change it.':''}</span>`:''}`
       :mode==='buzz'?`<span class="eyebrow">Buzz order</span><div id="buzzq">${queueHTML()}</div><div class="row">${S.buzzOpen?'<button class="btn-sm" data-act="buzz-close">Close buzzers</button>':'<button class="btn-sm" data-act="buzz-open">Open buzzers</button>'}<button class="btn-sm" data-act="buzz-reset">Clear buzzes</button></div>
         <span class="note">No phones? Tap the team that answers first:</span><div class="row">${S.teams.map((t,i)=>S.tried.includes(i)?'':`<button class="btn-sm" data-act="set-ans" data-i="${i}">${esc(t.name)}</button>`).join('')}</div>`
@@ -1282,7 +1287,7 @@ document.addEventListener('click',e=>{
     case 'buzz-close':S.buzzOpen=false;commit();break;
     case 'buzz-reset':newEpoch();S.buzzOpen=true;commit();break;
     case 'set-ans':S.answering=i;S.buzzOpen=false;resetTimer(S.settings.autoTimer);commit();break;
-    case 'mark':markClue(i,+b.dataset.s);commit();break;
+    case 'mark':{const sg=+b.dataset.s;markClue(i,sg);if(sg===-1&&classic()&&!isDD()&&S.scored[i]===-1&&!S.revealed){const left=S.teams.map((_,k)=>k).filter(k=>k!==i&&!S.tried.includes(k));if(left.length)nextTeam()}commit();break}
     case 'next-team':nextTeam();commit();break;
     case 'pass':{if(S.passes>0)return;passTo(i<0?null:i);commit();break}
     case 'dd-team':S.ddTeam=i;commit();break;
