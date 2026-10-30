@@ -93,6 +93,9 @@ You can also edit the questions for a single game from the host screen with **Ed
 
 ## Good to know
 
+- **Works on any device, browser and OS:** iPhone, iPad, Android, Windows, Mac, Chromebook and Linux, in a current version of Chrome, Safari, Edge, Firefox or Samsung Internet. Nothing to install, and no accounts needed for players. Very old browsers (from before about 2020) may not work.
+- A few small differences by device: iPhones can't go full screen in the browser (iPads and computers can); Firefox lets screens dim during long pauses, so keep the host and TV board awake in settings; and Spotify clips play best on the TV board laptop with a browser logged into Spotify.
+
 - The host's device runs the game, so keep the host page open and the iPad awake. If the host page reloads, tap **Host a game** to resume, and everyone reconnects within a few seconds.
 - Live syncing uses PeerJS's free public connection service, so devices connect straight to the host. It works best when everyone is on the same Wi-Fi. Some school or church networks block these direct connections; if phones can't join, try a phone hotspot for the host.
 - Anyone with the game code can join while the game is running.
