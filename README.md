@@ -11,7 +11,7 @@ A free Bible quiz game show for youth groups and young adults. The host runs the
 
 ## Running a game
 
-1. **Host (iPad):** open the site, tap **Host a game**, choose a difficulty and your rules, then tap **Create game**. Every new game picks 5 random categories with random questions.
+1. **Host (iPad):** open the site, tap **Host a game**, choose a difficulty and your rules, then tap **Create game**. Every new game picks 5 random categories with random questions. To leave categories out, open **Categories in the mix** and tap any category you don't want. Everything else stays in the random draw (keep at least 5). **Leave out song categories** removes all the music ones at once, and **Include all** brings everything back. Your choices are remembered on that device.
 2. **TV board (laptop on AirPlay):** open the site, tap **Show the board**, enter the 4-letter code, then tap **Full screen**. Music and sound effects play from this screen.
 3. **Players (any phone):** scan the QR code on the TV and enter a name. Scanning always opens the game for that code, even if the phone was in an earlier game. Each player starts on their own team and can join another team in the lobby.
 4. When you're ready, the host taps **Start the game**. You can start with no teams or players; anyone who joins later gets their own team.
@@ -48,14 +48,15 @@ In both styles, any player on the picking team can tap a clue on their phone to 
 ### Daily Double
 
 - One hidden clue each game is a Daily Double. It always goes to the team that picked it, and only that team answers.
-- Before seeing the clue, the team bets between 5 points and its score, or up to 500 points if its score is lower than that.
+- Before seeing the clue, the team bets between 5 points and its score, or up to 500 points if its score is lower than that. Anyone on that team can type the wager on their phone, or the host can type it on the iPad. Either can change it until the host taps **Show the clue**.
+- The wager shows in big numbers on the TV and on every phone as soon as it's set.
 - A right answer adds the bet, and a wrong answer subtracts it. The clue's face value doesn't count.
 
 ### Music and sounds
 
 - **Theme music:** the Jeopardy theme song from Spotify plays on a loop in the lobby and on the board between questions. It goes quiet while a question is open. It's on by default; the host turns it on or off with the **Theme music** button. To use a different song, paste its Spotify link into `theme` in the `spotify` section of `questions.js`, or set it to `""` to use the built-in original theme. If Spotify can't play on that screen, the built-in theme plays instead. The theme song's volume follows the device's volume; the volume slider sets the timer music.
 - **Timer music:** original suspenseful countdown music that plays while the timer is running and speeds up as time runs out. It stops when the timer is paused or ends. Turn it on or off with the **Timer music** button.
-- **Where sound plays:** all music, sound effects and song clips play on the TV board when one is connected, and on the host's device when it isn't. If the TV board connects or drops out mid-game (even mid-song), sound switches over right away. The host screen shows where sound is playing (**Sound: TV board** or **Sound: this device**). Song clips pause the music while they play.
+- **Where sound plays:** with no TV board connected, everything plays on the host's device: the theme song, timer music, sound effects, song clips and full songs. Otherwise it all plays on the TV board. If the TV board connects or drops out mid-game (even mid-song), sound switches over right away. The host screen shows where sound is playing (**Sound: TV board** or **Sound: this device**). Song clips pause the music while they play.
 - To use your own theme song instead, choose a music file under **Music on this screen** on the TV board. Use music you have the right to play.
 - **Timer:** when the host starts the timer, a big countdown number shows on the TV board and players' phones. At zero, a buzzer sounds and a red **Time's up!** animation plays automatically. The host still decides the points.
 - **Sound effects and animations:** correct answers get a chime and a green **Correct!** flash; wrong answers get a buzz and a red **Wrong!** shake. They show on the TV board, the host screen and players' phones.

@@ -173,6 +173,9 @@ body.tuning{padding-bottom:62vh}
 .artbox.tvsize{max-width:min(900px,100%)}
 .artbox svg,.artbox img{display:block;width:100%;height:100%;object-fit:cover}
 .artbox.zoom svg,.artbox.zoom img{transform-origin:var(--fx) var(--fy);animation:zoomout 28s cubic-bezier(.2,.6,.3,1) forwards;animation-delay:var(--zd,0s)}
+.ddwager{display:flex;flex-direction:column;align-items:center;gap:2px;margin-top:6px}
+.ddwager b{font-family:var(--f-display);font-weight:400;font-size:clamp(40px,9vw,96px);color:var(--gold);line-height:1}
+.catpick button.off{opacity:.5;text-decoration:line-through}
 .order{display:flex;align-items:center;justify-content:center;gap:6px 8px;flex-wrap:wrap;background:var(--panel);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:8px 10px}
 .order .olab{width:100%;text-align:center;margin-bottom:-2px}
 .ochip{display:flex;flex-direction:column;align-items:center;gap:1px;padding:6px 14px;border-radius:999px;border:2px solid rgba(255,255,255,.12);background:rgba(255,255,255,.05);max-width:44vw;transition:all .3s}
@@ -283,9 +286,10 @@ const LEVELS={all:[1,2,3,4,5],inter:[2,3,4,5,6],expert:[4,5,6,6,7]};
 const LEVEL_NAMES={all:'All levels',inter:'Intermediate',expert:'Expert'};
 /* random categories, preferring ones with enough questions at the levels this mode needs */
 function exactRows(b,lv){const used=new Set();let n=0;lv.forEach(d=>{const k=b.q.findIndex((q,i)=>!used.has(i)&&q[0]===d);if(k>=0){used.add(k);n++}});return n}
-function randomCats(mode){const lv=LEVELS[mode]||LEVELS.all;
-  for(const need of [5,4,3]){const ok=BANK.filter(b=>exactRows(b,lv)>=need);if(ok.length>=5)return shuffle(ok.map(b=>b.id)).slice(0,5)}
-  return shuffle(BANK.map(b=>b.id)).slice(0,5)}
+function inMix(){const skip=new Set(setup.skip||[]);return BANK.filter(b=>!skip.has(b.name))}
+function randomCats(mode){const lv=LEVELS[mode]||LEVELS.all,pool=inMix();
+  for(const need of [5,4,3]){const ok=pool.filter(b=>exactRows(b,lv)>=need);if(ok.length>=5)return shuffle(ok.map(b=>b.id)).slice(0,5)}
+  return shuffle(pool.map(b=>b.id)).slice(0,5)}
 function buildBoard(catIds,mode){const lv=LEVELS[mode]||LEVELS.all;
   return{title:'Jeopardy Showdown',levels:lv,cats:catIds.map(id=>{const b=BANK.find(x=>x.id===id);return{name:b.name,bank:id,clues:pickClues(b,lv)}}),
     final:(f=>({cat:f[0],q:f[1],a:f[2],h:f[3],alt:f[4]}))(rnd(FINALS))};
@@ -307,7 +311,8 @@ function judge(text,clue){
 const DEF_SET={rules:'classic',autoplay:false,level:'all',mode:'turns',answers:'voice',auto:true,timer:30,autoTimer:true,hintHalf:true,wrongLose:false,cap:0,dd:1,playersCreate:true};
 let custom=store.get('ssw.custom',[]);
 let S=store.get('ssw.host',null);
-let setup=Object.assign({preset:'random',pick:[],source:'bank',customId:null,settings:clone(DEF_SET)},store.get('ssw.setup',{}));
+let setup=Object.assign({preset:'random',pick:[],skip:[],source:'bank',customId:null,settings:clone(DEF_SET)},store.get('ssw.setup',{}));
+setup.skip=(setup.skip||[]).filter(n=>BANK.some(b=>b.name===n));
 setup.settings=Object.assign(clone(DEF_SET),setup.settings||{});
 if(!PRESETS.some(p=>p.id===setup.preset))setup.preset='random';
 setup.pick=(setup.pick||[]).filter(id=>BANK.some(b=>b.id===id));
@@ -638,6 +643,7 @@ function onMsg(c,m){
       if(S.answering==null){S.answering=myT;S.buzzOpen=false;resetTimer(S.settings.autoTimer);full=true}break}
     case 'ans':{if(S.phase!=='clue'||m.e!==S.epoch||myT==null||myT!==S.answering||S.revealed)return;if(S.inbox.ans[pid])return;S.inbox.ans[pid]={t:short(m.text,80),t0:Date.now()};if(autoJudge())full=true;break}
     case 'wager':{if(S.phase!=='final-cat'||m.e!==S.epoch||myT==null)return;S.inbox.wag[pid]={v:short(m.v,7),t0:Date.now()};break}
+    case 'ddwager':{if(S.phase!=='dd'||myT==null||myT!==S.ddTeam)return;const max=ddMax();let w=parseInt(m.v,10);if(!(w>=0))return;S.ddWager=String(Math.max(5,Math.min(max,w)));S.ddBy=S.members[pid]?.name||'';full=true;break}
     case 'fans':{if(S.phase!=='final-clue'||m.e!==S.epoch||myT==null)return;S.inbox.fans[pid]={t:short(m.text,80),t0:Date.now()};break}
     default:return;
   }
@@ -660,6 +666,7 @@ function createGame(){
 }
 const curClue=()=>S.cur?S.game.cats[S.cur.c].clues[S.cur.r]:null;
 const isDD=()=>!!(S.cur&&S.dds.some(d=>d[0]===S.cur.c&&d[1]===S.cur.r));
+function ddMax(){const t=S.ddTeam;return Math.max(500,t!=null&&S.teams[t]?S.teams[t].score:0)}
 function clueValue(){if(isDD())return parseInt(S.ddWager,10)||0;const v=VALUES[S.cur.r];return S.hint&&S.settings.hintHalf?Math.round(v/2):v}
 function resetTimer(run){const len=S.settings.timer*1000;S.tmr={len,left:len,run:!!run,end:run?Date.now()+len:0};S.timeUp=false}
 function tLeft(){return S.tmr.run?Math.max(0,S.tmr.end-Date.now()):S.tmr.left}
@@ -671,7 +678,7 @@ async function songTitle(id){if(titleCache[id])return titleCache[id];
 function fillSongTitles(){if(!S)return;S.game.cats.forEach(cat=>cat.clues.forEach(cl=>{if(cl.song&&cl.m&&cl.m.spotify&&!cl.a){songTitle(cl.m.spotify).then(t=>{if(t&&S&&!cl.a){cl.a=t;cl.alt=t.toLowerCase().replace(/\s*[\(\[-].*$/,'')+'|'+t.toLowerCase();commit()}})}}))}
 function openTile(c,r){setTimeout(hostCue,0);
   if(S.used[c][r])return;
-  S.cur={c,r};S.revealed=false;S.hint=false;peek=false;newEpoch();S.scored={};S.tried=[];S.ddWager='';S.spos={pos:0,dur:0,paused:true,at:Date.now()};S.picker=S.turn;
+  S.cur={c,r};S.revealed=false;S.hint=false;peek=false;newEpoch();S.scored={};S.tried=[];S.ddWager='';S.ddBy='';S.spos={pos:0,dur:0,paused:true,at:Date.now()};S.picker=S.turn;
   const hasT=S.teams.length>0;if(S.turn>=S.teams.length)S.turn=0;S.answering=S.settings.mode==='turns'&&hasT?S.turn:null;S.ddTeam=hasT?S.turn:null;
   if(isDD()){S.phase='dd';S.buzzOpen=false;resetTimer(false);}
   else{S.phase='clue';S.buzzOpen=S.settings.mode==='buzz';resetTimer(S.settings.autoTimer);if(curClue().m&&S.settings.autoplay)clipCmd('play')}
@@ -721,7 +728,7 @@ function publicState(){
     loose:Object.entries(S.members).filter(([,m])=>!m.team||teamIdx(m.team)<0).map(([p,m])=>({p,n:m.name})),
     ord:orderState(),cap:S.settings.cap,create:S.settings.playersCreate,mode:S.settings.mode,ans:S.settings.answers,turn:S.turn,epoch:S.epoch,open:!!S.buzzOpen,
     tm:{left:tLeft(),run:!!S.tmr.run,len:S.tmr.len},music:!!S.music,tmusic:S.tmusic!==false,snd:S.sound!==false,fx:S.fx||null,clip:S.clip?{n:S.clip.n,act:S.clip.act,at:S.clip.at||0}:null,hi:activeTeam()};
-  if(S.cur&&cl){st.clue={cat:g.cats[S.cur.c].name,val:clueValue(),dd:isDD(),
+  if(S.cur&&cl){st.clue={cat:g.cats[S.cur.c].name,val:clueValue(),dd:isDD(),wager:isDD()?S.ddWager:'',ddMax:isDD()?ddMax():0,ddTeam:S.ddTeam,ddBy:S.ddBy||'',
     q:ph==='clue'?cl.q:null,h:S.hint&&ph==='clue'?cl.h:null,a:S.revealed?(cl.a||(cl.song?'':null)):null,rev:!!S.revealed,m:ph==='clue'&&cl.m?cl.m:null,img:ph==='clue'&&cl.img?cl.img:null,full:ph==='clue'&&cl.full?cl.full:null,emoji:!!cl.emoji,zoom:ph==='clue'&&cl.img&&!S.revealed&&S.cur.r>=3?S.cur.r:0,ep:S.epoch,
     who:S.answering,tried:S.tried,res:S.scored,queue:S.inbox.buzz.slice(0,6).map(p=>S.members[p]?.name||'Player')}}
   if(ph.startsWith('final')||ph==='over')st.fin={cat:g.final.cat,q:ph!=='final-cat'?g.final.q:null,h:S.hint&&ph==='final-clue'?g.final.h:null,a:(ph==='final-reveal'||ph==='over')?g.final.a:null,res:S.final.marks};
@@ -851,7 +858,12 @@ function setupHTML(){
       <span class="note">Every new game pulls fresh random questions from a bank of ${BANK.reduce((s,b)=>s+b.q.length,0)} Bible questions, each with a hint.</span>
       <div class="chips">${PRESETS.map(p=>`<button class="chip ${setup.preset===p.id?'sel':''}" data-act="preset" data-v="${p.id}">${esc(p.name)}</button>`).join('')}</div>
       ${setup.preset==='pick'?`<span class="lbl">Pick 5 categories (${setup.pick.length}/5)</span><div class="catpick">${BANK.map(b=>`<button class="${setup.pick.includes(b.id)?'sel':''}" data-act="pickcat" data-v="${b.id}">${esc(b.name)}</button>`).join('')}</div>`:
-'<span class="note">Five random categories with random questions every game.</span>'}
+`<span class="note">Five random categories with random questions every game, picked from the categories in the mix below.</span>
+      <details class="card catfilter" ${(setup.skip||[]).length?'open':''}><summary class="eyebrow" style="cursor:pointer">Categories in the mix: ${inMix().length} of ${BANK.length}${(setup.skip||[]).length?` · ${setup.skip.length} left out`:' · all included'}</summary>
+        <span class="note">Everything is included by default. Tap a category to leave it out of the random draw; tap again to bring it back.${inMix().length<5?' <b class="no">Keep at least 5 in the mix.</b>':''}</span>
+        <div class="catpick">${BANK.map(b=>{const off=(setup.skip||[]).includes(b.name);return `<button class="${off?'off':'sel'}" data-act="skipcat" data-v="${esc(b.name)}" aria-pressed="${!off}">${off?'✕ ':'✓ '}${esc(b.name)}</button>`}).join('')}</div>
+        <div class="row"><button class="btn-sm" data-act="skip-none" ${(setup.skip||[]).length?'':'disabled'}>Include all</button><button class="btn-sm btn-ghost" data-act="skip-songs">Leave out song categories</button></div>
+      </details>`}
       <span class="note">${BANK.length} categories loaded. Add your own categories and questions in the questions.js file.</span>
       <div class="row"><button class="btn-sm" data-act="ed-new">Write a game from scratch</button><button class="btn-sm" data-act="tuner">Song Tuner: set chorus and lyric cut points</button></div>`
     :`${custom.length?`<div class="chips">${custom.map(c=>`<button class="chip ${setup.customId===c.id?'sel':''}" data-act="pickcustom" data-v="${esc(c.id)}">${esc(c.title)}</button>`).join('')}</div>
@@ -884,7 +896,7 @@ function setupHTML(){
   ${confirmNew?`<div class="confirm row"><span style="flex:1">This ends the game in progress. Start a new one?</span><button class="btn-sm" data-act="new-no">Keep playing</button><button class="btn-sm btn-bad" data-act="new-yes">Start new game</button></div>`:''}
   <div class="row"><button class="btn-ghost" data-act="go-role">Back</button><div class="spacer"></div>${S?'<button data-act="resume">Resume current game</button>':''}<button class="btn-gold" data-act="create" ${canCreate()?'':'disabled'}>Create game</button></div>`;
 }
-function canCreate(){if(BANK.length<5&&setup.source==='bank')return false;if(setup.source==='custom')return !!custom.find(x=>x.id===setup.customId);if(setup.preset==='pick')return setup.pick.length===5;return true}
+function canCreate(){if(BANK.length<5&&setup.source==='bank')return false;if(setup.source==='custom')return !!custom.find(x=>x.id===setup.customId);if(setup.preset==='pick')return setup.pick.length===5;return inMix().length>=5}
 
 function editorHTML(){
   const g=edit;
@@ -1070,7 +1082,8 @@ function clueOverlay(){
     <div class="cluebox"><div class="eyebrow" style="text-align:center">${esc(g.cats[c.c].name)}</div><div class="dd">Daily Double!</div></div>
     <div class="card"><h3>${t!=null?esc(S.teams[t].name)+' found it!':'No team to play it'}</h3>
       <span class="note">Only the team that picked the Daily Double answers. They wager 5 up to ${max} (their score, or 500 if that’s higher). Right adds the wager, wrong subtracts it. The clue’s ${VALUES[c.r]} points don’t count.</span>
-      ${t!=null?`<label for="ddw">Wager (5 to ${max})</label><input id="ddw" type="number" inputmode="numeric" min="5" max="${max}" value="${esc(S.ddWager)}" data-bind="ddWager">`:''}
+      ${t!=null?`<label for="ddw">Wager (5 to ${max})</label><input id="ddw" type="number" inputmode="numeric" min="5" max="${max}" value="${esc(S.ddWager)}" data-bind="ddWager">
+      <span class="note">${S.ddWager?`Wager: <b>${esc(S.ddWager)}</b>${S.ddBy?` · sent by ${esc(S.ddBy)} on ${esc(S.teams[t].name)}’s phone`:''}. Everyone can see it on the TV and their phones.`:`${esc(S.teams[t].name)} can type their wager on their phones, or you can type it here. ${esc(S.teams[t].name)} has ${S.teams[t].score} points.`}</span>`:''}
       <div class="row"><button class="btn-ghost" data-act="close-nouse">Cancel</button><div class="spacer"></div><button class="btn-gold" data-act="dd-go" ${t==null?'disabled':''}>Show the clue</button></div></div>
     </div></div>`;
   }
@@ -1183,7 +1196,12 @@ function playerHTML(){
     <button class="btn-ghost btn-sm" data-act="p-leave">Leave game</button>`;
   let main='';
   if(st.ph==='board')main=`${orderHTML(st.ord)}<div class="card"><span class="big-status">${st.turn===mi?'Your team picks!':esc(st.teams[st.turn]?.name)+' is picking'}</span><div class="status muted">${st.turn===mi?'Anyone on your team can tap a clue below.':'Get ready…'}</div></div>${boardHTML(st.cats,st.used,st.turn===mi?'p-pick':false)}`;
-  else if(st.ph==='dd')main=`${orderHTML(st.ord)}<div class="cluebox"><div class="eyebrow" style="text-align:center">${esc(st.clue?.cat)}</div><div class="dd">Daily Double!</div><div class="status">${st.ord&&st.ord.who===mi?'Your team found it! Agree on a wager and tell the host.':esc(st.teams[st.ord?.who]?.name||'The picking team')+' plays this one alone and sets a wager.'}</div></div>`;
+  else if(st.ph==='dd'){const c=st.clue||{},mineDD=c.ddTeam===mi,tm=st.teams[c.ddTeam];
+    main=`${orderHTML(st.ord)}<div class="cluebox"><div class="eyebrow" style="text-align:center">${esc(c.cat)}</div><div class="dd">Daily Double!</div>
+      ${c.wager?`<div class="ddwager"><span class="eyebrow">${mineDD?'Your team wagers':esc(tm?.name||'')+' wagers'}</span><b>${esc(c.wager)}</b></div>`:`<div class="status">${mineDD?'Your team found it!':esc(tm?.name||'The picking team')+' is choosing a wager…'}</div>`}</div>
+      ${mineDD?`<div class="card"><label for="p-dd">Your team’s wager (5 to ${c.ddMax})</label><input id="p-dd" type="number" inputmode="numeric" min="5" max="${c.ddMax}" value="${esc(pDraft.dd??'')}" data-pd="dd">
+        <button class="btn-gold" data-act="p-dd">${c.wager?'Change wager':'Send wager'}</button>
+        <span class="note">Your team has ${myTeam.score} points, so you can bet up to ${c.ddMax}. Right adds your wager, wrong subtracts it. Anyone on your team can send it, and the host can change it.</span></div>`:''}`}
   else if(st.ph==='clue'&&st.clue){
     const c=st.clue,who=c.who,mine=who===mi,tried=(c.tried||[]).includes(mi),res=c.res||{};let act='';
     if(c.a)act=`<div class="answer revealed"><span class="eyebrow">Answer</span><span class="a">${esc(c.a)}</span></div>${res[mi]===1?'<div class="big-status" style="color:var(--good)">Your team got it!</div>':res[mi]===-1?'<div class="status no">Not this time.</div>':''}`;
@@ -1230,10 +1248,11 @@ function displayHTML(){
       ${st.teams.length?`<div class="grid2">${st.teams.map(t=>`<div class="spot"><h3>${esc(t.name)}</h3><span class="muted">${(t.m||[]).length}${st.cap?` / ${st.cap}`:''} players</span><span style="font-size:18px">${(t.m||[]).length?esc(t.m.map(m=>m.n).join(', ')):'<span class="muted">Waiting for players…</span>'}</span></div>`).join('')}</div>`:'<div class="status muted" style="font-size:20px">Teams will appear here as they’re created.</div>'}
       ${(st.loose||[]).length?`<div class="status muted">Still choosing: ${esc(st.loose.map(m=>m.n).join(', '))}</div>`:''}`;
   if(st.ph==='board')main=`${orderHTML(st.ord)}${boardHTML(st.cats,st.used,false)}`;
-  else if(st.ph==='dd')main=`${orderHTML(st.ord)}<div class="tvbox"><div class="eyebrow" style="text-align:center">${esc(st.clue?.cat)}</div><div class="dd">Daily Double!</div></div>`;
+  else if(st.ph==='dd'){const c=st.clue||{},tm=st.teams[c.ddTeam];main=`${orderHTML(st.ord)}<div class="tvbox"><div class="eyebrow" style="text-align:center">${esc(c.cat)}</div><div class="dd">Daily Double!</div>
+    ${tm?`<div class="ddwager">${c.wager?`<span class="eyebrow">${esc(tm.name)} wagers</span><b>${esc(c.wager)}</b>`:`<span class="status">${esc(tm.name)} is choosing a wager… (up to ${c.ddMax})</span>`}</div>`:''}</div>`}
   else if(st.ph==='clue'&&st.clue){
     const c=st.clue,who=c.who,res=c.res||{},r=who!=null?res[who]:null;
-    main=`${orderHTML(st.ord)}<div class="row"><span class="eyebrow" style="font-size:15px">${esc(c.cat)} · ${c.dd?'Daily Double · '+c.val:c.val+' points'}</span><div class="spacer"></div>${who!=null?`<span class="answering">${esc(st.teams[who]?.name)} answering</span>`:''}</div>
+    main=`${orderHTML(st.ord)}<div class="row"><span class="eyebrow" style="font-size:15px">${esc(c.cat)} · ${c.dd?'Daily Double · wager '+c.val:c.val+' points'}</span><div class="spacer"></div>${who!=null?`<span class="answering">${esc(st.teams[who]?.name)} answering</span>`:''}</div>
     ${c.img?picHTML(c.img,c.zoom,c.ep,'tvsize'):''}
     <div class="tvbox" style="${c.img?'min-height:0':''}">${c.m?`<div class="cliptag" style="font-size:18px">♪ Listen${c.m.spotify?' · playing from Spotify':''}</div>`:''}<div class="tvclue ${c.emoji?'emojiq':''}">${clueText(c.q||'')}</div>${c.h?`<div class="hint" style="font-size:clamp(18px,2.6vw,30px)">Hint: ${esc(c.h)}</div>`:''}</div>
     ${!c.a?timerP(true):''}
@@ -1282,6 +1301,9 @@ document.addEventListener('click',e=>{
     case 'go-display':view='display';if(D.step==='live'&&D.code){PS=null;PSkey='';clientOpen(D.code,'display');keepAwake()}render();break;
     case 'src':setup.source=b.dataset.v;if(setup.source==='custom'&&!setup.customId&&custom[0])setup.customId=custom[0].id;saveSetup();render();break;
     case 'preset':setup.preset=b.dataset.v;saveSetup();render();break;
+    case 'skipcat':{const n=b.dataset.v,k=setup.skip||(setup.skip=[]);const i=k.indexOf(n);if(i>=0)k.splice(i,1);else k.push(n);saveSetup();render();break}
+    case 'skip-none':setup.skip=[];saveSetup();render();break;
+    case 'skip-songs':{const k=new Set(setup.skip||[]);BANK.forEach(b=>{if(b.clipByRow||b.q.some(q=>q[5]))k.add(b.name)});setup.skip=[...k];saveSetup();render();break}
     case 'pickcat':{const v=b.dataset.v,k=setup.pick.indexOf(v);if(k>=0)setup.pick.splice(k,1);else if(setup.pick.length<5)setup.pick.push(v);saveSetup();render();break}
     case 'pickcustom':setup.customId=b.dataset.v;saveSetup();render();break;
     case 'set':setup.settings[b.dataset.k]=JSON.parse(b.dataset.v);saveSetup();render();break;
@@ -1380,6 +1402,7 @@ document.addEventListener('click',e=>{
     case 'p-rename':send({t:'rename',name:short(pDraft.rename,24)});break;
     case 'p-buzz':if(!PS)return;pSent.buzz=PS.epoch;send({t:'buzz',e:PS.epoch});try{navigator.vibrate&&navigator.vibrate(60)}catch{}render();break;
     case 'p-ans':if(!PS||!short(pDraft.ans,80))return;pSent.ans=PS.epoch;send({t:'ans',e:PS.epoch,text:pDraft.ans});render();break;
+    case 'p-dd':if(!PS)return;send({t:'ddwager',v:pDraft.dd});break;
     case 'p-wager':if(!PS)return;pSent.wager=PS.epoch;send({t:'wager',e:PS.epoch,v:pDraft.wager});render();break;
     case 'p-fans':if(!PS||!short(pDraft.fans,80))return;pSent.fans=PS.epoch;send({t:'fans',e:PS.epoch,text:pDraft.fans});render();break;
     /* display */
@@ -1390,7 +1413,7 @@ document.addEventListener('click',e=>{
 });
 document.addEventListener('input',e=>{
   const t=e.target,d=t.dataset;
-  if(d.bind==='ddWager'){S.ddWager=t.value;saveHost()}
+  if(d.bind==='ddWager'){S.ddWager=t.value;S.ddBy='';saveHost();broadcastSoon()}
   else if(d.fw!==undefined){S.final.wagers[+d.fw]=t.value;saveHost()}
   else if(d.p){P[d.p]=d.p==='code'?t.value.toUpperCase():t.value;if(d.p==='code')t.value=P.code}
   else if(d.pd){pDraft[d.pd]=t.value}
