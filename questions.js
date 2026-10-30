@@ -1030,7 +1030,22 @@ https://open.spotify.com/track/5jwakA3WYHMeucmgu0tjbD
       { n: 97, level: 7, title: "Come To the Table", artist: "Sidewalk Prophets", accept: ["come to the table"] },
       { n: 99, level: 7, title: "What Faith Can Do", artist: "Kutless", accept: ["what faith can do"] },
       { n: 56, level: 7, title: "Start A Fire", artist: "Unspoken", accept: ["start a fire"] },
-      { n: 47, level: 7, title: "My Story", artist: "Big Daddy Weave", accept: ["my story"] }
+      { n: 47, level: 7, title: "My Story", artist: "Big Daddy Weave", accept: ["my story"] },
+      { n: 2, level: 6, title: "Stars", artist: "Skillet", accept: ["stars"] },
+      { n: 6, level: 6, title: "Relentless", artist: "Hillsong UNITED", accept: ["relentless"] },
+      { n: 14, level: 4, title: "How Deep The Father's Love For Us", artist: "Selah", accept: ["how deep the fathers love for us", "how deep the fathers love", "how deep the father s love"] },
+      { n: 22, level: 4, title: "Come As You Are", artist: "Crowder", accept: ["come as you are"] },
+      { n: 43, level: 5, title: "Stand In Your Love", artist: "Josh Baldwin", accept: ["stand in your love"] },
+      { n: 52, level: 6, title: "Soul On Fire", artist: "Third Day", accept: ["soul on fire"] },
+      { n: 54, level: 7, title: "Christ In Me", artist: "Jeremy Camp", accept: ["christ in me"] },
+      { n: 66, level: 7, title: "Ever Be", artist: "Aaron Shust", accept: ["ever be"] },
+      { n: 70, level: 6, title: "Rise", artist: "Danny Gokey", accept: ["rise"] },
+      { n: 77, level: 7, title: "Love", artist: "We Are Messengers", accept: ["love"] },
+      { n: 78, level: 7, title: "Even The Impossible", artist: "Mack Brock", accept: ["even the impossible"] },
+      { n: 79, level: 6, title: "You Are Loved", artist: "Stars Go Dim", accept: ["you are loved"] },
+      { n: 86, level: 6, title: "Breathe", artist: "Jonny Diaz", accept: ["breathe"] },
+      { n: 95, level: 6, title: "All In", artist: "Matthew West", accept: ["all in"] },
+      { n: 96, level: 7, title: "Mercy Is A Song", artist: "Matthew West", accept: ["mercy is a song"] }
     ]
   }
 };
