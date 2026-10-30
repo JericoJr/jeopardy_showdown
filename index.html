@@ -228,6 +228,8 @@ body.tuning{padding-bottom:62vh}
 .volrow{display:grid;grid-template-columns:minmax(110px,auto) 1fr 48px;align-items:center;gap:10px}.volrow input{padding:0;width:100%}.volrow b{text-align:right;font-variant-numeric:tabular-nums}
 .tvsize{display:inline-flex;align-items:center;gap:4px}.tvsize .btn-sm{min-width:32px;padding:4px 8px}
 .steps{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:6px}
+.firstbanner{text-align:center;font-family:var(--f-display);text-transform:uppercase;font-size:clamp(22px,4.5vw,46px);color:var(--gold-ink);background:var(--gold);border-radius:14px;padding:8px 14px;animation:fxpop .5s ease-out}
+body.tvfit .firstbanner{font-size:clamp(20px,5vh,52px);padding:4px 14px}
 .order{display:flex;align-items:center;justify-content:center;gap:6px 8px;flex-wrap:wrap;background:var(--panel);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:8px 10px}
 .order .olab{width:100%;text-align:center;margin-bottom:-2px}
 .ochip{display:flex;flex-direction:column;align-items:center;gap:1px;padding:6px 14px;border-radius:999px;border:2px solid rgba(255,255,255,.12);background:rgba(255,255,255,.05);max-width:44vw;transition:all .3s}
@@ -989,7 +991,7 @@ function publicState(){
   const st={ph,code:S.code,title:short(g.title,60),cats:g.cats.map(x=>short(x.name,40)),used:S.used,
     teams:S.teams.map((t,i)=>({id:t.id,name:t.name,named:t.custom!==false,need:needName(i),score:t.score,m:members(i).map(m=>({p:m.pid,n:m.name,on:on.has(m.pid)}))})),
     loose:Object.entries(S.members).filter(([,m])=>!m.team||teamIdx(m.team)<0).map(([p,m])=>({p,n:m.name})),
-    allowPass:S.settings.allowPass!==false,stealOpen:!!S.stealOpen,ord:orderState(),vol:Object.assign({},VOL_DEF,S.vol),fullOnly:S.fullOnly!==false,spotCheck:S.spotCheck||0,cap:S.settings.cap,create:S.settings.playersCreate,mode:S.settings.mode,ans:S.settings.answers,turn:S.turn,epoch:S.epoch,open:!!S.buzzOpen,
+    first:S.first&&Date.now()-S.first.at<4500?{name:(S.teams[S.first.t]||{}).name||'',left:4500-(Date.now()-S.first.at)}:null,allowPass:S.settings.allowPass!==false,stealOpen:!!S.stealOpen,ord:orderState(),vol:Object.assign({},VOL_DEF,S.vol),fullOnly:S.fullOnly!==false,spotCheck:S.spotCheck||0,cap:S.settings.cap,create:S.settings.playersCreate,mode:S.settings.mode,ans:S.settings.answers,turn:S.turn,epoch:S.epoch,open:!!S.buzzOpen,
     tm:{left:tLeft(),run:!!S.tmr.run,len:S.tmr.len},music:!!S.music,tmusic:S.tmusic!==false,snd:S.sound!==false,fx:S.fx||null,clip:S.clip?{n:S.clip.n,act:S.clip.act,at:S.clip.at||0}:null,hi:activeTeam()};
   if(S.cur&&cl){st.clue={cat:g.cats[S.cur.c].name,val:clueValue(),dd:isDD(),wager:isDD()?S.ddWager:'',ddMax:isDD()?ddMax():0,ddTeam:S.ddTeam,ddBy:S.ddBy||'',
     q:ph==='clue'?cl.q:null,h:S.hint&&ph==='clue'?cl.h:null,a:S.revealed?(cl.a||(cl.song?'':null)):null,rev:!!S.revealed,m:ph==='clue'&&cl.m?cl.m:null,img:ph==='clue'&&cl.img?cl.img:null,full:ph==='clue'&&cl.full?cl.full:null,emoji:!!cl.emoji,zoom:ph==='clue'&&cl.img&&!S.revealed&&S.cur.r>=3?S.cur.r:0,ep:S.epoch,
@@ -1013,6 +1015,7 @@ function myTeamIdx(st){return st?st.teams.findIndex(t=>(t.m||[]).some(m=>m.p===P
 function applyState(st){
   if(!st||typeof st!=='object'||!Array.isArray(st.teams))return;
   if(st.tm)pTimer={left:st.tm.left,run:st.tm.run,len:st.tm.len||1,end:Date.now()+st.tm.left};
+  if(st.first&&st.first.left>0){clearTimeout(window.firstT);window.firstT=setTimeout(()=>{if(PS){PS.first=null;render()}},st.first.left+50)}
   if(view==='display'){setTimeout(applyVolumes,0);if(D.spotCheck!=null&&st.spotCheck!==D.spotCheck){sentPv=null;resetSpotify()}D.spotCheck=st.spotCheck;sendSpotStat();if(PS&&PS.fullOnly!==st.fullOnly)setTimeout(()=>ThemeSpot.kick(),0);const n=st.fx?st.fx.n:0;if(lastFx!=null&&n!==lastFx&&st.fx){if(!D.mute&&st.snd!==false)sfx(st.fx.k);flash(st.fx.k)}lastFx=n;
     const on=!D.mute&&st.snd!==false,cn=st.clip?st.clip.n:0;playingN=cn;if(lastClip!=null&&cn!==lastClip&&st.clip){if(on)runClip(st.clip.act,st.clue&&st.clue.m,st.clip.at,st.clue&&st.clue.full);else Clip.stop()}lastClip=cn;
     if(!on&&Clip.playing)Clip.stop();if(st.ph==='clue'&&st.clue&&st.clue.m&&st.clue.m.spotify&&!Clip.playing)Spot.cue(st.clue.m.spotify);if(st.ph!=='clue'&&Clip.playing)Clip.stop();PS=st;displayAudio()}
@@ -1190,6 +1193,7 @@ function orderState(){if(!S||!S.teams.length||S.phase==='lobby')return null;cons
   return {names:S.teams.map(t=>t.name),turn:S.turn,picker:inClue?(S.picker??S.turn):S.turn,who:S.phase==='clue'?S.answering:S.phase==='dd'?S.ddTeam:null,dd:S.phase==='dd'||(inClue&&isDD()),
     tried:inClue?S.tried||[]:[],res:inClue?S.scored||{}:{},clue:inClue,next:S.phase==='clue'&&!S.revealed&&!isDD()&&!Object.values(S.scored||{}).includes(1)?upNext():null,
     nextPick:S.phase==='board'&&!classic()?(S.turn+1)%S.teams.length:null,passed:inClue?S.passed||{}:{},steal:S.phase==='clue'&&!!S.stealOpen,rules:S.settings.rules,rev:!!S.revealed}}
+function firstHTML(name){return name?`<div class="firstbanner" role="status">🎲 <b>${esc(name)}</b> goes first!</div>`:''}
 function orderHTML(o){if(!o||!o.names.length)return '';const n=o.names.length;
   const chip=i=>{const r=o.res[i];let cls='',tag='';
     if(r===1){cls='ok';tag='✓ Correct'}
@@ -1260,6 +1264,7 @@ function hostHTML(){
   return `<div class="row"><div><div class="eyebrow">Jeopardy Showdown · host</div><h1 style="font-family:var(--f-display);font-weight:400;font-size:clamp(24px,4vw,38px);letter-spacing:.02em;text-transform:uppercase">${esc(g.title)}</h1></div><div class="spacer"></div>
     <button class="btn-sm" data-act="show-lobby">Code ${esc(S.code)} · teams & QR</button>${canFull()?`<button class="btn-sm" data-act="fs">${isFull()?'Exit full screen':'⛶ Full screen'}</button>`:''}<div id="conn">${connHTML()}</div></div>
   ${spotifyCardHTML()}${volHTML()}
+  ${firstHTML(S.first&&Date.now()-S.first.at<4500?(S.teams[S.first.t]||{}).name:'')}
   ${orderHTML(orderState())}
   <div class="turnbar"><span class="eyebrow">${classic()?'In control':'Picking now'}</span><b>${esc(S.teams[S.turn]?.name||'No teams yet')}</b><span class="spacer"></span><span class="note">${classic()?'Classic Jeopardy':'Team Order'} · ${esc(LEVEL_NAMES[S.settings.level]||'All levels')} · ${S.settings.mode==='turns'?'next team steals':'buzz-in'} · ${S.settings.answers==='typed'?'typed answers'+(S.settings.auto?', auto-scored':''):'answers out loud'}</span></div>
   <div class="row"><button class="btn-sm ${S.settings.autoTimer?'':'btn-ghost'}" data-act="auto-timer" aria-pressed="${!!S.settings.autoTimer}">⏱ Auto-start timer: ${S.settings.autoTimer?'on':'off'}</button><span class="note">${S.settings.autoTimer?'The timer starts by itself when a question opens.':'The timer waits until you tap Start timer.'}</span></div>
@@ -1471,7 +1476,7 @@ function playerHTML(){
     <button class="btn-gold" data-act="p-random">Put me on any team (random)</button>`:'<div class="card status">No teams yet. Ask the host to add one.</div>'}
     <button class="btn-ghost btn-sm" data-act="p-leave">Leave game</button>`;
   let main='';
-  if(st.ph==='board')main=`${orderHTML(st.ord)}<div class="card"><span class="big-status">${st.turn===mi?'Your team picks!':esc(st.teams[st.turn]?.name)+' is picking'}</span><div class="status muted">${st.turn===mi?'Anyone on your team can tap a clue below.':'Get ready…'}</div></div>${boardHTML(st.cats,st.used,st.turn===mi?'p-pick':false)}`;
+  if(st.ph==='board')main=`${firstHTML(st.first&&st.first.name)}${orderHTML(st.ord)}<div class="card"><span class="big-status">${st.turn===mi?'Your team picks!':esc(st.teams[st.turn]?.name)+' is picking'}</span><div class="status muted">${st.turn===mi?'Anyone on your team can tap a clue below.':'Get ready…'}</div></div>${boardHTML(st.cats,st.used,st.turn===mi?'p-pick':false)}`;
   else if(st.ph==='dd'){const c=st.clue||{},mineDD=c.ddTeam===mi,tm=st.teams[c.ddTeam];
     main=`${orderHTML(st.ord)}<div class="cluebox"><div class="eyebrow" style="text-align:center">${esc(c.cat)}</div><div class="dd">Daily Double!</div>
       ${c.wager?`<div class="ddwager"><span class="eyebrow">${mineDD?'Your team wagers':esc(tm?.name||'')+' wagers'}</span><b>${esc(c.wager)}</b></div>`:`<div class="status">${mineDD?'Your team found it!':esc(tm?.name||'The picking team')+' is choosing a wager…'}</div>`}</div>
@@ -1530,7 +1535,7 @@ function displayHTML(){
       <div class="col"><span class="eyebrow">Scan to join, or enter this code</span><div class="tvcode">${esc(st.code)}</div><span class="muted" style="font-size:18px">Open the game on your phone, tap <b>Join a game</b>, then pick or create a team.</span></div></div></div>
       ${st.teams.length?`<div class="grid2">${st.teams.map(t=>`<div class="spot"><h3>${esc(t.name)}</h3><span class="muted">${(t.m||[]).length}${st.cap?` / ${st.cap}`:''} players</span><span style="font-size:18px">${(t.m||[]).length?esc(t.m.map(m=>m.n).join(', ')):'<span class="muted">Waiting for players…</span>'}</span></div>`).join('')}</div>`:'<div class="status muted" style="font-size:20px">Teams will appear here as they’re created.</div>'}
       ${(st.loose||[]).length?`<div class="status muted">Still choosing: ${esc(st.loose.map(m=>m.n).join(', '))}</div>`:''}`;
-  if(st.ph==='board')main=`${orderHTML(st.ord)}${boardHTML(st.cats,st.used,false)}`;
+  if(st.ph==='board')main=`${firstHTML(st.first&&st.first.name)}${orderHTML(st.ord)}${boardHTML(st.cats,st.used,false)}`;
   else if(st.ph==='dd'){const c=st.clue||{},tm=st.teams[c.ddTeam];main=`${orderHTML(st.ord)}<div class="tvbox"><div class="eyebrow" style="text-align:center">${esc(c.cat)}</div><div class="dd">Daily Double!</div>
     ${tm?`<div class="ddwager">${c.wager?`<span class="eyebrow">${esc(tm.name)} wagers</span><b>${esc(c.wager)}</b>`:`<span class="status">${esc(tm.name)} is choosing a wager… (up to ${c.ddMax})</span>`}</div>`:''}</div>`}
   else if(st.ph==='clue'&&st.clue){
@@ -1599,7 +1604,7 @@ document.addEventListener('click',e=>{
     case 'end-no':confirmEnd=false;render();break;
     case 'end-yes':endGame();break;
     case 'new-no':confirmNew=false;render();break;
-    case 'begin':S.phase='board';S.turn=S.teams.length?Math.floor(Math.random()*S.teams.length):0;commit();break;
+    case 'begin':S.phase='board';S.turn=S.teams.length?Math.floor(Math.random()*S.teams.length):0;S.first=S.teams.length?{t:S.turn,at:Date.now()}:null;commit();setTimeout(()=>{if(S)render()},4600);break;
     case 'show-lobby':showLobby=true;render();break;
     case 'hide-lobby':showLobby=false;render();break;
     case 'copy':{const inp=$('#joinlink');try{navigator.clipboard.writeText(joinLink(S.code)).then(()=>{b.textContent='Copied'},()=>{inp.select()})}catch{inp&&inp.select()}break}

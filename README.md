@@ -34,6 +34,11 @@ In every mode, higher points always means a harder question.
 - Renaming a team is optional. Any player on the team, or the host, can do it.
 - The host can also add or delete teams, move or remove players, and shuffle everyone into random teams.
 
+### Turn order
+
+- Teams take turns in the order they joined: Team 1 → Team 2 → Team 3, then back to Team 1.
+- When the host taps **Start the game**, a random team goes first, and a "🎲 Team 3 goes first!" banner shows on the TV, the phones and the host. From there the order stays the same and wraps around (for example Team 3 → Team 1 → Team 2 → Team 3).
+
 ### Game styles
 
 Pick one in setup:
