@@ -362,10 +362,13 @@ const ThemeSpot={ctl:null,want:false,made:false,played:false,ok:false,pos:0,dur:
   update(e){const d=(e&&e.data)||{};this.pos=(d.position||0)/1000;if(d.duration)this.dur=d.duration/1000;
     if(!d.isPaused&&!d.isBuffering&&d.duration){this.ok=true;this.played=true}
     if(!this.want){if(!d.isPaused)try{this.ctl.pause()}catch{}return}
-    /* loop: jump back to the start just before the end, or restart if it finished */
-    if(d.duration&&!d.isPaused&&d.position>=d.duration-700){try{this.ctl.seek(0)}catch{}}
+    /* loop: play the whole song, then jump back to the start right as it ends (timed to the song, not to the next update) */
+    clearTimeout(this.loopT);
+    if(d.duration&&!d.isPaused&&!d.isBuffering){const left=d.duration-d.position;
+      if(left<=60){try{this.ctl.seek(0)}catch{}}
+      else this.loopT=setTimeout(()=>{if(this.want){try{this.ctl.seek(0)}catch{}}},Math.max(0,left-60))}
     else if(d.isPaused&&this.played&&d.duration&&(d.position===0||d.position>=d.duration-1500)){try{this.ctl.seek(0);this.ctl.resume?this.ctl.resume():this.ctl.play()}catch{}}},
-  stop(){this.want=false;try{this.ctl&&this.ctl.pause()}catch{}}};
+  stop(){this.want=false;clearTimeout(this.loopT);try{this.ctl&&this.ctl.pause()}catch{}}};
 document.addEventListener('pointerdown',()=>{if(ThemeSpot.want&&!ThemeSpot.ok&&ThemeSpot.ctl){try{ThemeSpot.ctl.play()}catch{}}},true);
 const Music={on:false,kind:null,el:null,timer:null,bus:null,step:0,next:0,prog:()=>0,
   start(kind){if(this.on&&this.kind===kind)return;this.stop();this.on=true;this.kind=kind;
