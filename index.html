@@ -157,6 +157,8 @@ body.tv .wrap{max-width:1600px}
 /* TV board size: scales the whole board down and keeps it centred (TVs and AirPlay often crop the edges) */
 html.tvhtml{background:var(--stage)}html.tvfithtml{overflow:hidden;height:100%}
 body.tvfit{transform:scale(var(--tvz,1));transform-origin:50% 50%}
+/* lobby, final round and winner screens: the same even shrink, centred, with a margin at the top too */
+body.tv:not(.tvfit) #app{transform:translateY(calc((1 - var(--tvz,1)) * 12vh)) scale(var(--tvz,1));transform-origin:50% 0}
 /* TV board: everything sizes to the screen's height, so the whole board fits on any TV, laptop or tablet */
 body.tvfit{height:100vh;height:100dvh;box-sizing:border-box;overflow:hidden;display:flex;flex-direction:column;padding-top:max(8px,env(safe-area-inset-top,0px));padding-bottom:max(8px,env(safe-area-inset-bottom,0px))}
 body.tvfit #app{flex:1 1 auto;min-height:0;width:100%;max-width:none;gap:clamp(4px,1vh,12px);overflow-y:auto;overflow-x:hidden}
