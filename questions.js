@@ -1,5 +1,5 @@
 /*
-  SCRIPTURE SHOWDOWN QUESTION BANK
+  JEOPARDY SHOWDOWN QUESTION BANK
   ================================
   Edit this file to add your own categories and questions. The game picks
   5 random categories and random questions every time a new game starts.

@@ -4,8 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0b0e2c">
-<meta name="description" content="Scripture Showdown: a free Bible quiz game show for youth groups. Host on a tablet, show the board on a TV, and play on any phone.">
-<title>Scripture Showdown</title>
+<meta name="description" content="Jeopardy Showdown: a free Bible quiz game show for youth groups. Host on a tablet, show the board on a TV, and play on any phone.">
+<title>Jeopardy Showdown</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=Fraunces:opsz,wght@9..144,500;9..144,700&family=Figtree:wght@400;600;800&display=swap">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
@@ -183,7 +183,7 @@ const BASE=location.href.split('#')[0];
 const joinLink=code=>BASE+'#'+code;
 const PREFIX='scripture-showdown-v1-';
 function buildBoard(catIds){
-  return{title:'Scripture Showdown',cats:catIds.map(id=>{const b=BANK.find(x=>x.id===id);return{name:b.name,bank:id,clues:pickClues(b)}}),
+  return{title:'Jeopardy Showdown',cats:catIds.map(id=>{const b=BANK.find(x=>x.id===id);return{name:b.name,bank:id,clues:pickClues(b)}}),
     final:(f=>({cat:f[0],q:f[1],a:f[2],h:f[3],alt:f[4]}))(rnd(FINALS))};
 }
 function pickClues(b){const used=new Set();return [1,2,3,4,5].map(d=>{let best=null;
@@ -348,7 +348,7 @@ const needName=()=>false;
 function pruneTeams(all){if(!S||S.phase!=='lobby')return;const used=new Set(Object.values(S.members).map(m=>m.team));const before=S.teams.length;
   S.teams=S.teams.filter(t=>used.has(t.id)||(!all&&!t.auto));if(S.teams.length!==before&&S.turn>=S.teams.length)S.turn=0}
 function soloTeam(pid){const t=addTeam('',true);if(t)S.members[pid].team=t.id;return t}
-const startProblem=()=>S.teams.length<2?'You need at least 2 teams to start (a team can be just 1 player).':'';
+const startProblem=()=>'';
 function openTeams(){const cap=S.settings.cap;return S.teams.map((t,i)=>i).filter(i=>!cap||members(i).length<cap)}
 function mixTeams(n){
   const ps=shuffle(Object.keys(S.members));
@@ -411,12 +411,12 @@ function newEpoch(){S.epoch++;S.inbox={buzz:[],ans:{},wag:{},fans:{}};S.judged={
 function openTile(c,r){
   if(S.used[c][r])return;
   S.cur={c,r};S.revealed=false;S.hint=false;peek=false;newEpoch();S.scored={};S.tried=[];S.ddWager='';
-  S.answering=S.settings.mode==='turns'?S.turn:null;S.ddTeam=S.turn;
+  const hasT=S.teams.length>0;if(S.turn>=S.teams.length)S.turn=0;S.answering=S.settings.mode==='turns'&&hasT?S.turn:null;S.ddTeam=hasT?S.turn:null;
   if(isDD()){S.phase='dd';S.buzzOpen=false;resetTimer(false);}
   else{S.phase='clue';S.buzzOpen=S.settings.mode==='buzz';resetTimer(S.settings.autoTimer);if(curClue().m)clipCmd('play')}
   S.passes=0;commit();
 }
-function closeTile(){if(S.cur&&curClue()?.m)clipCmd('stop');if(S.cur)S.used[S.cur.c][S.cur.r]=1;S.cur=null;S.phase='board';S.buzzOpen=false;S.tmr.run=false;S.turn=(S.turn+1)%S.teams.length;commit()}
+function closeTile(){if(S.cur&&curClue()?.m)clipCmd('stop');if(S.cur)S.used[S.cur.c][S.cur.r]=1;S.cur=null;S.phase='board';S.buzzOpen=false;S.tmr.run=false;S.turn=S.teams.length?(S.turn+1)%S.teams.length:0;commit()}
 function scoreTeam(i,sign,val,book){const prev=book[i]||0;S.teams[i].score-=prev*val;if(prev===sign){delete book[i]}else{S.teams[i].score+=sign*val;book[i]=sign}}
 function markClue(i,sign){
   const val=clueValue(),prev=S.scored[i]||0,free=!S.settings.wrongLose&&!isDD();
@@ -505,7 +505,7 @@ function refreshParts(){
   Object.entries(map).forEach(([id,fn])=>{const el=$(id);if(el)el.innerHTML=fn()});
 }
 function drawQR(text,size){const el=$('#qr');if(!el)return;el.innerHTML='';if(!window.QRCode){el.textContent='QR code unavailable';return}try{new QRCode(el,{text,width:size,height:size,colorDark:'#0b0e2c',colorLight:'#ffffff',correctLevel:QRCode.CorrectLevel.M})}catch{el.textContent='QR code unavailable'}}
-function header(sub){return `<div class="row"><div class="brand">Scripture Showdown<small>${esc(sub)}</small></div><div class="spacer"></div><div id="conn">${connHTML()}</div></div>`}
+function header(sub){return `<div class="row"><div class="brand">Jeopardy Showdown<small>${esc(sub)}</small></div><div class="spacer"></div><div id="conn">${connHTML()}</div></div>`}
 
 function roleHTML(){
   return `${header('A Bible game show for youth & young adults')}
@@ -627,11 +627,11 @@ function lobbyHTML(inOverlay){
 }
 function hostHTML(){
   const g=S.game;
-  if(S.phase==='lobby')return `<div class="row"><div><div class="eyebrow">Scripture Showdown · lobby</div><h1 style="font-family:var(--f-display);font-weight:400;font-size:clamp(24px,4vw,38px);text-transform:uppercase">${esc(g.title)}</h1></div><div class="spacer"></div><div id="conn">${connHTML()}</div></div>${lobbyHTML(false)}`;
+  if(S.phase==='lobby')return `<div class="row"><div><div class="eyebrow">Jeopardy Showdown · lobby</div><h1 style="font-family:var(--f-display);font-weight:400;font-size:clamp(24px,4vw,38px);text-transform:uppercase">${esc(g.title)}</h1></div><div class="spacer"></div><div id="conn">${connHTML()}</div></div>${lobbyHTML(false)}`;
   const allUsed=S.used.every(c=>c.every(Boolean));
-  return `<div class="row"><div><div class="eyebrow">Scripture Showdown · host</div><h1 style="font-family:var(--f-display);font-weight:400;font-size:clamp(24px,4vw,38px);letter-spacing:.02em;text-transform:uppercase">${esc(g.title)}</h1></div><div class="spacer"></div>
+  return `<div class="row"><div><div class="eyebrow">Jeopardy Showdown · host</div><h1 style="font-family:var(--f-display);font-weight:400;font-size:clamp(24px,4vw,38px);letter-spacing:.02em;text-transform:uppercase">${esc(g.title)}</h1></div><div class="spacer"></div>
     <button class="btn-sm" data-act="show-lobby">Code ${esc(S.code)} · teams & QR</button><div id="conn">${connHTML()}</div></div>
-  <div class="turnbar"><span class="eyebrow">${S.settings.mode==='turns'?'Picking now':'Picks the next clue'}</span><b>${esc(S.teams[S.turn]?.name||'')}</b><span class="spacer"></span><span class="note">${S.settings.mode==='turns'?'Teams take turns':'Buzz-in mode'} · ${S.settings.answers==='typed'?'typed answers'+(S.settings.auto?', auto-scored':''):'answers out loud'}</span></div>
+  <div class="turnbar"><span class="eyebrow">${S.settings.mode==='turns'?'Picking now':'Picks the next clue'}</span><b>${esc(S.teams[S.turn]?.name||'No teams yet')}</b><span class="spacer"></span><span class="note">${S.settings.mode==='turns'?'Teams take turns':'Buzz-in mode'} · ${S.settings.answers==='typed'?'typed answers'+(S.settings.auto?', auto-scored':''):'answers out loud'}</span></div>
   <div class="scores" id="scores">${scoresInner(true)}</div>
   ${boardHTML(g.cats,S.used,true)}
   <div class="row">
@@ -711,7 +711,7 @@ function clueOverlay(){
         ${S.judged[ans]?`<span class="${S.judged[ans]===1?'ok':'no'}">${S.settings.auto?'Auto-scored':'Typed answer looks'} ${S.judged[ans]===1?'correct':'wrong'}${S.settings.auto?'. Tap a button to change it.':''}</span>`:''}`
       :mode==='buzz'?`<span class="eyebrow">Buzz order</span><div id="buzzq">${queueHTML()}</div><div class="row">${S.buzzOpen?'<button class="btn-sm" data-act="buzz-close">Close buzzers</button>':'<button class="btn-sm" data-act="buzz-open">Open buzzers</button>'}<button class="btn-sm" data-act="buzz-reset">Clear buzzes</button></div>
         <span class="note">No phones? Tap the team that answers first:</span><div class="row">${S.teams.map((t,i)=>S.tried.includes(i)?'':`<button class="btn-sm" data-act="set-ans" data-i="${i}">${esc(t.name)}</button>`).join('')}</div>`
-      :`<span class="note">Every team has tried. Reveal the answer and head back to the board.</span>`}
+      :`<span class="note">${S.teams.length?'Every team has tried. Reveal the answer and head back to the board.':'No teams yet. You can still reveal the answer, and players can join any time with the game code.'}</span>`}
       ${S.tried.length?`<span class="note">Already tried: ${esc(S.tried.map(i=>S.teams[i].name).join(', '))}</span>`:''}
     </div>
     ${S.settings.answers==='typed'?`<div class="card" style="gap:8px"><div class="eyebrow">Typed answers</div><div id="answers">${answersHTML()}</div></div>`:''}
@@ -745,8 +745,8 @@ function finalOverlay(){
       <button class="btn-good ${S.final.marks[i]===1?'on-good':''}" data-act="fmark" data-i="${i}" data-s="1">Correct +${w}</button><button class="btn-bad ${S.final.marks[i]===-1?'on-good':''}" data-act="fmark" data-i="${i}" data-s="-1">Wrong −${w}</button></div>`}).join('')}
       <div class="row"><div class="spacer"></div><button class="btn-gold" data-act="over">Show the winner</button></div></div>`:''}`;
   }else{
-    const max=Math.max(...S.teams.map(t=>t.score));const win=S.teams.filter(t=>t.score===max);
-    body=`<div class="cluebox"><div class="eyebrow" style="text-align:center">And the winner is</div><div class="banner">${win.map(t=>esc(t.name)).join(' & ')}</div><div style="text-align:center;font-family:var(--f-display);font-size:32px;color:var(--gold)">${max} points</div></div>
+    const max=S.teams.length?Math.max(...S.teams.map(t=>t.score)):0;const win=S.teams.filter(t=>t.score===max);
+    body=`<div class="cluebox"><div class="eyebrow" style="text-align:center">And the winner is</div><div class="banner">${win.length?win.map(t=>esc(t.name)).join(' & '):'Thanks for playing!'}</div><div style="text-align:center;font-family:var(--f-display);font-size:32px;color:var(--gold)">${max} points</div></div>
     <div class="scores">${[...S.teams].sort((a,b)=>b.score-a.score).map(t=>`<div class="team"><span class="nm">${esc(t.name)}</span><span class="sc">${t.score}</span></div>`).join('')}</div>
     <div class="row"><button class="btn-ghost" data-act="final-back">Back to final</button><div class="spacer"></div><button class="btn-gold" data-act="go-setup">Play again</button></div>`;
   }
@@ -810,7 +810,7 @@ function playerHTML(){
       ${timerP()}<div class="card"><label for="p-fans">Your team’s answer</label><textarea id="p-fans" maxlength="80" data-pd="fans">${esc(pDraft.fans)}</textarea>
       <button class="btn-gold" data-act="p-fans">${pSent.fans===st.epoch?'Update answer':'Send answer'}</button>${pSent.fans===st.epoch?'<span class="note">Sent to the host.</span>':''}</div>`;
     else if(st.ph==='final-reveal')main=`<span class="eyebrow">Final round · ${esc(f.cat)}</span><div class="cluebox" style="min-height:120px"><div class="clue" style="font-size:clamp(20px,5.5vw,30px)">${esc(f.q)}</div></div><div class="answer revealed"><span class="eyebrow">Answer</span><span class="a">${esc(f.a)}</span></div>${f.res&&f.res[mi]===1?'<div class="big-status" style="color:var(--good)">Your team got it!</div>':f.res&&f.res[mi]===-1?'<div class="status no">Not this time.</div>':''}`;
-    else{const max=Math.max(...st.teams.map(t=>t.score));const won=myTeam.score===max;main=`<div class="cluebox"><div class="eyebrow" style="text-align:center">Winner</div><div class="banner">${st.teams.filter(t=>t.score===max).map(t=>esc(t.name)).join(' & ')}</div>${won?'<div class="status">That’s your team. Well played!</div>':''}</div>`}
+    else{const max=st.teams.length?Math.max(...st.teams.map(t=>t.score)):0;const won=myTeam.score===max;main=`<div class="cluebox"><div class="eyebrow" style="text-align:center">Winner</div><div class="banner">${st.teams.filter(t=>t.score===max).map(t=>esc(t.name)).join(' & ')}</div>${won?'<div class="status">That’s your team. Well played!</div>':''}</div>`}
   }
   return `<div class="row"><div style="min-width:0"><div class="eyebrow">${esc(st.title)} · ${esc(P.code)}</div><h2>${esc(P.name)} <span class="muted" style="font-weight:400">· ${esc(myTeam.name)}</span></h2></div><div class="spacer"></div><div id="conn">${connHTML()}</div></div>
   ${main}
@@ -827,7 +827,7 @@ function displayHTML(){
       <span class="note">Enter the code from the host’s screen. This view never shows an answer until the host reveals it, so it’s safe for the TV.</span>
       <button class="btn-ghost btn-sm" data-act="go-role">Back</button></div>`;
   const st=PS;
-  const bar=`<div class="row"><span class="eyebrow">${esc(st?.title||'Scripture Showdown')} · Join with code <b style="color:var(--gold)">${esc(D.code)}</b></span><div class="spacer"></div><div id="conn">${connHTML()}</div>
+  const bar=`<div class="row"><span class="eyebrow">${esc(st?.title||'Jeopardy Showdown')} · Join with code <b style="color:var(--gold)">${esc(D.code)}</b></span><div class="spacer"></div><div id="conn">${connHTML()}</div>
     <button class="btn-sm btn-ghost" data-act="d-sound">${D.mute?'Sound: off':'Sound: on'}</button><button class="btn-sm btn-ghost" data-act="d-full">Full screen</button><button class="btn-sm btn-ghost" data-act="d-leave">Exit</button></div>`;
   if(!st)return `${bar}<div class="tvbox"><div class="big-status">${net==='live'?'Loading…':'Connecting to the host…'}</div>${netNote()}</div>`;
   const scores=`<div class="scores">${st.teams.map((t,i)=>`<div class="team ${st.hi===i?'turn':''}">${st.hi===i?`<span class="badge">${st.ph==='clue'&&st.clue&&st.clue.who===i?'Answering':st.ph==='board'?'Picking':'Their turn'}</span>`:''}<span class="nm">${esc(t.name)}</span><span class="sc ${t.score<0?'neg':''}">${t.score}</span><span class="mem">${esc((t.m||[]).map(m=>m.n).join(', '))}</span></div>`).join('')}</div>`;
@@ -855,7 +855,7 @@ function displayHTML(){
     else if(st.ph==='final-reveal')main=`<span class="eyebrow" style="font-size:15px">Final round · ${esc(f.cat)}</span><div class="tvbox" style="min-height:30vh"><div class="tvclue" style="font-size:clamp(24px,3.4vw,44px)">${esc(f.q)}</div></div>
       <div class="answer revealed"><span class="eyebrow">Answer</span><span class="a" style="font-size:clamp(22px,3.4vw,44px)">${esc(f.a)}</span></div>
       ${f.res?`<div class="row" style="justify-content:center">${Object.keys(f.res).map(i=>`<span class="pill" style="font-size:16px">${esc(st.teams[i]?.name)} <span class="${f.res[i]===1?'ok':'no'}">${f.res[i]===1?'✓ correct':'✗ wrong'}</span></span>`).join('')}</div>`:''}`;
-    else{const max=Math.max(...st.teams.map(t=>t.score));main=`<div class="tvbox"><div class="eyebrow" style="text-align:center">And the winner is</div><div class="banner">${st.teams.filter(t=>t.score===max).map(t=>esc(t.name)).join(' & ')}</div><div style="text-align:center;font-family:var(--f-display);font-size:40px;color:var(--gold)">${max} points</div></div>`}
+    else{const max=st.teams.length?Math.max(...st.teams.map(t=>t.score)):0;main=`<div class="tvbox"><div class="eyebrow" style="text-align:center">And the winner is</div><div class="banner">${st.teams.filter(t=>t.score===max).map(t=>esc(t.name)).join(' & ')}</div><div style="text-align:center;font-family:var(--f-display);font-size:40px;color:var(--gold)">${max} points</div></div>`}
   }
   return `${bar}${main}${scores}
   <details class="card"><summary class="eyebrow" style="cursor:pointer">Music on this screen</summary><span class="note">The host turns background music on and off. ${PS&&PS.music?'Music is on.':'Music is off right now.'} Sound effects play only for correct and wrong answers.</span>${musicControlsHTML()}</details>`;
@@ -887,7 +887,7 @@ document.addEventListener('click',e=>{
     case 'end-no':confirmEnd=false;render();break;
     case 'end-yes':endGame();break;
     case 'new-no':confirmNew=false;render();break;
-    case 'begin':if(startProblem())return;S.phase='board';S.turn=Math.floor(Math.random()*S.teams.length);commit();break;
+    case 'begin':S.phase='board';S.turn=S.teams.length?Math.floor(Math.random()*S.teams.length):0;commit();break;
     case 'show-lobby':showLobby=true;render();break;
     case 'hide-lobby':showLobby=false;render();break;
     case 'copy':{const inp=$('#joinlink');try{navigator.clipboard.writeText(joinLink(S.code)).then(()=>{b.textContent='Copied'},()=>{inp.select()})}catch{inp&&inp.select()}break}

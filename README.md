@@ -1,4 +1,4 @@
-# Scripture Showdown
+# Jeopardy Showdown
 
 A free Bible quiz game show for youth groups and young adults. The host runs the game from a tablet or laptop, a TV shows the board, and players join from any phone. No accounts or apps needed.
 
@@ -14,7 +14,7 @@ A free Bible quiz game show for youth groups and young adults. The host runs the
 1. **Host (iPad):** open the site, tap **Host a game**, choose your rules, then tap **Create game**. Every new game picks 5 random categories with random questions.
 2. **TV board (laptop on AirPlay):** open the site, tap **Show the board**, enter the 4-letter code, then tap **Full screen**. Music and sound effects play from this screen.
 3. **Players (any phone):** scan the QR code on the TV and enter a name. Scanning always opens the game for that code, even if the phone was in an earlier game. Each player starts on their own team and can join another team in the lobby.
-4. When the teams look right, the host taps **Start the game**.
+4. When you're ready, the host taps **Start the game**. You can start with no teams or players; anyone who joins later gets their own team.
 5. When you're done, the host taps **End game**, which sends every player and the TV board back to the start screen.
 
 ### Teams
