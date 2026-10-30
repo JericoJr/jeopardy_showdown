@@ -896,7 +896,7 @@ document.addEventListener('click',e=>{
       confirmRm=null;const k=teamIdx(id);if(k<0)return;Object.values(S.members).forEach(m=>{if(m.team===id)m.team=null});S.teams.splice(k,1);if(S.turn>=S.teams.length)S.turn=0;commit();break}
     case 'mix':mixTeams(+b.dataset.n);commit();break;
     case 'setturn':S.turn=i;commit();break;
-    case 'ed-new':edit={id:'c'+Date.now(),title:'My Bible game',cats:[0,1,2,3,4].map(n=>({name:'Category '+(n+1),clues:VALUES.map(()=>({q:'',a:'',h:'',alt:''}))})),final:{cat:'',q:'',a:'',h:'',alt:''}};editFrom='setup';confirmDel=false;view='editor';render();window.scrollTo(0,0);break;
+    case 'ed-new':edit={id:'c'+Date.now(),title:'Jeopardy Showdown',cats:[0,1,2,3,4].map(n=>({name:'Category '+(n+1),clues:VALUES.map(()=>({q:'',a:'',h:'',alt:''}))})),final:{cat:'',q:'',a:'',h:'',alt:''}};editFrom='setup';confirmDel=false;view='editor';render();window.scrollTo(0,0);break;
     case 'ed-custom':{const c=custom.find(x=>x.id===setup.customId);if(!c)return;edit=clone(c);editFrom='setup';confirmDel=false;view='editor';render();window.scrollTo(0,0);break}
     case 'ed-host':edit=clone(S.game);if(!edit.id||!custom.some(x=>x.id===edit.id))edit.id='c'+Date.now();editFrom='host';confirmDel=false;view='editor';render();window.scrollTo(0,0);break;
     case 'ed-cancel':view=editFrom==='host'?'host':'setup';render();break;
