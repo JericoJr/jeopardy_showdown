@@ -11,21 +11,15 @@ A free Bible quiz game show for youth groups and young adults. The host runs the
 
 ## Running a game
 
-1. **Host (any device: iPad, iPhone, Android or laptop):** open the site, tap **Host a game**, choose a difficulty and your rules, then tap **Create game**. Every new game picks 5 random categories with random questions. To leave categories out, open **Categories in the mix** and tap any category you don't want. Everything else stays in the random draw (keep at least 5). **Leave out song categories** removes all the music ones at once, and **Include all** brings everything back. Your choices are remembered on that device.
+1. **Host (any device: iPad, iPhone, Android or laptop):** open the site, tap **Host a game**, choose your rules, then tap **Create game**. Every new game picks 5 random categories with random questions. To leave categories out, open **Categories in the mix** and tap any category you don't want. Everything else stays in the random draw (keep at least 5). **Leave out song categories** removes all the music ones at once, and **Include all** brings everything back. Your choices are remembered on that device.
 2. **TV board (laptop on AirPlay):** open the site, tap **Show the board**, enter the 4-letter code, then tap **Full screen**. Music and sound effects play from this screen.
 3. **Players (any phone):** scan the QR code on the TV and enter a name. Scanning always opens the game for that code, even if the phone was in an earlier game. Each player starts on their own team and can join another team in the lobby.
 4. When you're ready, the host taps **Start the game**. You can start with no teams or players; anyone who joins later gets their own team.
 5. When you're done, the host taps **End game**, which sends every player and the TV board back to the start screen.
 
-### Difficulty modes
+### Difficulty
 
-| Mode | 100 | 200 | 300 | 400 | 500 | Good for |
-|---|---|---|---|---|---|---|
-| **All levels** | easy | easy | medium | hard | hard | mixed groups and newcomers |
-| **Intermediate** | easy | medium | hard | hard | expert | teens who know their Bible |
-| **Expert** | hard | hard | expert | expert | expert | Bible buffs and leaders |
-
-In every mode, higher points always means a harder question.
+Every game uses the same scale: **100** is the easiest, **200** easy, **300** medium, **400** a bit harder and **500** somewhat hard. Higher points always means a harder question.
 
 ### Teams
 
@@ -93,6 +87,10 @@ In both styles, any player on the picking team can tap a clue on their phone to 
 
 - **Old Testament** and **New Testament:** general questions on each testament, from easy (the first man God created) to expert (the longest-reigning king of Judah).
 
+### Bible or Not?
+
+A quote or saying appears, and players decide whether it's really in the Bible. Easy rows mix famous verses ("Love thy neighbour as thyself") with obvious sayings ("An apple a day keeps the doctor away"); harder rows use sayings people often think are Bible verses, like "God helps those who help themselves" or "Cleanliness is next to godliness." Bible quotes use King James wording, and their hints include the verse. Typed answers need to be exactly "Bible" (or "yes") or "Not the Bible" (or "no", "not"), so "not the Bible" never counts as "Bible."
+
 ### Picture and emoji categories
 
 - **Scripture Snapshots:** an original illustration appears, like a burning bush or a ladder of angels, and players name the Bible story. Easy rows show iconic scenes (Noah's ark, David and Goliath); expert rows show stories that are harder to spot in a picture (the writing on the wall, Moses' bronze serpent). On the 400 and 500 rows, the TV and phones start **zoomed in** on part of the picture and slowly zoom out. The host always sees the whole picture.
@@ -147,7 +145,7 @@ You can also edit the questions for a single game from the host screen with **Ed
 - **Volume:** the host has a **🔊 Volume** dropdown (lobby, board and question screens) with three sliders: **Theme & timer music**, **Songs & clips** and **Sound effects**. They set the volume on whichever screen plays the sound, usually the TV board. Spotify's regular player doesn't let websites change its volume, so Spotify songs follow the device's own volume unless Spotify Premium is linked on that screen; with Premium linked, the theme and song clips follow the sliders (and clips play the full song through your account).
 - **Timer auto-start:** the **⏱ Auto-start timer** switch on the host board (and next to the timer on each question) turns the automatic countdown on or off. With it off, the timer waits until you tap **Start timer**.
 
-- **TV board fits any screen:** the board, scores and questions size themselves to the screen's height, so the whole board fits on a TV, laptop or tablet, including over AirPlay. Picture questions show the picture beside the question on widescreen TVs. The TV board's top bar has a **Size** control (**−** and **+**, or the − and = keys on the laptop) that shrinks the whole board evenly with a margin around it, from 70% to 100%. It starts at 90% so nothing gets cut off when a TV or AirPlay crops the edges, and the laptop remembers your choice.
+- **TV board fits any screen:** the board, scores and questions size themselves to the screen's height, so the whole board fits on a TV, laptop or tablet, including over AirPlay. Picture questions show the picture beside the question on widescreen TVs. The TV board's top bar has a **Size** control (**−** and **+**, or the − and = keys on the laptop) that shrinks the whole board evenly with a margin around it, from 70% to 100%. It starts at 90% so nothing gets cut off when a TV or AirPlay crops the edges, and the laptop remembers your choice. The host can also change it from the iPad with **📺 TV −/+** in the lobby and on the board, and the TV board's code screen has the size control too, so you can set it before the game starts.
 
 - **Full screen:** the host, the TV board and players' phones have a **⛶ Full screen** button during the game (tap again to exit). iPhones don't allow web pages to go full screen, so the button doesn't show there; iPads, Android phones and computers are fine.
 

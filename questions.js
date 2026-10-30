@@ -12,6 +12,7 @@
     question   the clue shown on screen
     answer     the correct answer shown when the host reveals it
     hint       optional, shown when the host gives a hint
+    style      (on a category) "emoji" shows big emojis; "exact" needs an exact typed answer (for yes/no categories like Bible or Not?)
     verse      optional Bible reference for the hint, like "Daniel 6:16"; it shows as 📖 Daniel 6:16
     accept     optional, other answers that count as correct when players type
                answers (spelling mistakes are already forgiven a little)
@@ -445,6 +446,32 @@ window.QUESTION_BANK = {
         { level: 5, question: "Paul wrote that he had learned to be content in every situation in this letter.", answer: "Philippians", hint: "He wrote it from prison.", accept: ["philippians"], verse: "Philippians 4:11" },
         { level: 6, question: "The number of New Testament letters traditionally credited to Paul.", answer: "13", hint: "It is a baker’s dozen.", accept: ["13","thirteen"] },
         { level: 6, question: "In 2 Timothy, Paul says only this doctor is with him.", answer: "Luke", hint: "He also wrote Acts.", accept: ["luke"], verse: "2 Timothy 4:11" }
+      ]
+    },
+    {
+      name: "Bible or Not?",
+      style: "exact",
+      questions: [
+        { level: 1, question: "Bible or not? “Love thy neighbour as thyself.”", answer: "Bible", hint: "Jesus called it the second greatest commandment.", verse: "Mark 12:31", accept: ["bible", "in the bible", "yes", "its in the bible", "it is in the bible"] },
+        { level: 1, question: "Bible or not? “An apple a day keeps the doctor away.”", answer: "Not the Bible", hint: "It’s advice about healthy eating, not scripture.", accept: ["not", "not the bible", "no", "not in the bible", "not bible", "its not", "it is not in the bible"] },
+        { level: 1, question: "Bible or not? “In the beginning God created the heaven and the earth.”", answer: "Bible", hint: "It is the very first verse.", verse: "Genesis 1:1", accept: ["bible", "in the bible", "yes", "its in the bible", "it is in the bible"] },
+        { level: 2, question: "Bible or not? “God is love.”", answer: "Bible", hint: "It is in one of John’s letters.", verse: "1 John 4:8", accept: ["bible", "in the bible", "yes", "its in the bible", "it is in the bible"] },
+        { level: 2, question: "Bible or not? “Honesty is the best policy.”", answer: "Not the Bible", hint: "It’s an old English proverb.", accept: ["not", "not the bible", "no", "not in the bible", "not bible", "its not", "it is not in the bible"] },
+        { level: 2, question: "Bible or not? “The truth shall make you free.”", answer: "Bible", hint: "Jesus said it to people who believed in him.", verse: "John 8:32", accept: ["bible", "in the bible", "yes", "its in the bible", "it is in the bible"] },
+        { level: 3, question: "Bible or not? “Pride goeth before destruction.”", answer: "Bible", hint: "It is in the book of wise sayings.", verse: "Proverbs 16:18", accept: ["bible", "in the bible", "yes", "its in the bible", "it is in the bible"] },
+        { level: 3, question: "Bible or not? “Blood is thicker than water.”", answer: "Not the Bible", hint: "It’s an old saying about family.", accept: ["not", "not the bible", "no", "not in the bible", "not bible", "its not", "it is not in the bible"] },
+        { level: 3, question: "Bible or not? “Seek, and ye shall find.”", answer: "Bible", hint: "It is part of the Sermon on the Mount.", verse: "Matthew 7:7", accept: ["bible", "in the bible", "yes", "its in the bible", "it is in the bible"] },
+        { level: 3, question: "Bible or not? “Everything happens for a reason.”", answer: "Not the Bible", hint: "It sounds comforting, but it’s a modern saying.", accept: ["not", "not the bible", "no", "not in the bible", "not bible", "its not", "it is not in the bible"] },
+        { level: 4, question: "Bible or not? “Cleanliness is next to godliness.”", answer: "Not the Bible", hint: "A famous preacher used it in a 1700s sermon.", accept: ["not", "not the bible", "no", "not in the bible", "not bible", "its not", "it is not in the bible"] },
+        { level: 4, question: "Bible or not? “God helps those who help themselves.”", answer: "Not the Bible", hint: "A Founding Father made it famous in his almanac.", accept: ["not", "not the bible", "no", "not in the bible", "not bible", "its not", "it is not in the bible"] },
+        { level: 4, question: "Bible or not? “The spirit indeed is willing, but the flesh is weak.”", answer: "Bible", hint: "Jesus said it in the garden of Gethsemane.", verse: "Matthew 26:41", accept: ["bible", "in the bible", "yes", "its in the bible", "it is in the bible"] },
+        { level: 4, question: "Bible or not? “Physician, heal thyself.”", answer: "Bible", hint: "Jesus quoted it as a proverb in Nazareth.", verse: "Luke 4:23", accept: ["bible", "in the bible", "yes", "its in the bible", "it is in the bible"] },
+        { level: 5, question: "Bible or not? “This too shall pass.”", answer: "Not the Bible", hint: "It’s an old Persian saying about a king’s ring.", accept: ["not", "not the bible", "no", "not in the bible", "not bible", "its not", "it is not in the bible"] },
+        { level: 5, question: "Bible or not? “God works in mysterious ways.”", answer: "Not the Bible", hint: "It comes from a 1700s hymn by William Cowper.", accept: ["not", "not the bible", "no", "not in the bible", "not bible", "its not", "it is not in the bible"] },
+        { level: 5, question: "Bible or not? “Money is the root of all evil.”", answer: "Not the Bible", hint: "Close, but one word is missing: the Bible says “the love of money” (1 Timothy 6:10).", accept: ["not", "not the bible", "no", "not in the bible", "not bible", "its not", "it is not in the bible"] },
+        { level: 5, question: "Bible or not? “I am escaped with the skin of my teeth.”", answer: "Bible", hint: "It was said by a man who lost almost everything.", verse: "Job 19:20", accept: ["bible", "in the bible", "yes", "its in the bible", "it is in the bible"] },
+        { level: 5, question: "Bible or not? “To err is human, to forgive divine.”", answer: "Not the Bible", hint: "It’s from a 1711 poem by Alexander Pope.", accept: ["not", "not the bible", "no", "not in the bible", "not bible", "its not", "it is not in the bible"] },
+        { level: 5, question: "Bible or not? “Spare the rod, spoil the child.”", answer: "Not the Bible", hint: "It’s from a 1600s poem. Proverbs 13:24 has a similar idea in different words.", accept: ["not", "not the bible", "no", "not in the bible", "not bible", "its not", "it is not in the bible"] }
       ]
     },
     {

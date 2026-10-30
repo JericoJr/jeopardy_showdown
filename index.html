@@ -266,7 +266,7 @@ const media=q=>(q.audio||q.melody||spotifyId(q.spotify))?{spotify:spotifyId(q.sp
 const withVerse=(h,v)=>{h=String(h||'').trim();v=String(v||'').trim();if(!v||h.replace(/\s/g,'').includes(v.replace(/\s/g,'')))return h;return (h?h+' · ':'')+'📖 '+v};
 const acc=x=>(Array.isArray(x)?x:String(x||'').split('|')).map(v=>String(v).trim()).filter(Boolean).join('|');
 const BANK=(QB.categories||[]).filter(c=>c&&c.name&&Array.isArray(c.questions)).map((c,i)=>({id:String(c.name).toLowerCase().replace(/[^a-z0-9]+/g,'-')+'-'+i,name:String(c.name),
-  q:c.questions.filter(q=>q&&q.question&&q.answer&&!('spotify' in q&&!spotifyId(q.spotify))).map(q=>[Math.min(7,Math.max(1,parseInt(q.level,10)||3)),String(q.question),String(q.answer),withVerse(q.hint,q.verse),acc(q.accept),media(q),(q.image||c.style==='emoji')?{img:q.image?String(q.image):'',emoji:c.style==='emoji'}:null])})).filter(c=>c.q.length);
+  q:c.questions.filter(q=>q&&q.question&&q.answer&&!('spotify' in q&&!spotifyId(q.spotify))).map(q=>[Math.min(7,Math.max(1,parseInt(q.level,10)||3)),String(q.question),String(q.answer),withVerse(q.hint,q.verse),acc(q.accept),media(q),(q.image||c.style==='emoji'||c.style==='exact')?{img:q.image?String(q.image):'',emoji:c.style==='emoji',exact:c.style==='exact'}:null])})).filter(c=>c.q.length);
 const FINALS=(QB.finals||[]).filter(f=>f&&f.question&&f.answer).map(f=>[String(f.category||'Final Round'),String(f.question),String(f.answer),withVerse(f.hint,f.verse),acc(f.accept)]);
 if(!FINALS.length)FINALS.push(['The Disciples','Before following Jesus, this disciple was a tax collector. The first Gospel carries his name.','Matthew','He was also called Levi.','matthew|levi']);
 /* Spotify categories built from your playlists (questions.js: spotify). Links are matched by playlist position. */
@@ -323,7 +323,7 @@ const clone=o=>JSON.parse(JSON.stringify(o));
 const $=s=>document.querySelector(s);
 const rnd=a=>a[Math.floor(Math.random()*a.length)];
 const shuffle=a=>{a=[...a];for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
-const mkClue=x=>Object.assign({q:x[1],a:x[2],h:x[3]||'',alt:x[4]||''},x[5]?{m:x[5]}:{},x[6]?{img:x[6].img||'',emoji:!!x[6].emoji,full:x[6].full||''}:{});
+const mkClue=x=>Object.assign({q:x[1],a:x[2],h:x[3]||'',alt:x[4]||''},x[5]?{m:x[5]}:{},x[6]?{img:x[6].img||'',emoji:!!x[6].emoji,full:x[6].full||'',exact:!!x[6].exact}:{});
 /* pictures for Scripture Snapshots: "art:key" uses a built-in drawing (images.js), anything else is an image file */
 const zoomSeen={};
 function picHTML(img,zoom,ep,size){if(!img)return '';let inner,fx=50,fy=50;
@@ -341,8 +341,9 @@ const BASE=location.href.split('#')[0];
 const joinLink=code=>BASE+'#'+code;
 const PREFIX='scripture-showdown-v1-';
 /* difficulty modes: which question level goes on each row (100 to 500) */
-const LEVELS={all:[1,2,3,4,5],inter:[2,3,4,5,6],expert:[4,5,6,6,7]};
-const LEVEL_NAMES={all:'All levels',inter:'Intermediate',expert:'Expert'};
+/* one difficulty scale for every game: 100 easiest, 300 medium, 500 somewhat hard (older saved settings map to the same scale) */
+const LEVELS={all:[1,2,3,4,5],inter:[1,2,3,4,5],expert:[1,2,3,4,5]};
+const LEVEL_NAMES={all:'100 easy → 500 somewhat hard',inter:'100 easy → 500 somewhat hard',expert:'100 easy → 500 somewhat hard'};
 /* random categories, preferring ones with enough questions at the levels this mode needs */
 function exactRows(b,lv){const used=new Set();let n=0;lv.forEach(d=>{const k=b.q.findIndex((q,i)=>!used.has(i)&&q[0]===d);if(k>=0){used.add(k);n++}});return n}
 function inMix(){const skip=new Set(setup.skip||[]);return BANK.filter(b=>!skip.has(b.name))}
@@ -362,6 +363,8 @@ function lev(a,b){const m=a.length,n=b.length;if(!m)return n;if(!n)return m;let 
 function judge(text,clue){
   const t=norm(text);if(!t)return false;
   const acc=[clue.a,...String(clue.alt||'').split(/[|,]/)].map(norm).filter(Boolean);
+  /* yes/no style categories (Bible or Not?): "not the bible" must never count as "bible" */
+  if(clue.exact)return acc.includes(t);
   return acc.some(a=>{if(t===a)return true;const tol=a.length>8?2:a.length>4?1:0;if(tol&&lev(t,a)<=tol)return true;
     if(a.length>=4&&t.length>=4&&(t.includes(a)||(a.includes(t)&&t.length>=Math.min(6,a.length))))return true;return false});
 }
@@ -381,7 +384,10 @@ const APP_VERSION='202610301659';
 const TV_SIZES=[0.7,0.75,0.8,0.85,0.9,0.95,1];
 const tvSize=()=>{const v=+D.tvSize;return TV_SIZES.includes(v)?v:0.9};
 function applyTvSize(){const z=view==='display'?tvSize():1;try{document.body.style.setProperty('--tvz',z)}catch{}}
-function setTvSize(d){const i=TV_SIZES.indexOf(tvSize());D.tvSize=TV_SIZES[Math.max(0,Math.min(TV_SIZES.length-1,i+d))];saveDisplay();render()}
+function setTvSize(d){const i=TV_SIZES.indexOf(tvSize());D.tvSize=TV_SIZES[Math.max(0,Math.min(TV_SIZES.length-1,i+d))];saveDisplay();render();if(D.step==='live')send({t:'tvsize',v:D.tvSize})}
+const hostTvSize=()=>{const v=S&&+S.tvSize;return TV_SIZES.includes(v)?v:0.9};
+function setHostTvSize(d){if(!S)return;const i=TV_SIZES.indexOf(hostTvSize());S.tvSize=TV_SIZES[Math.max(0,Math.min(TV_SIZES.length-1,i+d))];S.tvSizeN=(S.tvSizeN||0)+1;commit()}
+function tvSizeCtl(){return `<span class="tvsize" role="group" aria-label="TV board size" title="Shrink or grow the TV board so nothing gets cut off at the TV's edges">📺 <button class="btn-sm btn-ghost" data-act="h-tv-smaller" aria-label="TV smaller">−</button><span class="note">TV ${Math.round(hostTvSize()*100)}%</span><button class="btn-sm btn-ghost" data-act="h-tv-bigger" aria-label="TV bigger">+</button></span>`}
 document.addEventListener('keydown',e=>{if(view!=='display'||/INPUT|TEXTAREA/.test((e.target&&e.target.tagName)||''))return;if(e.key==='-'){setTvSize(-1)}else if(e.key==='='||e.key==='+'){setTvSize(1)}});
 /* full screen (not available on iPhone; iPad and computers are fine) */
 const canFull=()=>!!(document.fullscreenEnabled||document.webkitFullscreenEnabled);
@@ -883,6 +889,7 @@ function netChanged(){if(!S)return;if(!displayOn())S.tvSdk='';setTimeout(()=>sha
 function onMsg(c,m){
   if(!S||!m||typeof m!=='object')return;
   const info=conns.get(c);if(!info)return;
+  if(info.role==='display'&&m.t==='tvsize'){if(TV_SIZES.includes(+m.v)){S.tvSize=+m.v;saveHost();render()}return}
   if(info.role==='display'&&m.t==='spotsdk'){S.tvSdk=String(m.st||'');render();return}
   if(info.role==='display'&&m.t==='spotstat'){S.tvSpot=!!m.pv;render();return}
   if(info.role==='display'&&m.t==='pos'){const c=S.clip||{},onlyDur=m.durOnly||m.n==null||m.n!==c.n||(c.act==='full'&&Date.now()-(c.ts||0)<3500&&Math.abs((+m.pos||0)-(c.at||0))>4);
@@ -997,7 +1004,7 @@ function publicState(){
   const st={ph,code:S.code,title:short(g.title,60),cats:g.cats.map(x=>short(x.name,40)),used:S.used,
     teams:S.teams.map((t,i)=>({id:t.id,name:t.name,named:t.custom!==false,need:needName(i),score:t.score,m:members(i).map(m=>({p:m.pid,n:m.name,on:on.has(m.pid)}))})),
     loose:Object.entries(S.members).filter(([,m])=>!m.team||teamIdx(m.team)<0).map(([p,m])=>({p,n:m.name})),
-    first:S.first&&Date.now()-S.first.at<4500?{name:(S.teams[S.first.t]||{}).name||'',left:4500-(Date.now()-S.first.at)}:null,allowPass:S.settings.allowPass!==false,stealOpen:!!S.stealOpen,ord:orderState(),vol:Object.assign({},VOL_DEF,S.vol),fullOnly:S.fullOnly!==false,spotCheck:S.spotCheck||0,cap:S.settings.cap,create:S.settings.playersCreate,mode:S.settings.mode,ans:S.settings.answers,turn:S.turn,epoch:S.epoch,open:!!S.buzzOpen,
+    first:S.first&&Date.now()-S.first.at<4500?{name:(S.teams[S.first.t]||{}).name||'',left:4500-(Date.now()-S.first.at)}:null,tvSize:S.tvSizeN?hostTvSize():null,tvSizeN:S.tvSizeN||0,allowPass:S.settings.allowPass!==false,stealOpen:!!S.stealOpen,ord:orderState(),vol:Object.assign({},VOL_DEF,S.vol),fullOnly:S.fullOnly!==false,spotCheck:S.spotCheck||0,cap:S.settings.cap,create:S.settings.playersCreate,mode:S.settings.mode,ans:S.settings.answers,turn:S.turn,epoch:S.epoch,open:!!S.buzzOpen,
     tm:{left:tLeft(),run:!!S.tmr.run,len:S.tmr.len},music:!!S.music,tmusic:S.tmusic!==false,snd:S.sound!==false,fx:S.fx||null,clip:S.clip?{n:S.clip.n,act:S.clip.act,at:S.clip.at||0}:null,hi:activeTeam()};
   if(S.cur&&cl){st.clue={cat:g.cats[S.cur.c].name,val:clueValue(),dd:isDD(),wager:isDD()?S.ddWager:'',ddMax:isDD()?ddMax():0,ddTeam:S.ddTeam,ddBy:S.ddBy||'',
     q:ph==='clue'?cl.q:null,h:S.hint&&ph==='clue'?cl.h:null,a:S.revealed?(cl.a||(cl.song?'':null)):null,rev:!!S.revealed,m:ph==='clue'&&cl.m?cl.m:null,img:ph==='clue'&&cl.img?cl.img:null,full:ph==='clue'&&cl.full?cl.full:null,emoji:!!cl.emoji,zoom:ph==='clue'&&cl.img&&!S.revealed&&S.cur.r>=3?S.cur.r:0,ep:S.epoch,
@@ -1022,6 +1029,7 @@ function applyState(st){
   if(!st||typeof st!=='object'||!Array.isArray(st.teams))return;
   if(st.tm)pTimer={left:st.tm.left,run:st.tm.run,len:st.tm.len||1,end:Date.now()+st.tm.left};
   if(st.first&&st.first.left>0){clearTimeout(window.firstT);window.firstT=setTimeout(()=>{if(PS){PS.first=null;render()}},st.first.left+50)}
+  if(view==='display'&&st.tvSizeN&&st.tvSizeN!==D.tvSizeN){D.tvSizeN=st.tvSizeN;if(TV_SIZES.includes(+st.tvSize)){D.tvSize=+st.tvSize;saveDisplay()}}
   if(view==='display'){setTimeout(applyVolumes,0);if(D.spotCheck!=null&&st.spotCheck!==D.spotCheck){sentPv=null;resetSpotify()}D.spotCheck=st.spotCheck;sendSpotStat();if(PS&&PS.fullOnly!==st.fullOnly)setTimeout(()=>ThemeSpot.kick(),0);const n=st.fx?st.fx.n:0;if(lastFx!=null&&n!==lastFx&&st.fx){if(!D.mute&&st.snd!==false)sfx(st.fx.k);flash(st.fx.k)}lastFx=n;
     const on=!D.mute&&st.snd!==false,cn=st.clip?st.clip.n:0;playingN=cn;if(lastClip!=null&&cn!==lastClip&&st.clip){if(on)runClip(st.clip.act,st.clue&&st.clue.m,st.clip.at,st.clue&&st.clue.full);else Clip.stop()}lastClip=cn;
     if(!on&&Clip.playing)Clip.stop();if(st.ph==='clue'&&st.clue&&st.clue.m&&st.clue.m.spotify&&!Clip.playing)Spot.cue(st.clue.m.spotify);if(st.ph!=='clue'&&Clip.playing)Clip.stop();PS=st;displayAudio()}
@@ -1154,8 +1162,7 @@ function setupHTML(){
   </div>
   <div class="card">
     <h2>3. How to play</h2>
-    <div class="opt"><span class="lbl">Difficulty</span>${segHTML('level',[['all','All levels'],['inter','Intermediate'],['expert','Expert']])}
-      <span class="note">${st.level==='expert'?'Hard to expert questions on every row: deep-cut names, places and verses for Bible buffs.':st.level==='inter'?'Starts at easy-medium and climbs to expert at 500. Good for teens who know their Bible.':'100 is easy, 300 is medium and 500 is hard. Good for mixed groups and newcomers.'}</span></div>
+    <div class="opt"><span class="lbl">Difficulty</span><span class="note">Every game uses the same scale: <b>100</b> is the easiest, <b>300</b> is medium and <b>500</b> is somewhat hard.</span></div>
     <div class="opt"><span class="lbl">Game style</span>${segHTML('rules',[['classic','Classic Jeopardy'],['order','Team Order']])}
       <span class="note">${st.rules==='order'?'<b>Team Order:</b> teams take turns picking in order, no matter who answers. If a team misses, you can pass the question once. Wrong answers only lose points if you turn that on below.':'<b>Classic Jeopardy:</b> the real show’s rules. Right answers earn the points and that team picks next. Wrong answers lose the points and the question moves to the next team. Each team gets one try. If nobody gets it, no one earns the points and the next team in order picks.'}</span></div>
     <div class="opt"><span class="lbl">Who answers first</span>${segHTML('mode',[['turns','Teams take turns'],['buzz','Buzz in (fastest team)']])}
@@ -1265,10 +1272,10 @@ function lobbyHTML(inOverlay){
 }
 function hostHTML(){
   const g=S.game;
-  if(S.phase==='lobby')return `<div class="row"><div><div class="eyebrow">Jeopardy Showdown · lobby</div><h1 style="font-family:var(--f-display);font-weight:400;font-size:clamp(24px,4vw,38px);text-transform:uppercase">${esc(g.title)}</h1></div><div class="spacer"></div>${canFull()?`<button class="btn-sm" data-act="fs">${isFull()?'Exit full screen':'⛶ Full screen'}</button>`:''}<div id="conn">${connHTML()}</div></div>${spotifyCardHTML()}${volHTML()}${lobbyHTML(false)}`;
+  if(S.phase==='lobby')return `<div class="row"><div><div class="eyebrow">Jeopardy Showdown · lobby</div><h1 style="font-family:var(--f-display);font-weight:400;font-size:clamp(24px,4vw,38px);text-transform:uppercase">${esc(g.title)}</h1></div><div class="spacer"></div>${tvSizeCtl()}${canFull()?`<button class="btn-sm" data-act="fs">${isFull()?'Exit full screen':'⛶ Full screen'}</button>`:''}<div id="conn">${connHTML()}</div></div>${spotifyCardHTML()}${volHTML()}${lobbyHTML(false)}`;
   const allUsed=S.used.every(c=>c.every(Boolean));
   return `<div class="row"><div><div class="eyebrow">Jeopardy Showdown · host</div><h1 style="font-family:var(--f-display);font-weight:400;font-size:clamp(24px,4vw,38px);letter-spacing:.02em;text-transform:uppercase">${esc(g.title)}</h1></div><div class="spacer"></div>
-    <button class="btn-sm" data-act="show-lobby">Code ${esc(S.code)} · teams & QR</button>${canFull()?`<button class="btn-sm" data-act="fs">${isFull()?'Exit full screen':'⛶ Full screen'}</button>`:''}<div id="conn">${connHTML()}</div></div>
+    <button class="btn-sm" data-act="show-lobby">Code ${esc(S.code)} · teams & QR</button>${tvSizeCtl()}${canFull()?`<button class="btn-sm" data-act="fs">${isFull()?'Exit full screen':'⛶ Full screen'}</button>`:''}<div id="conn">${connHTML()}</div></div>
   ${spotifyCardHTML()}${volHTML()}
   ${firstHTML(S.first&&Date.now()-S.first.at<4500?(S.teams[S.first.t]||{}).name:'')}
   ${orderHTML(orderState())}
@@ -1522,6 +1529,7 @@ function displayHTML(){
     <div class="card" style="max-width:520px;width:100%;margin:0 auto">
       <label for="d-code">Game code</label><input id="d-code" class="codeinput" maxlength="4" value="${esc(D.code)}" data-d="code" autocomplete="off" autocapitalize="characters" placeholder="ABCD">
       <button class="btn-gold" data-act="d-code">Show the board</button>
+      <div class="row" style="justify-content:center"><span class="note">Screen size</span><span class="tvsize"><button class="btn-sm btn-ghost" data-act="tv-smaller" aria-label="Smaller">−</button><span class="note">${Math.round(tvSize()*100)}%</span><button class="btn-sm btn-ghost" data-act="tv-bigger" aria-label="Bigger">+</button></span></div>
       <a class="btn btn-sm btn-ghost" href="${SPOT_LOGIN}" target="_blank" rel="noopener" style="text-align:center">Log in to Spotify on this computer (for the full theme song)</a>
       <details class="card" style="gap:6px"><summary class="eyebrow" style="cursor:pointer">AirPlaying to a TV? Get the sound on the TV</summary>
         <span class="note"><b>Mac:</b> mirroring sends the picture, but the sound stays on the Mac until you pick the TV. Click <b>Control Center</b> (top right) › <b>Sound</b> and choose your TV (for example your Roku TV). Or go to System Settings › Sound › Output.</span>
@@ -1716,6 +1724,8 @@ document.addEventListener('click',e=>{
     case 'd-full':toggleFull();break;
     case 'tv-smaller':setTvSize(-1);break;
     case 'tv-bigger':setTvSize(1);break;
+    case 'h-tv-smaller':setHostTvSize(-1);break;
+    case 'h-tv-bigger':setHostTvSize(1);break;
   }
 });
 document.addEventListener('input',e=>{
