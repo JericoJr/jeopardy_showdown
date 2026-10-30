@@ -10,6 +10,7 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=Fraunces:opsz,wght@9..144,500;9..144,700&family=Figtree:wght@400;600;800&display=swap">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+<script src="questions.js"></script>
 <style>
 html{{-webkit-text-size-adjust:100%}}
 body{{margin:0;padding-top:max(16px,env(safe-area-inset-top,0px))}}
@@ -153,180 +154,14 @@ body.tv .qr img,body.tv .qr canvas{width:260px;height:260px}
 <div class="wrap" id="app"></div>
 <script>
 const VALUES=[100,200,300,400,500];
-/* ---------- question bank: [difficulty 1-5, clue, answer, hint, accepted answers separated by |] ---------- */
-const BANK=[
-{id:'heroes',name:'Heroes of the Faith',q:[
-[1,'He built an ark to save his family and the animals from the flood.','Noah','His story starts in Genesis 6.','noah'],
-[1,'This shepherd boy defeated Goliath with a sling and a stone.','David','He later became king of Israel.','david'],
-[2,'God used him to lead the Israelites out of slavery in Egypt.','Moses','As a baby he was hidden in a basket on the Nile.','moses'],
-[2,'Called the father of many nations, he waited years for his son Isaac.','Abraham','His name used to be Abram.','abraham|abram'],
-[3,'This queen risked her life to save her people, saying, "If I perish, I perish."','Esther','Her book comes right before Job.','esther'],
-[3,'This judge had super strength that was tied to his uncut hair.','Samson','Delilah betrayed him.','samson'],
-[4,'He led the Israelites into the Promised Land after Moses died.','Joshua','The walls of Jericho fell for him.','joshua'],
-[4,'He led the rebuilding of Jerusalem’s walls in just 52 days.','Nehemiah','He had been cupbearer to a Persian king.','nehemiah'],
-[5,'This prophetess and judge led Israel to victory alongside Barak.','Deborah','She held court under a palm tree.','deborah'],
-[5,'This judge tested God with a fleece, then defeated an army with 300 men.','Gideon','He fought the Midianites.','gideon']]},
-{id:'miracles',name:'Jesus’ Miracles',q:[
-[1,'Jesus did his first miracle at a wedding in Cana by doing this.','Turned water into wine','Something ran out at the party.','water into wine|wine|turned water into wine'],
-[1,'While in a boat with his disciples, Jesus calmed this.','A storm','He said, "Peace, be still!"','storm|the storm|a storm|wind|waves|the sea'],
-[2,'Jesus fed 5,000 people with two fish and this many loaves of bread.','Five','Count the fingers on one hand.','5|five'],
-[2,'One night Jesus walked across the Sea of Galilee on this.','Water','The disciples thought he was a ghost.','water|the water|sea|the sea|lake'],
-[3,'Jesus raised this friend after four days in the tomb.','Lazarus','He was the brother of Mary and Martha.','lazarus'],
-[3,'This disciple stepped out of the boat and walked on water toward Jesus.','Peter','He was also called Simon.','peter|simon peter|simon'],
-[4,'Friends lowered this man through a roof so Jesus could heal him.','A paralyzed man','He could not walk.','paralyzed man|paralyzed|paralytic|a paralyzed man|lame man'],
-[4,'Jesus healed this many men with leprosy, but only one came back to thank him.','Ten','It is a double-digit number.','10|ten'],
-[5,'Jesus healed this blind beggar sitting by the road outside Jericho (Mark 10).','Bartimaeus','His name means "son of Timaeus."','bartimaeus'],
-[5,'In Gethsemane, Jesus healed the ear of this servant after Peter cut it off.','Malchus','He served the high priest.','malchus']]},
-{id:'books',name:'Books of the Bible',q:[
-[1,'The very first book of the Bible.','Genesis','Its name means "beginning."','genesis'],
-[1,'The very last book of the Bible.','Revelation','It records John’s vision.','revelation|revelations'],
-[2,'The book that comes right after the four Gospels.','Acts','Luke wrote it.','acts|acts of the apostles'],
-[2,'The number of books in the Protestant Bible.','66','39 in the Old Testament plus 27 in the New.','66|sixty six'],
-[3,'This book has 150 chapters, many written as songs.','Psalms','It is the Bible’s songbook.','psalms|psalm'],
-[3,'The number of Gospels in the New Testament.','Four','Matthew, Mark, ...','4|four'],
-[4,'The last book of the Old Testament.','Malachi','A minor prophet whose name starts with M.','malachi'],
-[4,'This doctor wrote a Gospel and the book of Acts.','Luke','Paul called him "the beloved physician."','luke'],
-[5,'The number of books in the New Testament.','27','It is 3 times 9.','27|twenty seven'],
-[5,'This book of the Old Testament comes between Micah and Habakkuk.','Nahum','It starts with N.','nahum']]},
-{id:'verse',name:'Finish the Verse',q:[
-[1,'"For God so loved the world, that he gave..."','"...his only Son" (John 3:16)','It is John 3:16.','his only son|only son|his one and only son|son|his son'],
-[1,'"The Lord is my shepherd..."','"...I shall not want" (Psalm 23:1)','It is Psalm 23.','i shall not want|shall not want|i lack nothing'],
-[2,'"I can do all things..."','"...through Christ who strengthens me" (Philippians 4:13)','It is Philippians 4:13.','through christ who strengthens me|through christ|christ who strengthens me|through him who gives me strength'],
-[2,'The shortest verse in most English Bibles: "Jesus ___."','Wept (John 11:35)','He was at Lazarus’ tomb.','wept'],
-[3,'"For I know the plans I have for you," declares the Lord...','"...plans to prosper you and not to harm you" (Jeremiah 29:11)','It is Jeremiah 29:11.','plans to prosper you and not to harm you|plans to prosper you|prosper you|to prosper you'],
-[3,'"Trust in the Lord with all your heart..."','"...and lean not on your own understanding" (Proverbs 3:5)','It is Proverbs 3:5.','lean not on your own understanding|and lean not on your own understanding|do not lean on your own understanding|lean not'],
-[4,'"Be still, and know..."','"...that I am God" (Psalm 46:10)','It is Psalm 46:10.','that i am god|i am god'],
-[4,'"Your word is a lamp for my feet..."','"...a light on my path" (Psalm 119:105)','It is in the longest chapter of the Bible.','a light on my path|light on my path|a light to my path|light to my path|light unto my path|and a light unto my path'],
-[5,'"Those who hope in the Lord will renew their strength. They will soar on wings like..."','Eagles (Isaiah 40:31)','It is a bird.','eagles|eagle'],
-[5,'"Love is patient, love is..."','Kind (1 Corinthians 13:4)','It is read at a lot of weddings.','kind']]},
-{id:'genesis',name:'Genesis',q:[
-[1,'On this day of creation, God made people.','The sixth day','It is the day before God rested.','6|sixth|six|6th|sixth day|the sixth day'],
-[1,'God set this in the sky as a sign of his promise after the flood.','A rainbow','It has many colors.','rainbow|a rainbow'],
-[2,'The first woman.','Eve','Her name sounds like "living."','eve'],
-[2,'The garden where Adam and Eve first lived.','Eden','It starts with E.','eden|garden of eden|the garden of eden'],
-[3,'Jacob tricked this twin brother out of his birthright.','Esau','He was hairy and loved to hunt.','esau'],
-[3,'Joseph’s father gave him this special gift, which made his brothers jealous.','A coat (robe) of many colors','You wear it.','coat|robe|a coat|coat of many colors|robe of many colors|colorful coat'],
-[4,'Abraham’s nephew, whose wife turned into a pillar of salt.','Lot','It is a three-letter name.','lot'],
-[4,'God asked Abraham to offer this son on an altar, then provided a ram instead.','Isaac','His name means "he laughs."','isaac'],
-[5,'The oldest person recorded in the Bible, he lived 969 years.','Methuselah','He was Noah’s grandfather.','methuselah'],
-[5,'After wrestling with God, Jacob was given this new name.','Israel','It became the name of a nation.','israel']]},
-{id:'exodus',name:'Exodus & Wilderness',q:[
-[1,'The number of plagues God sent on Egypt.','Ten','Same as the number of commandments.','10|ten'],
-[1,'The Israelites crossed this sea on dry ground.','The Red Sea','It is a color.','red sea|the red sea|red'],
-[2,'The bread-like food God sent from heaven in the wilderness.','Manna','Its name means "What is it?"','manna'],
-[2,'Moses received the Ten Commandments on this mountain.','Mount Sinai','It is also called Horeb.','sinai|mount sinai|mt sinai|horeb|mount horeb'],
-[3,'Moses’ brother, who spoke for him before Pharaoh.','Aaron','He became the first high priest.','aaron'],
-[3,'God first spoke to Moses from this.','A burning bush','It was on fire but did not burn up.','burning bush|bush|a burning bush|the burning bush'],
-[4,'While Moses was on the mountain, the people made this idol.','A golden calf','It is a young cow made of gold.','golden calf|calf|a golden calf|the golden calf'],
-[4,'The number of years Israel wandered in the wilderness.','40','Same as the days of rain in the flood.','40|forty'],
-[5,'Moses’ sister, who watched over his basket in the river.','Miriam','She led the women in song with a tambourine.','miriam'],
-[5,'Pharaoh’s daughter found baby Moses in this river.','The Nile','It is the longest river in Africa.','nile|the nile|nile river']]},
-{id:'kings',name:'Kings & Prophets',q:[
-[1,'This prophet ran from God and was swallowed by a great fish.','Jonah','He was supposed to go to Nineveh.','jonah'],
-[1,'He kept praying to God and survived a night in the lions’ den.','Daniel','He prayed three times a day.','daniel'],
-[2,'The first king of Israel.','Saul','He shares a name with Paul’s old name.','saul'],
-[2,'This king, known for his wisdom, built the first temple.','Solomon','He was David’s son.','solomon'],
-[3,'This prophet was taken up to heaven in a whirlwind.','Elijah','He faced the prophets of Baal on Mount Carmel.','elijah'],
-[3,'Name one of the three friends thrown into the fiery furnace.','Shadrach, Meshach or Abednego','They were Daniel’s friends.','shadrach|meshach|abednego|shadrach meshach and abednego'],
-[4,'This prophet asked for a double portion of Elijah’s spirit.','Elisha','His name is one letter different from Elijah’s.','elisha'],
-[4,'This wicked queen, wife of King Ahab, tried to kill Elijah.','Jezebel','She worshiped Baal.','jezebel'],
-[5,'He became king at age 8 and later rediscovered the Book of the Law.','Josiah','Find him in 2 Kings 22.','josiah'],
-[5,'This prophet saw a vision of a valley of dry bones coming to life.','Ezekiel','It starts with E.','ezekiel']]},
-{id:'whosaid',name:'Who Said It?',q:[
-[1,'"Here am I. Send me!"','Isaiah','A major prophet, chapter 6 of his book.','isaiah'],
-[1,'"Let there be light."','God','It is in Genesis 1:3.','god|the lord|lord'],
-[2,'"Where you go I will go, and where you stay I will stay."','Ruth','She said it to her mother-in-law, Naomi.','ruth'],
-[2,'"Am I my brother’s keeper?"','Cain','His brother was Abel.','cain'],
-[3,'"As for me and my household, we will serve the Lord."','Joshua','He said it after leading Israel into Canaan.','joshua'],
-[3,'"Speak, for your servant is listening."','Samuel','He said it as a boy in the temple with Eli.','samuel'],
-[4,'"I am the way and the truth and the life."','Jesus','It is in John 14:6.','jesus|jesus christ|christ'],
-[4,'"Unless I see the nail marks in his hands... I will not believe."','Thomas','People call him "Doubting."','thomas|doubting thomas'],
-[5,'"You are the Messiah, the Son of the living God."','Peter','It is in Matthew 16.','peter|simon peter|simon'],
-[5,'"For to me, to live is Christ and to die is gain."','Paul','He wrote it from prison to the Philippians.','paul']]},
-{id:'parables',name:'Parables',q:[
-[1,'In this parable, a son wastes his inheritance, then comes home to a celebration.','The Prodigal (Lost) Son','He ended up feeding pigs.','prodigal son|prodigal|lost son|the prodigal son'],
-[1,'The wise man built his house on rock. The foolish man built on this.','Sand','You find it at the beach.','sand'],
-[2,'A shepherd leaves 99 sheep to go find this many lost ones.','One','The smallest number you can count.','1|one|one sheep'],
-[2,'He stopped to help a beaten man on the road to Jericho.','The Good Samaritan','He came from Samaria.','good samaritan|samaritan|the good samaritan'],
-[3,'Jesus compared the kingdom of God to this tiny seed.','The mustard seed','It shares its name with a yellow condiment.','mustard|mustard seed'],
-[3,'A woman swept her whole house to find this lost item.','A coin','It is money.','coin|a coin|lost coin|silver coin'],
-[4,'The number of bridesmaids (virgins) with lamps in Matthew 25.','Ten','Half were wise and half were foolish.','10|ten'],
-[4,'The lazy servant hid his master’s money (talent) here.','In the ground','He dug a hole.','ground|the ground|in the ground|dirt|earth|hole|a hole'],
-[5,'A farmer scatters seed on four kinds of soil in this parable.','The Sower','It is named after the one planting.','sower|the sower|parable of the sower|soils|the soils'],
-[5,'The rich fool planned to tear down his barns and build these.','Bigger barns','He wanted more storage for crops.','barns|bigger barns|barn|larger barns']]},
-{id:'church',name:'The Early Church',q:[
-[1,'Saul of Tarsus became better known by this name.','Paul','It is four letters.','paul'],
-[1,'The Holy Spirit came on the believers during this feast in Acts 2.','Pentecost','It was 50 days after Passover.','pentecost'],
-[2,'Saul met Jesus in a blinding light on the road to this city.','Damascus','It is in Syria.','damascus|road to damascus'],
-[2,'He was the first Christian martyr, forgiving the people who stoned him.','Stephen','He was chosen to serve food to widows.','stephen'],
-[3,'Paul’s young helper, who received two letters in the New Testament.','Timothy','His mother was Eunice.','timothy'],
-[3,'About this many people believed and were baptized on the day of Pentecost.','3,000','It is in the thousands.','3000|3 000|three thousand'],
-[4,'Paul’s partner on his first missionary journey.','Barnabas','His name means "son of encouragement."','barnabas'],
-[4,'A seller of purple cloth who became the first known believer in Europe.','Lydia','She came from Thyatira (Acts 16).','lydia'],
-[5,'This young man fell asleep and fell from a window during Paul’s long sermon.','Eutychus','It happened in Acts 20.','eutychus'],
-[5,'This husband and wife lied about the money from selling their land.','Ananias and Sapphira','It is in Acts 5.','ananias and sapphira|ananias|sapphira']]},
-{id:'today',name:'Faith Today',q:[
-[1,'The 1990s bracelet letters "WWJD" stand for this question.','What Would Jesus Do?','Four words, starting with "What."','what would jesus do'],
-[1,'Many Christians give something up during these 40 days before Easter.','Lent','It starts on Ash Wednesday.','lent'],
-[2,'This free Bible app from Life.Church is known for its "Verse of the Day."','YouVersion (The Bible App)','Its name starts with "You."','youversion|you version|bible app|the bible app'],
-[2,'Dallas Jenkins created this series about Jesus and his disciples.','The Chosen','It was crowdfunded by fans.','the chosen|chosen'],
-[3,'Tim Tebow wrote this verse in his eye black during the 2009 college football title game.','John 3:16','It is the most famous verse in the Bible.','john 3:16|john 316|john 3 16'],
-[3,'This Christian rapper founded Reach Records and has won multiple Grammys.','Lecrae','One name, starts with L.','lecrae'],
-[4,'The worship song "Oceans (Where Feet May Fail)" was recorded by this group.','Hillsong United','The group comes from a church in Australia.','hillsong united|hillsong'],
-[4,'The 2023 movie "Jesus Revolution" is about this 1970s youth movement.','The Jesus Movement','Its followers were sometimes called "Jesus People."','jesus movement|the jesus movement|jesus people'],
-[5,'The Thursday before Easter, remembering the Last Supper, is called this.','Maundy (Holy) Thursday','It starts with M.','maundy thursday|maundy|holy thursday'],
-[5,'This author wrote "The Chronicles of Narnia."','C.S. Lewis','Aslan the lion is his creation.','cs lewis|c s lewis|lewis|clive staples lewis']]},
-{id:'sayings',name:'Bible Sayings Today',q:[
-[1,'An underdog story is often called this kind of matchup.','David and Goliath','A boy against a giant.','david and goliath|david vs goliath|david versus goliath'],
-[1,'Someone with huge patience is said to have "the patience of" this man.','Job','He lost almost everything but kept his faith.','job'],
-[2,'"The writing on the wall" comes from a feast in this book.','Daniel','The king was Belshazzar.','daniel'],
-[2,'"Go the extra mile" comes from this famous teaching of Jesus.','The Sermon on the Mount','It starts in Matthew 5.','sermon on the mount|the sermon on the mount'],
-[3,'"A drop in the bucket" comes from this prophet’s book.','Isaiah','See chapter 40.','isaiah'],
-[3,'"A leopard can’t change its spots" comes from this prophet.','Jeremiah','He is called the weeping prophet.','jeremiah'],
-[4,'"Pride goes before a fall" comes from this book of wise sayings.','Proverbs','Much of it was written by Solomon.','proverbs'],
-[4,'"A fly in the ointment" comes from this book written by "the Teacher."','Ecclesiastes','It also says there is "nothing new under the sun."','ecclesiastes'],
-[5,'Lincoln’s "house divided" speech quoted words first spoken by him.','Jesus','It is in Mark 3:25.','jesus|jesus christ|christ'],
-[5,'"An eye for an eye" first appears in this book of Moses.','Exodus','It is the second book of the Bible.','exodus']]},
-{id:'women',name:'Women of the Bible',q:[
-[1,'The mother of Jesus.','Mary','The angel Gabriel visited her.','mary'],
-[1,'Mary and this sister welcomed Jesus into their home.','Martha','She was busy in the kitchen.','martha'],
-[2,'Ruth’s mother-in-law.','Naomi','She asked to be called Mara.','naomi'],
-[2,'Abraham’s wife, who had a baby at age 90.','Sarah','She laughed when she heard the news.','sarah|sarai'],
-[3,'She was the first to see Jesus after he rose (John 20).','Mary Magdalene','She came from Magdala.','mary magdalene|magdalene'],
-[3,'She prayed for a son, and God gave her Samuel.','Hannah','Her name is spelled the same backward.','hannah'],
-[4,'She hid the Israelite spies in Jericho.','Rahab','She hung a scarlet cord from her window.','rahab'],
-[4,'Jacob loved her and worked 14 years to marry her.','Rachel','Her sister was Leah.','rachel'],
-[5,'The mother of John the Baptist.','Elizabeth','She was a relative of Mary.','elizabeth|elisabeth'],
-[5,'An 84-year-old prophetess who saw baby Jesus at the temple.','Anna','She appears in Luke 2.','anna']]},
-{id:'numbers',name:'Numbers in the Bible',q:[
-[1,'The number of disciples Jesus chose.','12','A dozen.','12|twelve'],
-[1,'The number of days in the creation week, including the day of rest.','7','A full week.','7|seven'],
-[2,'The number of commandments God gave on Sinai.','10','Count both hands.','10|ten'],
-[2,'The number of days and nights it rained during Noah’s flood.','40','It is the same as the years in the wilderness.','40|forty'],
-[3,'The number of books of Moses at the start of the Bible.','5','Think "Pentateuch."','5|five'],
-[3,'Jonah spent this many days inside the great fish.','3','Same as the days before Jesus rose.','3|three'],
-[4,'Judas was paid this many pieces of silver to betray Jesus.','30','It is three tens.','30|thirty'],
-[4,'The number of tribes of Israel.','12','One for each son of Jacob.','12|twelve'],
-[5,'Gideon defeated the Midianites with this many men.','300','It is in the hundreds.','300|three hundred'],
-[5,'The disciples caught this exact number of large fish in John 21.','153','It is between 150 and 160.','153|one hundred fifty three']]}
-];
-const FINALS=[
-['The Disciples','Before following Jesus, this disciple was a tax collector. The first Gospel carries his name.','Matthew','He was also called Levi.','matthew|levi'],
-['Last Words','The apostle John received the vision in the book of Revelation while on this island.','Patmos','It is in the Aegean Sea.','patmos'],
-['Holy Places','Jesus prayed in this garden on the night he was arrested.','Gethsemane','It is on the Mount of Olives.','gethsemane|garden of gethsemane'],
-['Kings','This Babylonian king threw three young men into a fiery furnace.','Nebuchadnezzar','He also had a dream about a giant statue.','nebuchadnezzar|nebuchadnezzer'],
-['The Early Church','Followers of Jesus were first called "Christians" in this city.','Antioch','See Acts 11:26.','antioch'],
-['Prophets','God told this prophet to marry Gomer as a picture of his faithful love.','Hosea','His book is the first of the minor prophets.','hosea'],
-['The Cross','This man was forced to carry Jesus’ cross.','Simon of Cyrene','His first name matches Peter’s original name.','simon of cyrene|simon'],
-['Long Lives','The oldest person recorded in the Bible, he lived 969 years.','Methuselah','He was Noah’s grandfather.','methuselah']
-];
-const PRESETS=[
-{id:'random',name:'Surprise me (random mix)'},
-{id:'youth',name:'Youth Night Mix',cats:['heroes','miracles','verse','today','numbers']},
-{id:'ot',name:'Old Testament',cats:['genesis','exodus','kings','whosaid','women']},
-{id:'nt',name:'New Testament',cats:['miracles','parables','church','verse','today']},
-{id:'pick',name:'Pick my own categories'}
-];
+/* ---------- question bank: edit questions.js to add categories and questions ---------- */
+const QB=window.QUESTION_BANK||{categories:[],finals:[]};
+const acc=x=>(Array.isArray(x)?x:String(x||'').split('|')).map(v=>String(v).trim()).filter(Boolean).join('|');
+const BANK=(QB.categories||[]).filter(c=>c&&c.name&&Array.isArray(c.questions)).map((c,i)=>({id:String(c.name).toLowerCase().replace(/[^a-z0-9]+/g,'-')+'-'+i,name:String(c.name),
+  q:c.questions.filter(q=>q&&q.question&&q.answer).map(q=>[Math.min(5,Math.max(1,parseInt(q.level,10)||3)),String(q.question),String(q.answer),String(q.hint||''),acc(q.accept)])})).filter(c=>c.q.length);
+const FINALS=(QB.finals||[]).filter(f=>f&&f.question&&f.answer).map(f=>[String(f.category||'Final Round'),String(f.question),String(f.answer),String(f.hint||''),acc(f.accept)]);
+if(!FINALS.length)FINALS.push(['The Disciples','Before following Jesus, this disciple was a tax collector. The first Gospel carries his name.','Matthew','He was also called Levi.','matthew|levi']);
+const PRESETS=[{id:'random',name:'Random categories'},{id:'pick',name:'Pick my own categories'}];
 
 /* ---------- helpers ---------- */
 const store={get(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch{return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch{}}};
@@ -343,9 +178,12 @@ const BASE=location.href.split('#')[0];
 const joinLink=code=>BASE+'#'+code;
 const PREFIX='scripture-showdown-v1-';
 function buildBoard(catIds){
-  return{title:'Scripture Showdown',cats:catIds.map(id=>{const b=BANK.find(x=>x.id===id);return{name:b.name,bank:id,clues:[1,2,3,4,5].map(d=>mkClue(rnd(b.q.filter(q=>q[0]===d))))}}),
+  return{title:'Scripture Showdown',cats:catIds.map(id=>{const b=BANK.find(x=>x.id===id);return{name:b.name,bank:id,clues:pickClues(b)}}),
     final:(f=>({cat:f[0],q:f[1],a:f[2],h:f[3],alt:f[4]}))(rnd(FINALS))};
 }
+function pickClues(b){const used=new Set();return [1,2,3,4,5].map(d=>{let best=null;
+  for(let dist=0;dist<5&&!best;dist++){const pool=b.q.filter((q,k)=>!used.has(k)&&Math.abs(q[0]-d)===dist);if(pool.length)best=rnd(pool)}
+  if(!best)best=rnd(b.q);used.add(b.q.indexOf(best));return mkClue(best)})}
 const norm=s=>String(s||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/\([^)]*\)/g,' ').replace(/&/g,' and ').replace(/[^a-z0-9 ]+/g,' ')
   .replace(/^\s*(what|who|where|when)\s+(is|are|was|were)\s+/,'').replace(/\b(the|a|an)\b/g,' ').replace(/\s+/g,' ').trim();
 function lev(a,b){const m=a.length,n=b.length;if(!m)return n;if(!n)return m;let p=Array.from({length:n+1},(_,i)=>i);for(let i=1;i<=m;i++){const c=[i];for(let j=1;j<=n;j++)c[j]=Math.min(p[j]+1,c[j-1]+1,p[j-1]+(a[i-1]===b[j-1]?0:1));p=c}return p[n]}
@@ -360,9 +198,11 @@ function judge(text,clue){
 const DEF_SET={mode:'turns',answers:'voice',auto:true,timer:30,autoTimer:true,hintHalf:true,wrongLose:false,cap:0,dd:1,playersCreate:true};
 let custom=store.get('ssw.custom',[]);
 let S=store.get('ssw.host',null);
-let setup=Object.assign({preset:'youth',pick:[],source:'bank',customId:null,settings:clone(DEF_SET)},store.get('ssw.setup',{}));
+let setup=Object.assign({preset:'random',pick:[],source:'bank',customId:null,settings:clone(DEF_SET)},store.get('ssw.setup',{}));
 setup.settings=Object.assign(clone(DEF_SET),setup.settings||{});
-let view='role',edit=null,editFrom='setup',confirmDel=false,peek=false,showLobby=false,confirmNew=false,confirmRm=null;
+if(!PRESETS.some(p=>p.id===setup.preset))setup.preset='random';
+setup.pick=(setup.pick||[]).filter(id=>BANK.some(b=>b.id===id));
+let view='role',edit=null,editFrom='setup',confirmDel=false,peek=false,showLobby=false,confirmNew=false,confirmRm=null,confirmEnd=false,ended=false;
 let P=Object.assign({pid:uid(),name:'',code:'',step:'code'},store.get('ssw.player',{}));
 let D=Object.assign({code:'',step:'code'},store.get('ssw.display',{}));
 let PS=null,PSkey='',pDraft={wager:'',ans:'',fans:'',team:''},pTimer={end:0,left:0,run:false,len:1},pSent={buzz:-1,ans:-1,wager:-1,fans:-1};
@@ -376,7 +216,37 @@ const watching=()=>view==='player'||view==='display';
 (()=>{const h=(location.hash||'').replace('#','').toUpperCase();if(/^[A-Z]{4}$/.test(h)){if(P.code!==h){P.code=h;P.step='code'}view='player'}})();
 
 /* ---------- sound & wake lock ---------- */
-let actx;function beep(f=880,d=.18){if(view==='host'&&S&&S.sound===false)return;try{actx=actx||new (window.AudioContext||window.webkitAudioContext)();const o=actx.createOscillator(),g=actx.createGain();o.frequency.value=f;o.connect(g);g.connect(actx.destination);g.gain.setValueAtTime(.18,actx.currentTime);g.gain.exponentialRampToValueAtTime(.001,actx.currentTime+d);o.start();o.stop(actx.currentTime+d)}catch{}}
+let actx=null;
+function audio(){try{actx=actx||new (window.AudioContext||window.webkitAudioContext)();if(actx.state==='suspended')actx.resume();return actx}catch{return null}}
+function tone(ac,f,t,d,type,vol,dest){const o=ac.createOscillator(),g=ac.createGain();o.type=type;o.frequency.value=f;o.connect(g);g.connect(dest||ac.destination);
+  g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(vol,t+0.015);g.gain.exponentialRampToValueAtTime(0.0001,t+d);o.start(t);o.stop(t+d+0.05)}
+/* the only sound effects: correct and wrong */
+function sfx(kind){const ac=audio();if(!ac)return;const t=ac.currentTime+0.02;
+  if(kind==='ok'){[[659.3,0,.16],[880,.12,.16],[1318.5,.24,.45]].forEach(([f,o,d])=>tone(ac,f,t+o,d,'triangle',.35))}
+  else{tone(ac,155.6,t,.55,'sawtooth',.18);tone(ac,146.8,t+.02,.6,'square',.08)}}
+/* original background music: a looping arpeggio over I-vi-IV-V (or the host's own file) */
+let musicVol=Number(store.get('ssw.vol',0.5));
+const Music={on:false,el:null,timer:null,bus:null,step:0,next:0,
+  start(){if(this.on)return;this.on=true;
+    if(this.el){this.el.loop=true;this.el.volume=musicVol;this.el.play().catch(()=>{});return}
+    const ac=audio();if(!ac){this.on=false;return}
+    this.bus=ac.createGain();this.bus.gain.value=musicVol*0.5;this.bus.connect(ac.destination);this.step=0;this.next=ac.currentTime+0.1;
+    this.timer=setInterval(()=>{const ac2=actx;if(!ac2||!this.bus)return;while(this.next<ac2.currentTime+0.35){this.note(this.next);this.next+=60/112/2;this.step++}},90)},
+  stop(){this.on=false;clearInterval(this.timer);this.timer=null;if(this.el)try{this.el.pause()}catch{};try{this.bus&&this.bus.disconnect()}catch{}this.bus=null},
+  vol(v){musicVol=v;store.set('ssw.vol',v);if(this.el)this.el.volume=v;if(this.bus)this.bus.gain.value=v*0.5},
+  file(f){const was=this.on;this.stop();try{this.el&&URL.revokeObjectURL(this.el.src)}catch{}this.el=f?new Audio(URL.createObjectURL(f)):null;if(was)this.start()},
+  note(t){const prog=[[0,4,7,12],[-3,0,4,9],[-7,-3,0,5],[-5,-1,2,7]],bar=Math.floor(this.step/8)%4,pat=[0,1,2,3,2,1,2,1],s=this.step%8,ch=prog[bar];
+    const f=n=>261.63*Math.pow(2,n/12);
+    tone(actx,f(ch[pat[s]]),t,.32,'triangle',.22,this.bus);
+    if(s===0||s===4)tone(actx,f(ch[0]-12),t,.6,'sine',.28,this.bus);
+    if(s%2===1)tone(actx,f(ch[2]+12),t,.08,'sine',.05,this.bus)}
+};
+function setMusic(want){if(want&&!Music.on)Music.start();else if(!want&&Music.on)Music.stop()}
+const displayOn=()=>[...conns.values()].some(v=>v.role==='display');
+function fire(kind){S.fx={n:(S.fx?.n||0)+1,k:kind};if(!displayOn()&&S.sound!==false)sfx(kind)}
+function hostAudio(){if(view==='host'&&S)setMusic(!!S.music&&!displayOn()&&S.sound!==false)}
+function musicControlsHTML(){return `<div class="row"><label for="musicfile" class="lbl" style="margin:0">Your own music (optional)</label><input type="file" id="musicfile" accept="audio/*" data-music="file" style="width:auto;max-width:100%;min-width:0">${Music.el?'<button class="btn-sm btn-ghost" data-act="music-builtin">Use built-in music</button>':''}
+  <label for="musicvol" class="lbl" style="margin:0">Volume</label><input type="range" id="musicvol" min="0" max="1" step="0.05" value="${musicVol}" data-music="vol" style="width:140px;padding:0"></div>`}
 let wakeLock=null;async function keepAwake(){try{if(navigator.wakeLock&&!wakeLock){wakeLock=await navigator.wakeLock.request('screen');wakeLock.addEventListener('release',()=>{wakeLock=null})}}catch{}}
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&(view==='display'||view==='host'))keepAwake()});
 
@@ -416,13 +286,21 @@ function clientOpen(code,role){
     if(!peer||peer.destroyed||hconn)return;
     const c=peer.connect(PREFIX+netCode.toLowerCase(),{reliable:true});
     c.on('open',()=>{hconn=c;net='live';lastState=Date.now();hello();updateConn()});
-    c.on('data',d=>{if(d&&d.t==='state'){lastState=Date.now();applyState(d.s)}});
+    c.on('data',d=>{if(d&&d.t==='ended'){onEnded();return}if(d&&d.t==='state'){lastState=Date.now();applyState(d.s)}});
     c.on('close',()=>{if(hconn===c){hconn=null;net='connecting';updateConn();retry(2000)}});
     c.on('error',()=>{});
   }
   function retry(ms){clearTimeout(retryT);retryT=setTimeout(()=>{if(peer&&!peer.destroyed&&!hconn){if(peer.disconnected){try{peer.reconnect()}catch{}}else dial()}},ms)}
 }
 setInterval(()=>{if(watching()&&hconn&&Date.now()-lastState>15000){try{hconn.close()}catch{}}},5000);
+/* ending a game sends everyone back to the start */
+function sendEnded(){conns.forEach((_,c)=>{try{c.open&&c.send({t:'ended'})}catch{}})}
+function endGame(){sendEnded();const p0=peer;peer=null;clearTimeout(retryT);setTimeout(()=>{try{p0&&p0.destroy()}catch{}},800);conns=new Map();net='off';netCode='';
+  Music.stop();S=null;store.set('ssw.host',null);confirmEnd=false;showLobby=false;view='role';render()}
+function onEnded(){ended=true;netClose();Music.stop();PS=null;PSkey='';lastFx=null;
+  if(view==='player'){P.step='code';savePlayer()}else if(view==='display'){D.step='code';saveDisplay()}render()}
+function endConfirmHTML(){return `<div class="confirm row"><span style="flex:1">End the game for everyone? All players and the TV board will be sent back to the start screen.</span><button class="btn-sm" data-act="end-no">Keep playing</button><button class="btn-sm btn-bad" data-act="end-yes">End game</button></div>`}
+const endedNote=()=>ended?'<div class="card status">The host ended the game. Thanks for playing!</div>':'';
 function send(m){try{hconn&&hconn.open&&hconn.send(m)}catch{}}
 function hello(){if(view==='display')send({t:'hello',role:'display'});else send({t:'hello',role:'player',pid:P.pid,name:P.name})}
 function sendTo(c){try{c.open&&c.send({t:'state',s:publicState()})}catch{}}
@@ -443,15 +321,21 @@ const onlinePids=()=>[...conns.values()].filter(v=>v.role==='player'&&v.pid).map
 const teamIdx=id=>S.teams.findIndex(t=>t.id===id);
 function members(i){const id=S.teams[i]?.id;return Object.entries(S.members).filter(([,m])=>m.team===id).map(([pid,m])=>({pid,name:m.name}))}
 function pTeam(pid){const m=S.members[pid];if(!m||!m.team)return null;const i=teamIdx(m.team);return i<0?null:i}
-function addTeam(name){name=short(name,24);if(!name||S.teams.length>=10||S.teams.some(t=>t.name.toLowerCase()===name.toLowerCase()))return null;const t={id:uid(),name,score:0};S.teams.push(t);return t}
+function nameTaken(name,exceptId){return S.teams.some(t=>t.id!==exceptId&&t.custom!==false&&t.name.toLowerCase()===name.toLowerCase())}
+function addTeam(name){name=short(name,24);if(S.teams.length>=12||(name&&nameTaken(name)))return null;const t={id:uid(),name:name||'',custom:!!name,score:0};S.teams.push(t);syncNames();return t}
+function renameTeam(id,name){const t=S.teams.find(x=>x.id===id);if(!t)return false;name=short(name,24);if(name&&nameTaken(name,id))return false;t.custom=!!name;if(name)t.name=name;syncNames();return true}
+/* a team without a custom name is named after its players ("Ana" or "Ana & Ben") */
+function syncNames(){if(!S)return;S.teams.forEach((t,i)=>{if(t.custom===false){const ms=members(i);t.name=ms.length?ms.map(m=>m.name).join(' & '):'Open team'}})}
+const needName=i=>S.teams[i].custom===false&&members(i).length>=3;
+const startProblem=()=>S.teams.length<2?'Add at least 2 teams to start (a team can be just 1 player).':S.teams.some((_,i)=>needName(i))?'Teams with 3 or more players need a team name.':'';
 function openTeams(){const cap=S.settings.cap;return S.teams.map((t,i)=>i).filter(i=>!cap||members(i).length<cap)}
 function mixTeams(n){
   const ps=shuffle(Object.keys(S.members));
-  if(n){while(S.teams.length<n){let k=S.teams.length+1;while(!addTeam('Team '+k))k++}}
+  if(n){while(S.teams.length<n){let k=S.teams.length+1;while(nameTaken('Team '+k))k++;addTeam('Team '+k)}}
   const k=n?Math.min(n,S.teams.length):S.teams.length;if(!k)return;const off=Math.floor(Math.random()*k);
   ps.forEach((pid,i)=>{S.members[pid].team=S.teams[(i+off)%k].id});
 }
-function netChanged(){if(!S)return;saveHost();broadcastSoon();refreshParts();updateConn()}
+function netChanged(){if(!S)return;syncNames();hostAudio();saveHost();broadcastSoon();refreshParts();updateConn()}
 function onMsg(c,m){
   if(!S||!m||typeof m!=='object')return;
   const info=conns.get(c);if(!info)return;
@@ -467,10 +351,11 @@ function onMsg(c,m){
     case 'join':{const i=teamIdx(m.id);if(i<0)return;const cap=S.settings.cap;if(cap&&members(i).length>=cap&&me.team!==m.id)return;me.team=m.id;break}
     case 'random':{const open=openTeams().filter(i=>S.teams[i].id!==me.team);if(!open.length)return;const min=Math.min(...open.map(i=>members(i).length));me.team=S.teams[rnd(open.filter(i=>members(i).length===min))].id;break}
     case 'create':{if(!S.settings.playersCreate||S.phase!=='lobby')return;const t=addTeam(m.name);if(t)me.team=t.id;break}
+    case 'rename':{if(S.phase!=='lobby'||!me.team)return;renameTeam(me.team,m.name);break}
     case 'leave':me.team=null;break;
     case 'buzz':{if(S.phase!=='clue'||S.settings.mode!=='buzz'||!S.buzzOpen||m.e!==S.epoch||myT==null||S.tried.includes(myT)||S.answering!=null)return;
       if(!S.inbox.buzz.includes(pid))S.inbox.buzz.push(pid);
-      if(S.answering==null){S.answering=myT;S.buzzOpen=false;beep(990,.2);resetTimer(S.settings.autoTimer);full=true}break}
+      if(S.answering==null){S.answering=myT;S.buzzOpen=false;resetTimer(S.settings.autoTimer);full=true}break}
     case 'ans':{if(S.phase!=='clue'||m.e!==S.epoch||myT==null||myT!==S.answering||S.revealed)return;if(S.inbox.ans[pid])return;S.inbox.ans[pid]={t:short(m.text,80),t0:Date.now()};if(autoJudge())full=true;break}
     case 'wager':{if(S.phase!=='final-cat'||m.e!==S.epoch||myT==null)return;S.inbox.wag[pid]={v:short(m.v,7),t0:Date.now()};break}
     case 'fans':{if(S.phase!=='final-clue'||m.e!==S.epoch||myT==null)return;S.inbox.fans[pid]={t:short(m.text,80),t0:Date.now()};break}
@@ -503,7 +388,7 @@ function openTile(c,r){
   if(S.used[c][r])return;
   S.cur={c,r};S.revealed=false;S.hint=false;peek=false;newEpoch();S.scored={};S.tried=[];S.ddWager='';
   S.answering=S.settings.mode==='turns'?S.turn:null;S.ddTeam=S.turn;
-  if(isDD()){S.phase='dd';S.buzzOpen=false;resetTimer(false);beep(520,.25);setTimeout(()=>beep(780,.35),220)}
+  if(isDD()){S.phase='dd';S.buzzOpen=false;resetTimer(false);}
   else{S.phase='clue';S.buzzOpen=S.settings.mode==='buzz';resetTimer(S.settings.autoTimer)}
   commit();
 }
@@ -511,10 +396,11 @@ function closeTile(){if(S.cur)S.used[S.cur.c][S.cur.r]=1;S.cur=null;S.phase='boa
 function scoreTeam(i,sign,val,book){const prev=book[i]||0;S.teams[i].score-=prev*val;if(prev===sign){delete book[i]}else{S.teams[i].score+=sign*val;book[i]=sign}}
 function markClue(i,sign){
   const val=clueValue(),prev=S.scored[i]||0,free=!S.settings.wrongLose&&!isDD();
-  if(sign===-1&&free){if(prev===1)S.teams[i].score-=val;if(prev===-1)delete S.scored[i];else S.scored[i]=-1;return}
+  if(sign===-1&&free){if(prev===1)S.teams[i].score-=val;if(prev===-1)delete S.scored[i];else{S.scored[i]=-1;fire('no')}return}
   if(prev===-1&&free)delete S.scored[i];
   scoreTeam(i,sign,val,S.scored);
-  if(sign===1&&S.scored[i]===1){S.tmr.left=tLeft();S.tmr.run=false;S.revealed=true;S.buzzOpen=false;beep(880,.12);setTimeout(()=>beep(1320,.2),120)}
+  if(S.scored[i]===sign)fire(sign===1?'ok':'no');
+  if(sign===1&&S.scored[i]===1){S.tmr.left=tLeft();S.tmr.run=false;S.revealed=true;S.buzzOpen=false;}
 }
 function nextTeam(){
   if(S.answering!=null&&!S.tried.includes(S.answering))S.tried.push(S.answering);
@@ -531,17 +417,17 @@ function autoJudge(){
   const ok=judge(first.t,curClue());S.judged[t]=ok?1:-1;
   if(!S.settings.auto)return true;
   S.tmr.left=tLeft();S.tmr.run=false;
-  if(ok)markClue(t,1);else{markClue(t,-1);beep(220,.35)}
+  if(ok)markClue(t,1);else{markClue(t,-1);}
   return true;
 }
-function commit(){saveHost();broadcast();render()}
+function commit(){syncNames();saveHost();broadcast();render();hostAudio()}
 function publicState(){
   const g=S.game,ph=S.phase,cl=curClue(),on=new Set(onlinePids());
   const st={ph,code:S.code,title:short(g.title,60),cats:g.cats.map(x=>short(x.name,40)),used:S.used,
-    teams:S.teams.map((t,i)=>({id:t.id,name:t.name,score:t.score,m:members(i).map(m=>({p:m.pid,n:m.name,on:on.has(m.pid)}))})),
+    teams:S.teams.map((t,i)=>({id:t.id,name:t.name,named:t.custom!==false,need:needName(i),score:t.score,m:members(i).map(m=>({p:m.pid,n:m.name,on:on.has(m.pid)}))})),
     loose:Object.entries(S.members).filter(([,m])=>!m.team||teamIdx(m.team)<0).map(([p,m])=>({p,n:m.name})),
     cap:S.settings.cap,create:S.settings.playersCreate,mode:S.settings.mode,ans:S.settings.answers,turn:S.turn,epoch:S.epoch,open:!!S.buzzOpen,
-    tm:{left:tLeft(),run:!!S.tmr.run,len:S.tmr.len}};
+    tm:{left:tLeft(),run:!!S.tmr.run,len:S.tmr.len},music:!!S.music,fx:S.fx||null};
   if(S.cur&&cl){st.clue={cat:g.cats[S.cur.c].name,val:clueValue(),dd:isDD(),
     q:ph==='clue'?cl.q:null,h:S.hint&&ph==='clue'?cl.h:null,a:S.revealed?cl.a:null,
     who:S.answering,tried:S.tried,res:S.scored,queue:S.inbox.buzz.slice(0,6).map(p=>S.members[p]?.name||'Player')}}
@@ -552,26 +438,26 @@ function publicState(){
 /* ---------- timer tick ---------- */
 setInterval(()=>{
   if(view==='host'&&S&&S.tmr&&(S.phase==='clue'||S.phase==='final-clue')){const left=tLeft();paintTimer(left,S.tmr.len);
-    if(S.tmr.run&&left===0&&!S.timeUp){S.timeUp=true;S.tmr.run=false;S.tmr.left=0;beep(300,.6);commit()}}
+    if(S.tmr.run&&left===0&&!S.timeUp){S.timeUp=true;S.tmr.run=false;S.tmr.left=0;commit()}}
   if(watching()&&PS&&PS.tm){const left=pTimer.run?Math.max(0,pTimer.end-Date.now()):pTimer.left;paintTimer(left,pTimer.len)}
 },200);
 function paintTimer(left,len){const bar=$('#tbar'),tx=$('#ttext');if(bar){bar.style.width=(100*left/(len||1))+'%';bar.classList.toggle('low',left<=5000)}if(tx)tx.textContent=Math.ceil(left/1000)+'s'}
 
 /* ---------- client: receiving state ---------- */
+let lastFx=null;
+function displayAudio(){if(view==='display')setMusic(!!(PS&&PS.music)&&!D.mute&&D.step==='live')}
 function myTeamIdx(st){return st?st.teams.findIndex(t=>(t.m||[]).some(m=>m.p===P.pid)):-1}
 function applyState(st){
   if(!st||typeof st!=='object'||!Array.isArray(st.teams))return;
   if(st.tm)pTimer={left:st.tm.left,run:st.tm.run,len:st.tm.len||1,end:Date.now()+st.tm.left};
+  if(view==='display'){const n=st.fx?st.fx.n:0;if(lastFx!=null&&n!==lastFx&&st.fx&&!D.mute)sfx(st.fx.k);lastFx=n;PS=st;displayAudio()}
   const k=JSON.stringify(Object.assign({},st,{tm:{run:st.tm?.run,left:st.tm?.run?0:st.tm?.left}}));
   if(k===PSkey)return;
   const newEp=!PS||PS.epoch!==st.epoch;PS=st;PSkey=k;
   if(view==='player'){
     if(newEp)pDraft.ans='';
-    const mi=myTeamIdx(st),tid=mi>=0?st.teams[mi].id:null;
-    if(P.step==='team'&&tid&&tid!==P.switchFrom){P.step='live';P.switchFrom=null;savePlayer()}
-    else if(P.step==='live'&&!tid){P.step='team';savePlayer()}
   }
-  const a=document.activeElement;const keep=a&&['p-ans','p-wager','p-fans','p-name','p-newteam'].includes(a.id)&&!newEp?a.id:null;
+  const a=document.activeElement;const keep=a&&['p-ans','p-wager','p-fans','p-name','p-newteam','p-rename'].includes(a.id)&&!newEp?a.id:null;
   render();if(keep){const el=$('#'+keep);if(el){el.focus();try{el.setSelectionRange(el.value.length,el.value.length)}catch{}}}
 }
 
@@ -610,7 +496,8 @@ function setupHTML(){
       <span class="note">Every new game pulls fresh random questions from a bank of ${BANK.reduce((s,b)=>s+b.q.length,0)} Bible questions, each with a hint.</span>
       <div class="chips">${PRESETS.map(p=>`<button class="chip ${setup.preset===p.id?'sel':''}" data-act="preset" data-v="${p.id}">${esc(p.name)}</button>`).join('')}</div>
       ${setup.preset==='pick'?`<span class="lbl">Pick 5 categories (${setup.pick.length}/5)</span><div class="catpick">${BANK.map(b=>`<button class="${setup.pick.includes(b.id)?'sel':''}" data-act="pickcat" data-v="${b.id}">${esc(b.name)}</button>`).join('')}</div>`:
-       setup.preset==='random'?'<span class="note">Five random categories every game.</span>':`<span class="note">${esc(PRESETS.find(p=>p.id===setup.preset).cats.map(id=>BANK.find(b=>b.id===id).name).join(' · '))}</span>`}
+'<span class="note">Five random categories with random questions every game.</span>'}
+      <span class="note">${BANK.length} categories loaded. Add your own categories and questions in the questions.js file.</span>
       <div class="row"><button class="btn-sm" data-act="ed-new">Write a game from scratch</button></div>`
     :`${custom.length?`<div class="chips">${custom.map(c=>`<button class="chip ${setup.customId===c.id?'sel':''}" data-act="pickcustom" data-v="${esc(c.id)}">${esc(c.title)}</button>`).join('')}</div>
       <div class="row"><button class="btn-sm" data-act="ed-custom" ${setup.customId?'':'disabled'}>Edit this game</button><button class="btn-sm" data-act="ed-new">Write a new game</button></div>`
@@ -637,7 +524,7 @@ function setupHTML(){
   ${confirmNew?`<div class="confirm row"><span style="flex:1">This ends the game in progress. Start a new one?</span><button class="btn-sm" data-act="new-no">Keep playing</button><button class="btn-sm btn-bad" data-act="new-yes">Start new game</button></div>`:''}
   <div class="row"><button class="btn-ghost" data-act="go-role">Back</button><div class="spacer"></div>${S?'<button data-act="resume">Resume current game</button>':''}<button class="btn-gold" data-act="create" ${canCreate()?'':'disabled'}>Create game</button></div>`;
 }
-function canCreate(){if(setup.source==='custom')return !!custom.find(x=>x.id===setup.customId);if(setup.preset==='pick')return setup.pick.length===5;return true}
+function canCreate(){if(BANK.length<5&&setup.source==='bank')return false;if(setup.source==='custom')return !!custom.find(x=>x.id===setup.customId);if(setup.preset==='pick')return setup.pick.length===5;return true}
 
 function editorHTML(){
   const g=edit;
@@ -681,10 +568,11 @@ function playerChip(pid,name){
 function lobbyTeamsHTML(){
   const cap=S.settings.cap;
   const loose=Object.entries(S.members).filter(([p])=>pTeam(p)==null);
-  return `${S.teams.length?`<div class="grid2">${S.teams.map((t,i)=>{const ms=members(i);return `<div class="spot"><div class="row"><h3 style="flex:1;min-width:0">${esc(t.name)}</h3><button class="btn-sm btn-ghost" data-act="rm-team" data-id="${t.id}" aria-label="Delete ${esc(t.name)}">Delete</button></div>
-    <span class="muted">${ms.length}${cap?` / ${cap}`:''} player${ms.length===1?'':'s'}</span>
+  return `${S.teams.length?`<div class="grid2">${S.teams.map((t,i)=>{const ms=members(i);return `<div class="spot ${needName(i)?'mine':''}"><div class="row"><h3 style="flex:1;min-width:0">${esc(t.name)}</h3><button class="btn-sm btn-ghost" data-act="rm-team" data-id="${t.id}" aria-label="Delete ${esc(t.name)}">Delete</button></div>
+    <span class="muted">${ms.length}${cap?` / ${cap}`:''} player${ms.length===1?'':'s'}${needName(i)?' · <span class="no">needs a team name</span>':''}</span>
+    <input id="tn-${t.id}" data-rename="${t.id}" maxlength="24" value="${t.custom===false?'':esc(t.name)}" placeholder="${ms.length>=3?'Team name (required)':'Team name (optional)'}" aria-label="Team name">
     <div class="row" style="gap:6px">${ms.length?ms.map(m=>playerChip(m.pid,m.name)).join(''):'<span class="muted">Waiting for players…</span>'}</div></div>`}).join('')}</div>`
-    :'<span class="note">No teams yet. Add some below, let players create their own, or shuffle everyone into teams.</span>'}
+    :'<span class="note">No teams yet. Players can play solo or create teams on their phones, or you can add teams below or shuffle everyone into teams.</span>'}
   ${loose.length?`<div class="col"><span class="lbl">Not on a team yet</span><div class="row" style="gap:6px">${loose.map(([p,m])=>playerChip(p,m.name)).join('')}</div></div>`:''}
   <div id="plist">${playersHTML()}</div>`;
 }
@@ -700,9 +588,10 @@ function lobbyHTML(inOverlay){
       <button class="btn-sm" data-act="mix" data-n="0" ${S.teams.length>=2?'':'disabled'}>Shuffle players across these teams</button>
       <button class="btn-sm" data-act="mix" data-n="2">Make 2 random teams</button><button class="btn-sm" data-act="mix" data-n="3">Make 3</button><button class="btn-sm" data-act="mix" data-n="4">Make 4</button></div>
     <div id="lobbyteams" class="col">${lobbyTeamsHTML()}</div>
-    <div class="row"><input id="newteam" maxlength="24" placeholder="New team name" style="flex:1;min-width:0" aria-label="New team name"><button class="btn-sm" data-act="add-team">Add team</button></div>
-    <span class="note">Players can tap a team to join, ${S.settings.playersCreate?'create a new one, ':''}or ask to be placed on any team.</span></div>
-  <div class="row">${inOverlay?'<button class="btn-gold" data-act="hide-lobby">Back to the board</button>':`<button class="btn-ghost" data-act="go-setup">Change setup</button><div class="spacer"></div><span class="note">${S.teams.length<2?'Add at least 2 teams to start':''}</span><button class="btn-gold" data-act="begin" ${S.teams.length<2?'disabled':''}>Start the game</button>`}</div>`;
+    <div class="row"><input id="newteam" maxlength="24" placeholder="New team name (optional)" style="flex:1;min-width:0" aria-label="New team name"><button class="btn-sm" data-act="add-team">Add team</button></div>
+    <span class="note">Teams can be any size, even 1 player. Teams of 1 or 2 don’t need a name; teams of 3 or more do. Players can join a team, ${S.settings.playersCreate?'play solo, create a new team, ':''}or ask to be placed on any team.</span></div>
+  <div class="row">${inOverlay?'<button class="btn-gold" data-act="hide-lobby">Back to the board</button>':`<button class="btn-ghost" data-act="go-setup">Change setup</button><div class="spacer"></div><span class="note">${esc(startProblem())}</span><button class="btn-bad btn-sm" data-act="end-game">End game</button><button class="btn-gold" data-act="begin" ${startProblem()?'disabled':''}>Start the game</button>`}</div>
+  ${confirmEnd?endConfirmHTML():''}`;
 }
 function hostHTML(){
   const g=S.game;
@@ -716,11 +605,16 @@ function hostHTML(){
   <div class="row">
     <button class="${allUsed?'btn-gold':''}" data-act="final">Final round</button>
     <button data-act="tv" aria-pressed="${S.tv}">${S.tv?'Hide answers: on':'Hide answers: off'}</button>
-    <button data-act="sound" aria-pressed="${S.sound!==false}">${S.sound!==false?'Sound: on':'Sound: off'}</button>
+    <button data-act="music" aria-pressed="${!!S.music}">${S.music?'Music: on':'Music: off'}</button>
+    <button data-act="sound" aria-pressed="${S.sound!==false}">${S.sound!==false?'Sounds: on':'Sounds: off'}</button>
     <button data-act="ed-host">Edit questions</button>
-    <div class="spacer"></div><button class="btn-ghost" data-act="go-setup">New game</button>
+    <div class="spacer"></div><button class="btn-ghost" data-act="go-setup">New game</button><button class="btn-bad" data-act="end-game">End game</button>
   </div>
+  ${confirmEnd?endConfirmHTML():''}
   <div class="note">${S.tv?'Answers and hints are hidden on this screen until you reveal them. Use “Peek” to check privately.':'Answers show on this screen. If this screen is ever on the TV, turn on “Hide answers”.'}${S.dds.length?` ${S.dds.length===1?'A Daily Double is':'Two Daily Doubles are'} hidden on the board.`:''}</div>
+  <details class="card"><summary class="eyebrow" style="cursor:pointer">Music & sounds</summary>
+    <span class="note">${displayOn()?'The TV board is connected, so music and sounds play there.':'No TV board is connected, so music and sounds play on this device.'} The only sound effects are for correct and wrong answers.</span>
+    ${displayOn()?'':musicControlsHTML()}</details>
   <div class="card" style="gap:6px"><div class="eyebrow">Players</div><div id="plist">${playersHTML()}</div></div>
   ${showLobby?`<div class="overlay" role="dialog" aria-label="Teams and join info"><div class="ov-in">${lobbyHTML(true)}</div></div>`:''}
   ${S.phase==='clue'||S.phase==='dd'?clueOverlay():''}
@@ -827,8 +721,26 @@ function finalOverlay(){
 /* ---------- player view ---------- */
 function timerP(){return PS&&PS.tm&&(PS.tm.run||PS.tm.left<PS.tm.len)?`<div class="row"><div class="timer"><i id="tbar"></i></div><span class="ttext" id="ttext"></span>${!PS.tm.run?'<span class="muted">Paused</span>':''}</div>`:''}
 function netNote(){return net==='nogame'?'<div class="note no">No game with that code is running yet. Check the code; this keeps trying.</div>':net==='nolib'?'<div class="note no">Couldn’t load the connection library. Check your internet connection and reload.</div>':''}
+function playerLobbyHTML(st,mi){
+  const my=st.teams[mi],total=st.teams.reduce((n,t)=>n+(t.m||[]).length,0)+(st.loose||[]).length;
+  return `<div class="row"><div style="min-width:0"><div class="eyebrow">Lobby · game ${esc(P.code)}</div><h2>${esc(P.name)}${my?` <span class="muted" style="font-weight:400">· ${esc(my.name)}</span>`:''}</h2></div><div class="spacer"></div><div id="conn">${connHTML()}</div></div>
+  <div class="card">${my?`<span class="big-status">You’re on ${esc(my.name)}</span><div class="status muted">Waiting for the host to start the game…</div>`:'<span class="big-status">Pick a team</span><div class="status muted">Join a team below, play solo, or create a team.</div>'}
+    ${my&&my.need?'<div class="status no">Your team has 3 or more players, so it needs a name.</div>':''}
+    ${my&&(my.m||[]).length>=2?`<div class="row"><input id="p-rename" maxlength="24" value="${esc(my.named?my.name:(pDraft.rename||''))}" data-pd="rename" placeholder="${(my.m||[]).length>=3?'Team name (required)':'Team name (optional)'}" style="flex:1;min-width:0" aria-label="Team name"><button class="btn-sm" data-act="p-rename">Save name</button></div>`:''}
+  </div>
+  <div class="card"><div class="row"><h2>Teams</h2><div class="spacer"></div><span class="muted">${total} player${total===1?'':'s'} in the lobby</span></div>
+    ${st.teams.length?`<div class="grid2">${st.teams.map((t,i)=>{const n=(t.m||[]).length,full=st.cap&&n>=st.cap&&i!==mi;return `<div class="spot ${i===mi?'mine':''}"><h3>${esc(t.name)}</h3>
+      <span class="muted">${n}${st.cap?` / ${st.cap} spots`:''} player${n===1?'':'s'}${t.need?' · needs a name':''}</span>
+      <span>${n?esc(t.m.map(m=>m.n).join(', ')):'<span class="muted">Empty</span>'}</span>
+      ${i===mi?'<span class="badge">Your team</span>':`<button class="btn-sm" data-act="p-team" data-id="${esc(t.id)}" ${full?'disabled':''}>${full?'Full':'Join'}</button>`}</div>`}).join('')}</div>`:'<span class="note">No teams yet. Be the first!</span>'}
+    ${(st.loose||[]).length?`<span class="note">Still choosing: ${esc(st.loose.map(m=>m.n).join(', '))}</span>`:''}
+    <div class="row">${st.teams.length?'<button data-act="p-random">Put me on any team</button>':''}${st.create?'<button data-act="p-solo">Play solo</button>':''}</div>
+    ${st.create?`<div class="row"><input id="p-newteam" maxlength="24" value="${esc(pDraft.team)}" data-pd="team" placeholder="New team name (optional for 1–2 players)" style="flex:1;min-width:0" aria-label="New team name"><button data-act="p-create">Create team</button></div>`:''}
+  </div>
+  <div><button class="btn-ghost btn-sm" data-act="p-leave">Leave game</button></div>`;
+}
 function playerHTML(){
-  if(P.step==='code')return `${header('Join a game')}
+  if(P.step==='code')return `${header('Join a game')}${endedNote()}
     <div class="card" style="max-width:480px;width:100%;margin:0 auto">
       <label for="p-code">Game code</label><input id="p-code" class="codeinput" maxlength="4" value="${esc(P.code)}" data-p="code" autocomplete="off" autocapitalize="characters" placeholder="ABCD">
       <label for="p-name">Your name</label><input id="p-name" maxlength="20" value="${esc(P.name)}" data-p="name" autocomplete="nickname">
@@ -838,17 +750,13 @@ function playerHTML(){
   const st=PS;
   if(!st)return `${header('Game '+P.code)}<div class="card status">${net==='live'?'Joining…':'Connecting to the game…'}${netNote()}</div><button class="btn-ghost btn-sm" data-act="p-leave">Use a different code</button>`;
   const mi=myTeamIdx(st),myTeam=st.teams[mi];
-  if(P.step==='team'||mi<0){
-    return `${header('Pick your team')}
-    ${st.teams.length?`<div class="grid2">${st.teams.map((t,i)=>{const n=(t.m||[]).length,full=st.cap&&n>=st.cap&&i!==mi;return `<button class="spot ${i===mi?'mine':''}" data-act="p-team" data-id="${esc(t.id)}" ${full?'disabled':''}><h3>${esc(t.name)}</h3><span class="muted">${n}${st.cap?` / ${st.cap} spots`:''}${full?' · full':''}</span><span>${n?esc(t.m.map(m=>m.n).join(', ')):'<span class="muted">Be the first!</span>'}</span></button>`}).join('')}</div>
-      <button class="btn-gold" data-act="p-random">Put me on any team (random)</button>`:'<div class="card status">No teams yet.</div>'}
-    ${st.create&&st.ph==='lobby'?`<div class="card"><label for="p-newteam">Or create a new team</label><div class="row"><input id="p-newteam" maxlength="24" value="${esc(pDraft.team)}" data-pd="team" placeholder="Team name" style="flex:1;min-width:0"><button data-act="p-create">Create & join</button></div></div>`:''}
-    <div class="row"><button class="btn-ghost btn-sm" data-act="p-leave">Leave game</button>${mi>=0?'<button class="btn-ghost btn-sm" data-act="p-back-live">Stay on my team</button>':''}</div>`;
-  }
+  if(st.ph==='lobby')return playerLobbyHTML(st,mi);
+  if(mi<0)return `${header('Pick your team')}
+    ${st.teams.length?`<div class="grid2">${st.teams.map(t=>{const n=(t.m||[]).length,full=st.cap&&n>=st.cap;return `<button class="spot" data-act="p-team" data-id="${esc(t.id)}" ${full?'disabled':''}><h3>${esc(t.name)}</h3><span class="muted">${n}${st.cap?` / ${st.cap} spots`:''}${full?' · full':''}</span></button>`}).join('')}</div>
+    <button class="btn-gold" data-act="p-random">Put me on any team (random)</button>`:'<div class="card status">No teams yet. Ask the host to add one.</div>'}
+    <button class="btn-ghost btn-sm" data-act="p-leave">Leave game</button>`;
   let main='';
-  if(st.ph==='lobby')main=`<div class="card"><span class="big-status">You’re on ${esc(myTeam.name)}</span><div class="status muted">Waiting for the host to start the game…</div>
-    <div class="status">Teammates: ${esc(myTeam.m.map(m=>m.n).join(', '))}</div><div class="row" style="justify-content:center"><button class="btn-sm" data-act="p-switch">Switch team</button></div></div>`;
-  else if(st.ph==='board')main=`<div class="card"><span class="big-status">${st.turn===mi?'Your team picks!':esc(st.teams[st.turn]?.name)+' is picking'}</span><div class="status muted">${st.turn===mi?'Tell the host a category and points.':'Get ready…'}</div></div>${boardHTML(st.cats,st.used,false)}`;
+  if(st.ph==='board')main=`<div class="card"><span class="big-status">${st.turn===mi?'Your team picks!':esc(st.teams[st.turn]?.name)+' is picking'}</span><div class="status muted">${st.turn===mi?'Tell the host a category and points.':'Get ready…'}</div></div>${boardHTML(st.cats,st.used,false)}`;
   else if(st.ph==='dd')main=`<div class="cluebox"><div class="eyebrow" style="text-align:center">${esc(st.clue?.cat)}</div><div class="dd">Daily Double!</div><div class="status">One team plays this clue and sets a wager.</div></div>`;
   else if(st.ph==='clue'&&st.clue){
     const c=st.clue,who=c.who,mine=who===mi,tried=(c.tried||[]).includes(mi),res=c.res||{};let act='';
@@ -878,7 +786,7 @@ function playerHTML(){
 
 /* ---------- TV board display ---------- */
 function displayHTML(){
-  if(D.step!=='live')return `${header('Big-screen board')}
+  if(D.step!=='live')return `${header('Big-screen board')}${endedNote()}
     <div class="card" style="max-width:520px;width:100%;margin:0 auto">
       <label for="d-code">Game code</label><input id="d-code" class="codeinput" maxlength="4" value="${esc(D.code)}" data-d="code" autocomplete="off" autocapitalize="characters" placeholder="ABCD">
       <button class="btn-gold" data-act="d-code">Show the board</button>
@@ -886,7 +794,7 @@ function displayHTML(){
       <button class="btn-ghost btn-sm" data-act="go-role">Back</button></div>`;
   const st=PS;
   const bar=`<div class="row"><span class="eyebrow">${esc(st?.title||'Scripture Showdown')} · Join with code <b style="color:var(--gold)">${esc(D.code)}</b></span><div class="spacer"></div><div id="conn">${connHTML()}</div>
-    <button class="btn-sm btn-ghost" data-act="d-full">Full screen</button><button class="btn-sm btn-ghost" data-act="d-leave">Exit</button></div>`;
+    <button class="btn-sm btn-ghost" data-act="d-sound">${D.mute?'Sound: off':'Sound: on'}</button><button class="btn-sm btn-ghost" data-act="d-full">Full screen</button><button class="btn-sm btn-ghost" data-act="d-leave">Exit</button></div>`;
   if(!st)return `${bar}<div class="tvbox"><div class="big-status">${net==='live'?'Loading…':'Connecting to the host…'}</div>${netNote()}</div>`;
   const scores=`<div class="scores">${st.teams.map((t,i)=>`<div class="team ${st.ph!=='lobby'&&st.turn===i?'turn':''}">${st.ph==='board'&&st.turn===i?'<span class="badge">Picking</span>':''}<span class="nm">${esc(t.name)}</span><span class="sc ${t.score<0?'neg':''}">${t.score}</span><span class="mem">${esc((t.m||[]).map(m=>m.n).join(', '))}</span></div>`).join('')}</div>`;
   let main='';
@@ -915,7 +823,8 @@ function displayHTML(){
       ${f.res?`<div class="row" style="justify-content:center">${Object.keys(f.res).map(i=>`<span class="pill" style="font-size:16px">${esc(st.teams[i]?.name)} <span class="${f.res[i]===1?'ok':'no'}">${f.res[i]===1?'✓ correct':'✗ wrong'}</span></span>`).join('')}</div>`:''}`;
     else{const max=Math.max(...st.teams.map(t=>t.score));main=`<div class="tvbox"><div class="eyebrow" style="text-align:center">And the winner is</div><div class="banner">${st.teams.filter(t=>t.score===max).map(t=>esc(t.name)).join(' & ')}</div><div style="text-align:center;font-family:var(--f-display);font-size:40px;color:var(--gold)">${max} points</div></div>`}
   }
-  return `${bar}${main}${scores}`;
+  return `${bar}${main}${scores}
+  <details class="card"><summary class="eyebrow" style="cursor:pointer">Music on this screen</summary><span class="note">The host turns background music on and off. ${PS&&PS.music?'Music is on.':'Music is off right now.'} Sound effects play only for correct and wrong answers.</span>${musicControlsHTML()}</details>`;
 }
 
 /* ---------- events ---------- */
@@ -923,8 +832,9 @@ function goHost(){view='host';if(!peer||netCode!==S.code||!conns)hostOpen(false)
 document.addEventListener('click',e=>{
   const b=e.target.closest('[data-act]');if(!b||b.disabled)return;
   const a=b.dataset.act,i=+b.dataset.i;
+  if(view==='host'||view==='display'||a==='go-display'||a==='go-host'||a==='d-code'||a==='resume'||a==='create')audio();
   switch(a){
-    case 'go-role':if(view!=='host')netClose();view='role';render();break;
+    case 'go-role':if(view!=='host')netClose();if(view==='display')Music.stop();view='role';render();break;
     case 'go-host':if(S)goHost();else{view='setup';render()}break;
     case 'go-setup':view='setup';confirmNew=false;render();window.scrollTo(0,0);break;
     case 'go-player':view='player';render();break;
@@ -937,13 +847,17 @@ document.addEventListener('click',e=>{
     case 'resume':goHost();break;
     case 'create':if(S&&S.phase!=='over'&&S.phase!=='lobby'){confirmNew=true;render();break}
     /* falls through */
-    case 'new-yes':{confirmNew=false;const fresh=createGame();if(!S)return;view='host';if(fresh||netCode!==S.code||!peer)hostOpen(true);keepAwake();commit();window.scrollTo(0,0);break}
+    case 'new-yes':{confirmNew=false;const go=()=>{const fresh=createGame();if(!S)return;view='host';if(fresh||netCode!==S.code||!peer)hostOpen(true);keepAwake();commit();window.scrollTo(0,0)};
+      if(S&&S.phase!=='lobby'&&conns.size){sendEnded();setTimeout(go,600)}else go();break}
+    case 'end-game':confirmEnd=true;render();break;
+    case 'end-no':confirmEnd=false;render();break;
+    case 'end-yes':endGame();break;
     case 'new-no':confirmNew=false;render();break;
-    case 'begin':if(S.teams.length<2)return;S.phase='board';S.turn=Math.floor(Math.random()*S.teams.length);commit();break;
+    case 'begin':if(startProblem())return;S.phase='board';S.turn=Math.floor(Math.random()*S.teams.length);commit();break;
     case 'show-lobby':showLobby=true;render();break;
     case 'hide-lobby':showLobby=false;render();break;
     case 'copy':{const inp=$('#joinlink');try{navigator.clipboard.writeText(joinLink(S.code)).then(()=>{b.textContent='Copied'},()=>{inp.select()})}catch{inp&&inp.select()}break}
-    case 'add-team':{const inp=$('#newteam');const t=addTeam(inp?inp.value:'Team '+(S.teams.length+1));if(!t){inp&&inp.focus();return}if(inp)inp.value='';commit();break}
+    case 'add-team':{const inp=$('#newteam');const t=addTeam(inp?inp.value:'');if(!t){inp&&inp.focus();return}if(inp)inp.value='';commit();break}
     case 'rm-team':{const id=b.dataset.id;if(S.phase!=='lobby'&&S.teams.find(t=>t.id===id)?.score){if(confirmRm!==id){confirmRm=id;b.textContent='Tap again to delete';return}}
       confirmRm=null;const k=teamIdx(id);if(k<0)return;Object.values(S.members).forEach(m=>{if(m.team===id)m.team=null});S.teams.splice(k,1);if(S.turn>=S.teams.length)S.turn=0;commit();break}
     case 'mix':mixTeams(+b.dataset.n);commit();break;
@@ -964,6 +878,9 @@ document.addEventListener('click',e=>{
     case 'adj':S.teams[i].score+=+b.dataset.v;commit();break;
     case 'tv':S.tv=!S.tv;peek=false;commit();break;
     case 'sound':S.sound=S.sound===false;commit();break;
+    case 'music':S.music=!S.music;commit();break;
+    case 'music-builtin':Music.file(null);render();break;
+    case 'd-sound':D.mute=!D.mute;saveDisplay();displayAudio();render();break;
     case 'peek':peek=!peek;render();break;
     case 'hint':S.hint=true;commit();break;
     case 'reveal':S.revealed=true;S.buzzOpen=false;S.tmr.left=tLeft();S.tmr.run=false;commit();break;
@@ -988,27 +905,27 @@ document.addEventListener('click',e=>{
     case 'use-wagers':inboxList('wag').forEach(x=>{S.final.wagers[x.team]=x.v});saveHost();render();break;
     case 'final-clue':{S.teams.forEach((t,k)=>{const w=parseInt(S.final.wagers[k],10)||0;S.final.wagers[k]=Math.max(0,Math.min(w,Math.max(0,t.score)))});S.phase='final-clue';peek=false;S.hint=false;const keepW=S.inbox.wag;newEpoch();S.inbox.wag=keepW;resetTimer(S.settings.autoTimer);commit();break}
     case 'final-reveal':{S.phase='final-reveal';S.tmr.run=false;
-      if(S.settings.answers==='typed'&&S.settings.auto){const done={};inboxList('fans').forEach(x=>{if(done[x.team])return;done[x.team]=1;scoreTeam(x.team,judge(x.t,S.game.final)?1:-1,parseInt(S.final.wagers[x.team],10)||0,S.final.marks)})}
+      if(S.settings.answers==='typed'&&S.settings.auto){const done={};inboxList('fans').forEach(x=>{if(done[x.team])return;done[x.team]=1;scoreTeam(x.team,judge(x.t,S.game.final)?1:-1,parseInt(S.final.wagers[x.team],10)||0,S.final.marks)});const v=Object.values(S.final.marks);if(v.length)fire(v.includes(1)?'ok':'no')}
       commit();break}
-    case 'fmark':scoreTeam(i,+b.dataset.s,parseInt(S.final.wagers[i],10)||0,S.final.marks);commit();break;
-    case 'over':S.phase='over';beep(660,.2);setTimeout(()=>beep(880,.2),180);setTimeout(()=>beep(1100,.35),360);commit();break;
+    case 'fmark':scoreTeam(i,+b.dataset.s,parseInt(S.final.wagers[i],10)||0,S.final.marks);if(S.final.marks[i]===+b.dataset.s)fire(+b.dataset.s===1?'ok':'no');commit();break;
+    case 'over':S.phase='over';commit();break;
     case 'final-back':S.phase='final-reveal';commit();break;
     /* player */
     case 'p-join':{const c=String(P.code||'').toUpperCase().replace(/[^A-Z]/g,'');if(c.length!==4){$('#p-code')?.focus();return}if(!short(P.name,20)){$('#p-name')?.focus();return}
-      P.code=c;P.name=short(P.name,20);P.step='team';savePlayer();PS=null;PSkey='';clientOpen(c,'player');render();break}
+      P.code=c;P.name=short(P.name,20);P.step='in';ended=false;savePlayer();PS=null;PSkey='';clientOpen(c,'player');render();break}
     case 'p-leave':send({t:'leave'});P.step='code';savePlayer();netClose();PS=null;PSkey='';render();break;
     case 'p-team':send({t:'join',id:b.dataset.id});break;
     case 'p-random':send({t:'random'});break;
-    case 'p-create':{const n=short(pDraft.team,24);if(!n){$('#p-newteam')?.focus();return}send({t:'create',name:n});pDraft.team='';break}
-    case 'p-switch':{const mi=myTeamIdx(PS);P.switchFrom=mi>=0?PS.teams[mi].id:null;P.step='team';savePlayer();render();break}
-    case 'p-back-live':P.step='live';P.switchFrom=null;savePlayer();render();break;
-    case 'p-buzz':if(!PS)return;pSent.buzz=PS.epoch;send({t:'buzz',e:PS.epoch});try{navigator.vibrate&&navigator.vibrate(60)}catch{}beep(990,.12);render();break;
+    case 'p-create':{send({t:'create',name:short(pDraft.team,24)});pDraft.team='';break}
+    case 'p-solo':send({t:'create',name:''});break;
+    case 'p-rename':send({t:'rename',name:short(pDraft.rename,24)});break;
+    case 'p-buzz':if(!PS)return;pSent.buzz=PS.epoch;send({t:'buzz',e:PS.epoch});try{navigator.vibrate&&navigator.vibrate(60)}catch{}render();break;
     case 'p-ans':if(!PS||!short(pDraft.ans,80))return;pSent.ans=PS.epoch;send({t:'ans',e:PS.epoch,text:pDraft.ans});render();break;
     case 'p-wager':if(!PS)return;pSent.wager=PS.epoch;send({t:'wager',e:PS.epoch,v:pDraft.wager});render();break;
     case 'p-fans':if(!PS||!short(pDraft.fans,80))return;pSent.fans=PS.epoch;send({t:'fans',e:PS.epoch,text:pDraft.fans});render();break;
     /* display */
-    case 'd-code':{const c=String(D.code||'').toUpperCase().replace(/[^A-Z]/g,'');if(c.length!==4){$('#d-code')?.focus();return}D.code=c;D.step='live';saveDisplay();PS=null;PSkey='';clientOpen(c,'display');keepAwake();render();break}
-    case 'd-leave':D.step='code';saveDisplay();netClose();PS=null;PSkey='';view='role';render();break;
+    case 'd-code':{ended=false;const c=String(D.code||'').toUpperCase().replace(/[^A-Z]/g,'');if(c.length!==4){$('#d-code')?.focus();return}D.code=c;D.step='live';saveDisplay();PS=null;PSkey='';clientOpen(c,'display');keepAwake();render();break}
+    case 'd-leave':D.step='code';saveDisplay();netClose();Music.stop();lastFx=null;PS=null;PSkey='';view='role';render();break;
     case 'd-full':try{const r=document.documentElement.requestFullscreen?.();r&&r.catch&&r.catch(()=>{})}catch{}break;
   }
 });
@@ -1019,6 +936,7 @@ document.addEventListener('input',e=>{
   else if(d.p){P[d.p]=d.p==='code'?t.value.toUpperCase():t.value;if(d.p==='code')t.value=P.code}
   else if(d.pd){pDraft[d.pd]=t.value}
   else if(d.d){D.code=t.value.toUpperCase();t.value=D.code}
+  else if(d.music==='vol'){Music.vol(+t.value)}
   else if(d.ed){const c=+d.c,r=+d.r,v=t.value;
     if(d.ed==='title')edit.title=v;else if(d.ed==='cat')edit.cats[c].name=v;
     else if(['q','a','h','alt'].includes(d.ed))edit.cats[c].clues[r][d.ed]=v;
@@ -1026,7 +944,9 @@ document.addEventListener('input',e=>{
 });
 document.addEventListener('change',e=>{
   const d=e.target.dataset;
+  if(d.music==='file'){const f=e.target.files&&e.target.files[0];if(f){Music.file(f);render()}return}
   if(d.opt){setup.settings[d.opt]=e.target.checked;saveSetup();render()}
+  if(d.rename!==undefined&&S){if(!renameTeam(d.rename,e.target.value)){e.target.value='';e.target.placeholder='That name is taken'}commit();return}
   if(d.mv!==undefined&&S){const pid=d.mv,v=e.target.value;if(!S.members[pid])return;
     if(v==='x'){delete S.members[pid];conns.forEach((inf,c)=>{if(inf.pid===pid){try{c.close()}catch{}}})}
     else if(v==='-')S.members[pid].team=null;else if(v&&teamIdx(v)>=0)S.members[pid].team=v;
