@@ -497,9 +497,12 @@ window.QUESTION_BANK = {
        playlist order; "n" below is each song's position in the playlist.
        Paste them as one long block of text between the backticks ` `.
     2. Songs with a link turn into these categories:
-         Guess the Worship Song   (worship list)
+         Guess the Worship Song   (worship list, plays the chorus area)
+         Who Sings It?            (worship list, name the artist)
+         Name That Intro          (worship + hymns, plays the first seconds)
          Guess the Hymn           (hymns list)
          Finish the Hymn          (lyrics list, only once start and cut are set)
+       Add artistLevel to a worship song to set how hard its artist is to name.
        Each category needs at least 5 songs with links to appear.
     3. Clips start 45 seconds in. Add start: 65 (seconds) to a song to change it.
        Harder rows play shorter clips: 100 = 12 seconds down to 500 = 3 seconds.
@@ -509,6 +512,324 @@ window.QUESTION_BANK = {
   */
   spotify: {
     worshipLinks: `
+https://open.spotify.com/track/3s0h3pyKFrS3XX6ZLBPx6s
+https://open.spotify.com/track/6VMT3SzIMbNoR5lsUsniQY
+https://open.spotify.com/track/4G29gmjS7Z2nEFeM7FA6wx
+https://open.spotify.com/track/3ngc7rGlfeFaskU90EWl4R
+https://open.spotify.com/track/0lVYRIVjK77Z6uG2GgM8Kl
+https://open.spotify.com/track/1oa8QzSaWAQ8zhFbeyqJlH
+https://open.spotify.com/track/5Mw9bXG1dLNhbjofkVS2oR
+https://open.spotify.com/track/3RBnnfWA4Q2AqNuwTDdDgz
+https://open.spotify.com/track/2JEcE2v4tOpKzVZFjpLR59
+https://open.spotify.com/track/1Hv54MWloXiAZDam1ez840
+https://open.spotify.com/track/5aA2v6AQgFHsmZO87tiaec
+https://open.spotify.com/track/1lEk3U3MzbDeL5MNHkE9JU
+https://open.spotify.com/track/3QntQwzIBV704yqCHLLmyH
+https://open.spotify.com/track/3kCNLcSSrtevQDAQfaWcTO
+https://open.spotify.com/track/6eFGvG8mkvZJjhPx9wMZGc
+https://open.spotify.com/track/2HFi7awvXr2IPFX1j2D9IA
+https://open.spotify.com/track/0HKt9URk2klsxEqbXqAycM
+https://open.spotify.com/track/398Dfg7EisARPcvixgrtuI
+https://open.spotify.com/track/4YjjNHtEsTX6Af4mCTupT5
+https://open.spotify.com/track/6L52op4ykljA5o3u0FSiB7
+https://open.spotify.com/track/6WSFMa721PvfnspCRsGOMh
+https://open.spotify.com/track/6iha1ZUpCGUJrrQLDSFYux
+https://open.spotify.com/track/5C64H6dEsQ15bS9gp0D3Xr
+https://open.spotify.com/track/40lKptao1hxVqA7fd1OOGp
+https://open.spotify.com/track/40TejHtJdQkd1nIxKf43CL
+https://open.spotify.com/track/7i2ZmmyLzE7NcFAJl30mKY
+https://open.spotify.com/track/1kQRahBqpKWMAhsoqfEETp
+https://open.spotify.com/track/17GmwQ9Q3MTAz05OokmNNB
+https://open.spotify.com/track/5VUQsLff8A3ruAyCdTxqzg
+https://open.spotify.com/track/7zuwaenG5AF0vG7o7kMduX
+https://open.spotify.com/track/1V3eyBz3pfkn9lBOlfle4x
+https://open.spotify.com/track/2lrHKMXyu8LTLxMorzJkTQ
+https://open.spotify.com/track/6wa4KnRz7LjGeMkpIa1mAI
+https://open.spotify.com/track/0jOSpB2zK2O0SNxj8ZT5lp
+https://open.spotify.com/track/5t35FJYwzRt9MG3ae2O41L
+https://open.spotify.com/track/0A84F87OSiCwAn38VQgNME
+https://open.spotify.com/track/0jBu6T5GgOekdHuXA5hVQM
+https://open.spotify.com/track/787cootcZRw5Xr47Of97AN
+https://open.spotify.com/track/1mWdyqs6Zvg8b1lKjDc8yB
+https://open.spotify.com/track/4EHWldZTas5KUyFtT0rQlY
+https://open.spotify.com/track/2XEdrmqNM9ZQQ24ViuceB0
+https://open.spotify.com/track/0VqMBJyeeRA4I6mSPO5uqZ
+https://open.spotify.com/track/6HRU0CPcG0q3Dq8XVBWacL
+https://open.spotify.com/track/1dtzjTkNecIRAL4X3u4CtL
+https://open.spotify.com/track/2FJYXPlTmFPAjTwPS1bMnw
+https://open.spotify.com/track/4908mwb34dqgcaxHeFjitw
+https://open.spotify.com/track/6Dkou08rjWrgGijVmoAVZp
+https://open.spotify.com/track/4KLj9QjEhJl2WU50mxRF9Z
+https://open.spotify.com/track/4YZkx9hCBOdaI71lzKEnOx
+https://open.spotify.com/track/6Dkou08rjWrgGijVmoAVZp
+https://open.spotify.com/track/0UcyrdirFfmpzEKQJ47Ixr
+https://open.spotify.com/track/73ZSUS3WLluxgASR1Hp74B
+https://open.spotify.com/track/7zJg7aNCvTKW9EtG1Dvzkl
+https://open.spotify.com/track/04ZzbJOLBEhaf8PVQuH96u
+https://open.spotify.com/track/4F6KXBE38OBGPZsryUih1x
+https://open.spotify.com/track/5y8qfDDccV2kEn4roGPter
+https://open.spotify.com/track/0rH0mprtecH3grD9HFM5AD
+https://open.spotify.com/track/2YgtXx9OVBOzja9Fckb4FY
+https://open.spotify.com/track/4F7GcPH79KzsQfNphjtkGx
+https://open.spotify.com/track/1N2fNKIlJJ6PQgcVD1GrBP
+https://open.spotify.com/track/27uBwOJbW6kHsCbKGukxMK
+https://open.spotify.com/track/3F6bUrxcmguP9Z5TJtA5DO
+https://open.spotify.com/track/7HQn99HBIBHWkZfTMR8Kki
+https://open.spotify.com/track/4v8GJxLdvUiN7R31cKcmNL
+https://open.spotify.com/track/6QbbxQtijqLfUV90Vlm1Xh
+https://open.spotify.com/track/0P8ANiSwsjYPx3zrmgN2Pv
+https://open.spotify.com/track/4ajsTrCAjWtUPLU6xCy4u4
+https://open.spotify.com/track/1sglby2dgYxUyca0wcBRhw
+https://open.spotify.com/track/2t8NsMho4AegF1wMGxvgj5
+https://open.spotify.com/track/49Z7hZgb3LzDy8RogfApYr
+https://open.spotify.com/track/5ELZpvTDGorz9BIE9zaBoZ
+https://open.spotify.com/track/5SVARIypUactzhS79rk6x8
+https://open.spotify.com/track/0maqaTZLFWYs7Wj31XXtr2
+https://open.spotify.com/track/4qxZb7aRiaqeQaRtwZe3S4
+https://open.spotify.com/track/7quVSDsO37Qj7DpjbvoNwl
+https://open.spotify.com/track/3g7bn09uvp9jkMAW0jXOms
+https://open.spotify.com/track/2peHyuWwcc2Jtg6h9Xomu1
+https://open.spotify.com/track/4QbRsEV2B7n7lm2EAWvvz4
+https://open.spotify.com/track/7M7eanIuxFd9IgaB8rAP7b
+https://open.spotify.com/track/3qEOommLiDYvxoZfsB3ONu
+https://open.spotify.com/track/0ZpJVWYW5hJKGbpStrsCdD
+https://open.spotify.com/track/6oizwmD5yHvlQUw0xvirrY
+https://open.spotify.com/track/5GDtkgG9T1BDknHHyDtghv
+https://open.spotify.com/track/0lJH7CAlpvdPgxUgGMY0ow
+https://open.spotify.com/track/4Uvjwj4KWFlyCULhR9zeTx
+https://open.spotify.com/track/5gHwf3DYciXuoFWstFswKj
+https://open.spotify.com/track/4ElNxglBjcrASiGn58t9Jm
+https://open.spotify.com/track/4ythCnq2XWIHzLqC9GnUE3
+https://open.spotify.com/track/0bHcGi6iafYk4TUrqvDYya
+https://open.spotify.com/track/5gdTKffU70UAJTlo7DopIs
+https://open.spotify.com/track/6Z85UCEueQcgSyChlrEu5G
+https://open.spotify.com/track/1B0kLftVGJsZqJZGdHbAWZ
+https://open.spotify.com/track/17x1RzAOMVLuNnFqjdal2C
+https://open.spotify.com/track/6sToW2vF0y8ZEXuHoMQob9
+https://open.spotify.com/track/3x5nSZ4AU8GmneYroBfT1p
+https://open.spotify.com/track/1yNInj2X42ZqQG6PUE57QV
+https://open.spotify.com/track/2gdSplXjHbjMMfLcwl3Nku
+https://open.spotify.com/track/5zuh9HIAzpBM5vqYGjeUYU
+https://open.spotify.com/track/58nLgrkgVsVA4w5dWsFgR2
+https://open.spotify.com/track/7fovCglnkftOlJmrIidq8r
+https://open.spotify.com/track/1L4MQJhKyrw0XiF0n0C2hL
+https://open.spotify.com/track/5O306r2a9Nl7rm5ZlaTqka
+https://open.spotify.com/track/136M9HS7oXYyL6NGHhmYB9
+https://open.spotify.com/track/0H4BGX7L8UfoD0g4wgXd0D
+https://open.spotify.com/track/0sMr52Vbn6WMkYLupCmO2h
+https://open.spotify.com/track/50f6Sc85lbQgEaOfQm41Zr
+https://open.spotify.com/track/3NNm7maZCjauZbXTsbXRj2
+https://open.spotify.com/track/0aZFEiDKLK2B4gzPaGCZVm
+https://open.spotify.com/track/7yu4816uyIqXiPvALxL44y
+https://open.spotify.com/track/0fukHGuIvc2NQEFCkI2owi
+https://open.spotify.com/track/3b6yQRfPf0wPiEKCTA46ZO
+https://open.spotify.com/track/5QJRT6u1hJuHSE0BeuEEud
+https://open.spotify.com/track/46JqDjp4BMbLQrTOUHdspO
+https://open.spotify.com/track/6zN6wjHO3ALVCIQQhSqqqN
+https://open.spotify.com/track/52stVyuGiZ0QOWAAb27ZY4
+https://open.spotify.com/track/0pAPFaE1Iwfvex9EVJuQlG
+https://open.spotify.com/track/6UEuIc9374TFQY1dn3pD1j
+https://open.spotify.com/track/357bDEZq4rcIFHPiaS8HwP
+https://open.spotify.com/track/6YyizHBnH22hpC4R3CwJK5
+https://open.spotify.com/track/6SmxhUH6FsflVXIs2xFgJX
+https://open.spotify.com/track/0cc2WXV2i8Jl3LhPKlZho1
+https://open.spotify.com/track/2W1EsT0BlEnFaPe44Q71N5
+https://open.spotify.com/track/1jcxDswcwde8Ffp1yvqSWY
+https://open.spotify.com/track/2PLq66Pulj13Ov30kBBxuG
+https://open.spotify.com/track/2aMb1asq5acm7cDYlFsYhY
+https://open.spotify.com/track/72B1Omo2kmEst4YKO8vOB6
+https://open.spotify.com/track/3wfoaC3ApX2Yf30b7Q7P2q
+https://open.spotify.com/track/2JHmDpOMBezuF3v36luc9N
+https://open.spotify.com/track/6CCZywPBScscwjJbKYmOiZ
+https://open.spotify.com/track/0HxKVc6xb4WFhWRDzlj7sS
+https://open.spotify.com/track/02RCTBFKyLaECOTgfr0zTM
+https://open.spotify.com/track/5o1Ogizb60r5oLh3pXNirN
+https://open.spotify.com/track/7rC5fxyrbNDRymrH7OwSxE
+https://open.spotify.com/track/3gj2zNkF0yC0MMILQA3Qq5
+https://open.spotify.com/track/7AlFRA7zpc30NM8LO3ZcE4
+https://open.spotify.com/track/43XS0V4EwZ1X3qFdUfYesE
+https://open.spotify.com/track/43uoWZBnf7udX8CReSV9zH
+https://open.spotify.com/track/7BTmtN6bP35E54vVASTqao
+https://open.spotify.com/track/2MobJagQB0dGJoRqI8OT0m
+https://open.spotify.com/track/15eJjGIuCDEtF6ph4Hd3eR
+https://open.spotify.com/track/7KT088cs0FVVQum6IyT0X9
+https://open.spotify.com/track/3wlpaljKzcvj0YYJAMIwXy
+https://open.spotify.com/track/1dN6rm3ywe9rWuANyICuCG
+https://open.spotify.com/track/1syFMBjjRvL3uReOM8yWEb
+https://open.spotify.com/track/5hOYQACuJVKPsVcTHjaeEH
+https://open.spotify.com/track/5MCG4XcVcvCOXWpSg2cfRC
+https://open.spotify.com/track/7iuU9NU6rhcWNYJ1KjylTO
+https://open.spotify.com/track/728o9uScjpXHDwPEA50DTh
+https://open.spotify.com/track/5OpjJ9qy54D3PzQJ1s4Q9X
+https://open.spotify.com/track/7KXJLrMlgQbGMY8kr6yJlB
+https://open.spotify.com/track/6ukP8PkZshgCEw8u9rPsho
+https://open.spotify.com/track/6goM4VNCDajmBCqDNDarVe
+https://open.spotify.com/track/2uCLhG4UKRErEUpjsXBaeD
+https://open.spotify.com/track/4DpNBNo7QytHQPHMVpFn5T
+https://open.spotify.com/track/3wF0rpX1njF2FLFGc45rxV
+https://open.spotify.com/track/6z5AXCQoORypVrhV51zZgi
+https://open.spotify.com/track/1NZWiuy0mlnsrcYL2dhKt6
+https://open.spotify.com/track/5roH4iWb96lJNShiZJDiGj
+https://open.spotify.com/track/5c1gWcamTmYP1t3UwN6caS
+https://open.spotify.com/track/7IPldKTGN7pssmDl66DrMG
+https://open.spotify.com/track/04sHEjOqkVXL0XjEoGXzhV
+https://open.spotify.com/track/2dBpNhfNCT1XkBRAOdam5J
+https://open.spotify.com/track/7pPLZZRphZu2hxju6oErbS
+https://open.spotify.com/track/15IFcZRm4OUEQsIK2LADpq
+https://open.spotify.com/track/08shoW0qPqgMDnNQppWAQj
+https://open.spotify.com/track/2RQvdhnvPxxLBHkCPd1dnw
+https://open.spotify.com/track/3aQKT3ln3OJkBlidLtt8fJ
+https://open.spotify.com/track/48UCq5zA1JGprsZgX36aFi
+https://open.spotify.com/track/0d2svMT7Gaisn7RY4cJRDN
+https://open.spotify.com/track/0PT7AYi17BlmeOdfQAwgGX
+https://open.spotify.com/track/7o9Yon8yj55VSpSe4rKEj7
+https://open.spotify.com/track/3rXoaocGAOEq6CorwCiI4J
+https://open.spotify.com/track/43DVtoypVSY4mQV2JrqY9I
+https://open.spotify.com/track/68x16tb33FQdWyiOaZYteP
+https://open.spotify.com/track/3ji2WLLlpJmvvSOlAyqB6p
+https://open.spotify.com/track/54LhEfBlV82p8zybyTeaIS
+https://open.spotify.com/track/0cm4XRYfCCXbIejiqBEu6z
+https://open.spotify.com/track/6FVg2subR7uoD80BmTOsdR
+https://open.spotify.com/track/066eFvkQXyR9UIYi65GsSu
+https://open.spotify.com/track/041qpPpNFBg7UFvQFD1G9R
+https://open.spotify.com/track/06yQb4UTUcjerrSKmpA0zp
+https://open.spotify.com/track/43yFiQ18Nhnb2YJwk09f3a
+https://open.spotify.com/track/053yoApAqzVFYZQUcf60Zv
+https://open.spotify.com/track/3Ba5WQizFbQPRN7MtlXoTF
+https://open.spotify.com/track/4BhKsrfLowNbN7F3JVhI8i
+https://open.spotify.com/track/3gQC0KTBXZeysuzRqMrfbD
+https://open.spotify.com/track/3G5Jcjse7TUQJY8HpRVKVN
+https://open.spotify.com/track/17LElTdi4b8AV0yro7KM94
+https://open.spotify.com/track/0BD6kjnLp2CGYAY3Vb6bUY
+https://open.spotify.com/track/3HRfH5dCEmrc4kquT51XgE
+https://open.spotify.com/track/68dlSBYa5sLmwjscN4nfhv
+https://open.spotify.com/track/5LzQhr1xmjluVGkcR0khbx
+https://open.spotify.com/track/0shVQUKS0dOq9lfocUhssI
+https://open.spotify.com/track/6InI3ufrydMnYw2PTvcepm
+https://open.spotify.com/track/2kFsFo3KVpWqts5wDyzkKx
+https://open.spotify.com/track/5cAyzSUlwxoW5P3p5gFzs0
+https://open.spotify.com/track/2eRAjiE8dYjBJeaHW5GT53
+https://open.spotify.com/track/08JcY8URs5O3rNgCw6wslO
+https://open.spotify.com/track/1wV6lCsV2PCeVZlyGTkVPt
+https://open.spotify.com/track/3tIosTCaD7OxaqMmNMqK39
+https://open.spotify.com/track/4paUjJnRme9F6f1fUejKG6
+https://open.spotify.com/track/6hNwggmMPUnO1l79JrlGve
+https://open.spotify.com/track/0EQ46ZEXFGXkQ4rXQ9Kcya
+https://open.spotify.com/track/1s7FNEGcL7lnF4GTzfQlOf
+https://open.spotify.com/track/5pNavG44Qct8Vm5vQDDxYF
+https://open.spotify.com/track/7nVkLvG0brftKooCjEluzA
+https://open.spotify.com/track/2qNHBHpGQPiCOH9irGM84X
+https://open.spotify.com/track/6yqubZF4LsME7BEHvT6kEG
+https://open.spotify.com/track/1VUCqKu2rCZWAxoRm3qznB
+https://open.spotify.com/track/51SKBQBJa7XuvMYvfUr5aX
+https://open.spotify.com/track/7n9QHEiowPHrIWhS9gLCpT
+https://open.spotify.com/track/1au0woWoLOVWffU7rolXqF
+https://open.spotify.com/track/4ViElQuRwSp33VmXzPURf7
+https://open.spotify.com/track/0ezeXzG4Qi5GJGu9E3W4VY
+https://open.spotify.com/track/5b0ijoGXz4qPLVlgwJNX1m
+https://open.spotify.com/track/6jAAYLKxXPyeEoddXu6Gf7
+https://open.spotify.com/track/5N72L6I3YRMCYhGE1dHu4g
+https://open.spotify.com/track/66J8DSBxHe5QZPF9rQG98p
+https://open.spotify.com/track/2RuUAwOz2vyArTaiMQUL7j
+https://open.spotify.com/track/2fV1D2YYFYreZXNDhqxk4D
+https://open.spotify.com/track/1hrF6s6kfXuPv14OrD9v6X
+https://open.spotify.com/track/6Srgw41KlTpWtu5hbEKeja
+https://open.spotify.com/track/2Vgo0mLTvZj6jWFv4Nqgo7
+https://open.spotify.com/track/0M1ujzJ1RTvLt13C4GsnaT
+https://open.spotify.com/track/33bqWsuJvnjTgAYr8DMadN
+https://open.spotify.com/track/0HMWVK0mK1615kUNtGAW3F
+https://open.spotify.com/track/6ZhORhQoBD0qndKYvpBTv2
+https://open.spotify.com/track/2BTcliAvvJroPJVB8hlfV5
+https://open.spotify.com/track/13OeoujtdpmyfhQLpq2lo1
+https://open.spotify.com/track/4PP0ZiDaUC1WPf2D0GLRkO
+https://open.spotify.com/track/2pMc6SJXAZe1HNwY8lQLby
+https://open.spotify.com/track/6SzbbQUOx85hxpqsesoMfx
+https://open.spotify.com/track/2VhspIZudDKIFjevS5tcWk
+https://open.spotify.com/track/65RTyZesurf9xxf7FZVL1u
+https://open.spotify.com/track/6QS8PaLUVZTx1qXRi1iurL
+https://open.spotify.com/track/3UUPQ4sAtAVnkcaSr06NBi
+https://open.spotify.com/track/7o0U7vAhsDri660NoqFk7t
+https://open.spotify.com/track/2LvCsxys4piJxKIMeE4cwT
+https://open.spotify.com/track/7u67t6j872bK1tDbMUjnMz
+https://open.spotify.com/track/25BV2kcZKrw8FFsKM6gmtx
+https://open.spotify.com/track/6O3GXI34itpMqZbBYHNgoX
+https://open.spotify.com/track/360aE5q4fclWPlsH73SdHO
+https://open.spotify.com/track/2OEnuXApFl7zqqbUY69RdH
+https://open.spotify.com/track/3mQZzVY0Tt5VL0obnPwP1V
+https://open.spotify.com/track/1r31U6R2caRtedD86GM529
+https://open.spotify.com/track/1tzE3LVnFDHWIOpODpvH9X
+https://open.spotify.com/track/0jJgHF533Wakrjt1lt6zwz
+https://open.spotify.com/track/2YKv2yIRlh1MEtKvw0woqO
+https://open.spotify.com/track/5awCuhQfaq13NwTllkfNWE
+https://open.spotify.com/track/6qUWiMokzyMYbqa3IXHhPd
+https://open.spotify.com/track/0CXu6tPlYg9j3AsQdx2Q7S
+https://open.spotify.com/track/4LjGJzjSR48S5zsYGnYZ8q
+https://open.spotify.com/track/2tXZxXmknsaVTNTaCvnlx8
+https://open.spotify.com/track/06EzKxIt7WUokYpkitiIK2
+https://open.spotify.com/track/7nrhv8ZemanddTfXk28rdy
+https://open.spotify.com/track/6Px8gSoHxBtBHIzLb964Q2
+https://open.spotify.com/track/3IBHk8pwBYyzlKYGVmoWQt
+https://open.spotify.com/track/6hv4MN2Knt4Zk2EyeCJ1pb
+https://open.spotify.com/track/0cXV6AoJBnrnrXK0toJHpB
+https://open.spotify.com/track/1d7RCdfczxJNVSgXL4Gkil
+https://open.spotify.com/track/1lF7uD9Yu2CL17a6tm4Tkh
+https://open.spotify.com/track/7tTojNH9f7n2MeAO5HaqAS
+https://open.spotify.com/track/6StHK5sgz9rjxVZv7CApW2
+https://open.spotify.com/track/5AjI1A5a68tyKBVjw22oWI
+https://open.spotify.com/track/7BS27vWbRTmCkSEpeFZRRy
+https://open.spotify.com/track/3fsfYz4goQbq1NCiAywkIL
+https://open.spotify.com/track/2LmpO2bjRDHDLSqxIUCkon
+https://open.spotify.com/track/1OoBG6B9674Y1xJLfdl7Vg
+https://open.spotify.com/track/7qMRmcVM1ki7z6YgiPmXrU
+https://open.spotify.com/track/2masBgZDOTFiuUbKTa7AXu
+https://open.spotify.com/track/6uNjCVovbl1hihc8DkbbVI
+https://open.spotify.com/track/5oEQFH35W5hoNwbYCf5anq
+https://open.spotify.com/track/1drvaTwu7cJkSHNdhVTQZo
+https://open.spotify.com/track/4NG3Xw4yu8O2j4UIDLUwCP
+https://open.spotify.com/track/3dRuzNZGBlP1pe3Gqn93Dp
+https://open.spotify.com/track/0pfm3xmeB1xNdTcKap5Jum
+https://open.spotify.com/track/2h1o9D6ZwydtI4XfexJkbn
+https://open.spotify.com/track/1oeKqHrG4EGSAQd9PgvPgs
+https://open.spotify.com/track/3xOyi75MAC8yELVqWBFGKg
+https://open.spotify.com/track/1brnLTvarI9D1hLP6z2Ar8
+https://open.spotify.com/track/3zt6T5xcqLJRYnQq0yqQaR
+https://open.spotify.com/track/3QT7ruZDodBTndp0q0EpW5
+https://open.spotify.com/track/3CwpNu67Qg1Mcl8WNtzUgo
+https://open.spotify.com/track/5wb1tQhNeXSOFuVWHeNJLl
+https://open.spotify.com/track/1z5YtEopKg5pyjCM3BEsr5
+https://open.spotify.com/track/2GpZhpQy0oBFKPy910Kp1r
+https://open.spotify.com/track/2c87x3mBYuffK4ihylVwAG
+https://open.spotify.com/track/2lgK3q3cnmrHzZwDOgfMdG
+https://open.spotify.com/track/670DkKROR8zeyw48fZ51fr
+https://open.spotify.com/track/5Gbie78cYLOXrcZoIzsZxy
+https://open.spotify.com/track/11IPArPOHGGHFpkfHJZuKZ
+https://open.spotify.com/track/11ZqcLaAYU4z9Ox6MLXMVA
+https://open.spotify.com/track/684KWncYCyW2o97ZeJmKbC
+https://open.spotify.com/track/4EjoSOfFN7HQVzwl5txinM
+https://open.spotify.com/track/3JBMyUHHYz30GCpJL99zGX
+https://open.spotify.com/track/2nidf7ZSu4eyL0jYpA6vrE
+https://open.spotify.com/track/097YWoXrjEEvt4kQvvzkAs
+https://open.spotify.com/track/6qWGguLKmE88iJMBxCRH4G
+https://open.spotify.com/track/2tw1U7sV7kvAeAGLU6pFkt
+https://open.spotify.com/track/5BlTg1Gbxxw2Mz1uZhDycp
+https://open.spotify.com/track/2vDJTc0KHHmAWYL9zyBEh4
+https://open.spotify.com/track/588PjaWtXos8VZfU6opoxA
+https://open.spotify.com/track/3rGriClqmR0c8MzSJ1hhhG
+https://open.spotify.com/track/0HiR1fErIN1CgzLyzBFhDw
+https://open.spotify.com/track/1B2SJ0QMcmYfgTAp25aqqY
+https://open.spotify.com/track/12GtqVYqedEHYnyRZt91ZQ
+https://open.spotify.com/track/2oMV6710ZfkU1ZTtZrhyHL
+https://open.spotify.com/track/68suEvcTsvGpZ2i2Zw3PVE
+https://open.spotify.com/track/2Vf59fzWMGDRtLwolStTGw
+https://open.spotify.com/track/2C3euTxP04Szz52drJQGp1
+https://open.spotify.com/track/3oXHgV86juSb5wC89RQNDj
+https://open.spotify.com/track/3DdQcdK52TKydq5tN3Iehd
+https://open.spotify.com/track/4vkeAHQBXmUTgMOfaT94CR
+https://open.spotify.com/track/4NttfcvjeRPvDe58UvnuTV
+https://open.spotify.com/track/4fvpSvvMoEd9ka3wfMGjKn
+https://open.spotify.com/track/5sn2NVwXGfGEQDBbkAIXj6
+https://open.spotify.com/track/6FWu5yUk5TlhKDpzVZ5wpF
+https://open.spotify.com/track/5jwakA3WYHMeucmgu0tjbD
 `,
     hymnLinks: `
 https://open.spotify.com/track/6XlUFokQc6VZMjdVyS2nv6
@@ -584,66 +905,162 @@ https://open.spotify.com/track/67VlbSn55nNtmHEhVfcfCQ
 `,
     worship: [
       { n: 7, level: 1, title: "Oceans (Where Feet May Fail)", artist: "Hillsong UNITED", accept: ["oceans", "where feet may fail"] },
+      { n: 48, level: 1, title: "What A Beautiful Name", artist: "Hillsong Worship", accept: ["what a beautiful name"] },
+      { n: 57, level: 1, title: "Reckless Love", artist: "Cory Asbury", accept: ["reckless love"] },
+      { n: 34, level: 1, title: "How Great Is Our God", artist: "Chris Tomlin", accept: ["how great is our god"] },
       { n: 39, level: 1, title: "Good Good Father", artist: "Chris Tomlin", accept: ["good good father"] },
       { n: 5, level: 1, title: "I Can Only Imagine", artist: "MercyMe", accept: ["i can only imagine"] },
       { n: 4, level: 1, title: "You Say", artist: "Lauren Daigle", accept: ["you say"] },
       { n: 37, level: 2, title: "Who You Say I Am", artist: "Hillsong Worship", accept: ["who you say i am"] },
+      { n: 10, level: 2, title: "Great Are You Lord", artist: "All Sons & Daughters", accept: ["great are you lord"] },
       { n: 25, level: 2, title: "Graves Into Gardens", artist: "Elevation Worship", accept: ["graves into gardens"] },
+      { n: 24, level: 2, title: "Our God", artist: "Chris Tomlin", accept: ["our god"] },
       { n: 21, level: 2, title: "How He Loves", artist: "David Crowder Band", accept: ["how he loves"] },
+      { n: 42, level: 2, title: "Holy Spirit", artist: "Francesca Battistelli", accept: ["holy spirit"] },
       { n: 28, level: 2, title: "Chain Breaker", artist: "Zach Williams", accept: ["chain breaker"] },
+      { n: 38, level: 2, title: "Even If", artist: "MercyMe", accept: ["even if"] },
+      { n: 40, level: 2, title: "Lord, I Need You", artist: "Matt Maher", accept: ["lord i need you", "i need you"] },
+      { n: 84, level: 3, title: "Here I Am To Worship", artist: "Jeremy Camp", accept: ["here i am to worship"] },
       { n: 29, level: 3, title: "Who Am I", artist: "Casting Crowns", accept: ["who am i"] },
       { n: 30, level: 3, title: "Redeemed", artist: "Big Daddy Weave", accept: ["redeemed"] },
+      { n: 41, level: 3, title: "Hello, My Name Is", artist: "Matthew West", accept: ["hello my name is"] },
       { n: 91, level: 3, title: "Fear Is a Liar", artist: "Zach Williams", accept: ["fear is a liar"] },
+      { n: 59, level: 3, title: "Old Church Choir", artist: "Zach Williams", accept: ["old church choir"] },
+      { n: 76, level: 3, title: "Run To The Father", artist: "Cody Carnes", accept: ["run to the father"] },
       { n: 16, level: 3, title: "Death Was Arrested", artist: "North Point Worship", accept: ["death was arrested"] },
+      { n: 12, level: 3, title: "O Come to the Altar", artist: "Elevation Worship", accept: ["o come to the altar", "come to the altar"] },
       { n: 61, level: 4, title: "At The Cross (Love Ran Red)", artist: "Chris Tomlin", accept: ["at the cross", "love ran red"] },
+      { n: 23, level: 4, title: "This Is Amazing Grace", artist: "Phil Wickham", accept: ["this is amazing grace"] },
+      { n: 51, level: 4, title: "Overwhelmed", artist: "Big Daddy Weave", accept: ["overwhelmed"] },
+      { n: 31, level: 4, title: "Thy Will", artist: "Hillary Scott & The Scott Family", accept: ["thy will"] },
+      { n: 32, level: 4, title: "He Knows My Name", artist: "Francesca Battistelli", accept: ["he knows my name"] },
+      { n: 45, level: 4, title: "The Lion and the Lamb", artist: "Big Daddy Weave", accept: ["the lion and the lamb", "lion and the lamb"] },
       { n: 3, level: 4, title: "Voice of Truth", artist: "Casting Crowns", accept: ["voice of truth"] },
+      { n: 46, level: 4, title: "Trust In You", artist: "Lauren Daigle", accept: ["trust in you"] },
+      { n: 33, level: 4, title: "Flawless", artist: "MercyMe", accept: ["flawless"] },
+      { n: 15, level: 4, title: "Greater", artist: "MercyMe", accept: ["greater"] },
+      { n: 55, level: 4, title: "Tell Your Heart To Beat Again", artist: "Danny Gokey", accept: ["tell your heart to beat again"] },
       { n: 53, level: 4, title: "Fix My Eyes", artist: "for KING & COUNTRY", accept: ["fix my eyes"] },
       { n: 18, level: 4, title: "Hills and Valleys", artist: "Tauren Wells", accept: ["hills and valleys"] },
       { n: 1, level: 5, title: "Oh My Soul", artist: "Casting Crowns", accept: ["oh my soul"] },
+      { n: 35, level: 5, title: "Just Be Held", artist: "Casting Crowns", accept: ["just be held"] },
+      { n: 13, level: 5, title: "Sinking Deep", artist: "Hillsong Young & Free", accept: ["sinking deep"] },
+      { n: 17, level: 5, title: "Canvas And Clay", artist: "Pat Barrett", accept: ["canvas and clay"] },
+      { n: 44, level: 5, title: "We Believe", artist: "Newsboys", accept: ["we believe"] },
+      { n: 49, level: 5, title: "God Is on the Move", artist: "7eventh Time Down", accept: ["god is on the move"] },
+      { n: 60, level: 5, title: "Where I Belong", artist: "Building 429", accept: ["where i belong"] },
       { n: 63, level: 5, title: "Give Me Your Eyes", artist: "Brandon Heath", accept: ["give me your eyes"] },
       { n: 62, level: 5, title: "Never Too Far Gone", artist: "Jordan Feliz", accept: ["never too far gone"] },
+      { n: 65, level: 5, title: "Live Like That", artist: "Sidewalk Prophets", accept: ["live like that"] },
       { n: 89, level: 5, title: "Refiner", artist: "Maverick City Music", accept: ["refiner"] },
+      { n: 82, level: 5, title: "There Was Jesus", artist: "Zach Williams & Dolly Parton", accept: ["there was jesus"] },
+      { n: 72, level: 5, title: "Only Jesus", artist: "Casting Crowns", accept: ["only jesus"] },
+      { n: 93, level: 5, title: "Best News Ever", artist: "MercyMe", accept: ["best news ever"] },
+      { n: 92, level: 5, title: "Survivor", artist: "Zach Williams", accept: ["survivor"] },
+      { n: 8, level: 6, title: "I Am Not Alone", artist: "Kari Jobe", accept: ["i am not alone"] },
+      { n: 9, level: 6, title: "How Can It Be", artist: "Lauren Daigle", accept: ["how can it be"] },
+      { n: 36, level: 6, title: "Love on the Radio", artist: "Matthew West", accept: ["love on the radio"] },
       { n: 26, level: 6, title: "Lead Me To The Cross", artist: "Hillsong UNITED", accept: ["lead me to the cross"] },
+      { n: 27, level: 6, title: "Because He Lives (Amen)", artist: "Matt Maher", accept: ["because he lives", "amen"] },
+      { n: 67, level: 6, title: "First", artist: "Lauren Daigle", accept: ["first"] },
+      { n: 68, level: 6, title: "He Knows", artist: "Jeremy Camp", accept: ["he knows"] },
       { n: 69, level: 6, title: "Hope in Front of Me", artist: "Danny Gokey", accept: ["hope in front of me"] },
-      { n: 80, level: 7, title: "Drops In the Ocean", artist: "Hawk Nelson", accept: ["drops in the ocean"] }
+      { n: 71, level: 6, title: "I Have This Hope", artist: "Tenth Avenue North", accept: ["i have this hope"] },
+      { n: 73, level: 6, title: "Never Have I Ever", artist: "Hillsong Young & Free", accept: ["never have i ever"] },
+      { n: 75, level: 6, title: "Who Can", artist: "Cochren & Co.", accept: ["who can"] },
+      { n: 81, level: 6, title: "Peace Be Still", artist: "Hope Darst", accept: ["peace be still"] },
+      { n: 83, level: 6, title: "The Father’s House", artist: "Cory Asbury", accept: ["the fathers house", "fathers house"] },
+      { n: 85, level: 6, title: "Eye of the Storm", artist: "Ryan Stevenson", accept: ["eye of the storm"] },
+      { n: 87, level: 6, title: "God Only Knows", artist: "for KING & COUNTRY", accept: ["god only knows"] },
+      { n: 80, level: 7, title: "Drops In the Ocean", artist: "Hawk Nelson", accept: ["drops in the ocean"] },
+      { n: 64, level: 7, title: "Broken Things", artist: "Matthew West", accept: ["broken things"] },
+      { n: 94, level: 7, title: "Confidence", artist: "Sanctus Real", accept: ["confidence"] },
+      { n: 97, level: 7, title: "Come To the Table", artist: "Sidewalk Prophets", accept: ["come to the table"] },
+      { n: 99, level: 7, title: "What Faith Can Do", artist: "Kutless", accept: ["what faith can do"] },
+      { n: 56, level: 7, title: "Start A Fire", artist: "Unspoken", accept: ["start a fire"] },
+      { n: 47, level: 7, title: "My Story", artist: "Big Daddy Weave", accept: ["my story"] }
     ],
     hymns: [
       { n: 1, level: 1, title: "Amazing Grace", artist: "CeCe Winans", accept: ["amazing grace"] },
       { n: 24, level: 1, title: "How Great Thou Art", artist: "Chris Rice", accept: ["how great thou art"] },
       { n: 30, level: 1, title: "It Is Well With My Soul", artist: "Phil Wickham", accept: ["it is well", "it is well with my soul"] },
+      { n: 3, level: 1, title: "Great Is Thy Faithfulness", artist: "Carrie Underwood & CeCe Winans", accept: ["great is thy faithfulness"] },
       { n: 7, level: 1, title: "Holy, Holy, Holy", artist: "Anthem Lights", accept: ["holy holy holy"] },
       { n: 5, level: 2, title: "In Christ Alone", artist: "Keith & Kristyn Getty", accept: ["in christ alone"] },
       { n: 65, level: 2, title: "Blessed Assurance", artist: "Nathan Drake", accept: ["blessed assurance"] },
       { n: 54, level: 2, title: "Come Thou Fount of Every Blessing", artist: "Phil Wickham", accept: ["come thou fount", "come thou fount of every blessing"] },
+      { n: 8, level: 2, title: "Rock Of Ages", artist: "Chris Rice", accept: ["rock of ages"] },
+      { n: 15, level: 2, title: "What A Friend We Have In Jesus", artist: "Chris Rice", accept: ["what a friend we have in jesus", "what a friend"] },
       { n: 57, level: 2, title: "Doxology", artist: "Nichole Nordeman", accept: ["doxology", "the doxology"] },
+      { n: 4, level: 2, title: "I Surrender All", artist: "Phillips, Craig & Dean", accept: ["i surrender all"] },
+      { n: 20, level: 3, title: "Joyful, Joyful, We Adore Thee", artist: "Amy Grant", accept: ["joyful joyful we adore thee", "joyful joyful"] },
       { n: 52, level: 3, title: "The Old Rugged Cross", artist: "Bart Millard", accept: ["the old rugged cross", "old rugged cross"] },
       { n: 67, level: 3, title: "I’ll Fly Away", artist: "The Gray Havens", accept: ["ill fly away", "i ll fly away"] },
       { n: 37, level: 3, title: "Nothing But The Blood", artist: "Keith & Kristyn Getty", accept: ["nothing but the blood"] },
+      { n: 49, level: 3, title: "Jesus Paid It All", artist: "Fernando Ortega", accept: ["jesus paid it all"] },
+      { n: 36, level: 3, title: "I Need Thee Every Hour", artist: "Jars Of Clay", accept: ["i need thee every hour"] },
+      { n: 31, level: 3, title: "How Deep The Father’s Love For Us", artist: "Phillips, Craig & Dean", accept: ["how deep the fathers love for us", "how deep the fathers love"] },
       { n: 29, level: 3, title: "When I Survey The Wondrous Cross", artist: "Chris Rice", accept: ["when i survey the wondrous cross", "when i survey"] },
+      { n: 2, level: 3, title: "On Christ the Solid Rock", artist: "Phillips, Craig & Dean", accept: ["on christ the solid rock", "the solid rock", "my hope is built"] },
+      { n: 42, level: 3, title: "Just As I Am", artist: "MercyMe", accept: ["just as i am"] },
       { n: 32, level: 4, title: "A Mighty Fortress Is Our God", artist: "Chris Rice", accept: ["a mighty fortress is our god", "a mighty fortress"] },
+      { n: 22, level: 4, title: "Leaning On The Everlasting Arms", artist: "David Crowder Band", accept: ["leaning on the everlasting arms"] },
+      { n: 62, level: 4, title: "Softly and Tenderly", artist: "Greg LaFollette & Alisa Turner", accept: ["softly and tenderly"] },
+      { n: 35, level: 4, title: "I Have Decided To Follow Jesus", artist: "Phil Wickham", accept: ["i have decided to follow jesus"] },
       { n: 39, level: 4, title: "Before The Throne", artist: "Shane & Shane", accept: ["before the throne", "before the throne of god above"] },
+      { n: 53, level: 4, title: "O For A Thousand Tongues To Sing", artist: "Chris Rice", accept: ["o for a thousand tongues", "o for a thousand tongues to sing"] },
       { n: 59, level: 4, title: "This Is My Father’s World", artist: "Chris Rice", accept: ["this is my fathers world"] },
+      { n: 26, level: 4, title: "All Creatures Of Our God And King", artist: "David Crowder Band", accept: ["all creatures of our god and king"] },
+      { n: 34, level: 4, title: "Fairest Lord Jesus", artist: "Sara Groves", accept: ["fairest lord jesus"] },
       { n: 44, level: 4, title: "Abide With Me", artist: "Audrey Assad", accept: ["abide with me"] },
+      { n: 48, level: 4, title: "There Is A Fountain", artist: "MercyMe", accept: ["there is a fountain"] },
       { n: 11, level: 5, title: "Christ Is Risen, He Is Risen Indeed", artist: "Keith & Kristyn Getty", accept: ["christ is risen he is risen indeed", "christ is risen"] },
       { n: 13, level: 5, title: "Come Thou Long Expected Jesus", artist: "Laura Story", accept: ["come thou long expected jesus"] },
+      { n: 17, level: 5, title: "Oh, the Deep, Deep Love of Jesus", artist: "Audrey Assad", accept: ["oh the deep deep love of jesus", "the deep deep love of jesus"] },
+      { n: 18, level: 5, title: "My Jesus, I Love Thee", artist: "Bart Millard", accept: ["my jesus i love thee"] },
+      { n: 58, level: 5, title: "Give Me Jesus", artist: "Fernando Ortega", accept: ["give me jesus"] },
       { n: 38, level: 5, title: "I Stand Amazed", artist: "Bart Millard", accept: ["i stand amazed"] },
       { n: 41, level: 5, title: "Praise to the Lord, the Almighty", artist: "Fernando Ortega", accept: ["praise to the lord the almighty"] },
+      { n: 46, level: 5, title: "Speak O Lord", artist: "Keith & Kristyn Getty", accept: ["speak o lord"] },
+      { n: 47, level: 5, title: "Jesus, Keep Me Near The Cross", artist: "Keith & Kristyn Getty", accept: ["jesus keep me near the cross"] },
+      { n: 25, level: 5, title: "How Can I Keep From Singing", artist: "Ginny Owens", accept: ["how can i keep from singing"] },
+      { n: 27, level: 5, title: "Breathe On Me, Breath Of God", artist: "Keith & Kristyn Getty", accept: ["breathe on me breath of god"] },
+      { n: 6, level: 6, title: "Untitled Hymn (Come To Jesus)", artist: "Chris Rice", accept: ["untitled hymn", "come to jesus"] },
+      { n: 10, level: 6, title: "Beautiful Savior", artist: "Ginny Owens", accept: ["beautiful savior"] },
+      { n: 40, level: 6, title: "Wonderful Merciful Savior", artist: "Phillips, Craig & Dean", accept: ["wonderful merciful savior"] },
+      { n: 43, level: 6, title: "Who But Jesus", artist: "Laura Story", accept: ["who but jesus"] },
       { n: 60, level: 6, title: "Come Behold The Wondrous Mystery", artist: "Matt Boswell & Matt Papa", accept: ["come behold the wondrous mystery"] },
+      { n: 64, level: 6, title: "My Worth Is Not In What I Own", artist: "Keith & Kristyn Getty", accept: ["my worth is not in what i own"] },
+      { n: 33, level: 6, title: "Brethren, We Have Met To Worship", artist: "Bart Millard", accept: ["brethren we have met to worship"] },
       { n: 68, level: 6, title: "For the Beauty of the Earth", artist: "Kyle Church", accept: ["for the beauty of the earth"] },
-      { n: 70, level: 7, title: "O, the Sorrows of My LORD", artist: "Melodyblue", accept: ["o the sorrows of my lord"] }
+      { n: 56, level: 7, title: "He’s Always Been Faithful", artist: "Sara Groves", accept: ["hes always been faithful"] },
+      { n: 66, level: 7, title: "Jesus, Fount of Joy Eternal", artist: "The Trails Church", accept: ["jesus fount of joy eternal"] },
+      { n: 70, level: 7, title: "O, the Sorrows of My LORD", artist: "Melodyblue", accept: ["o the sorrows of my lord"] },
+      { n: 21, level: 7, title: "I Saw The Light", artist: "Bart Millard", accept: ["i saw the light"] }
     ],
     lyrics: [
       { n: 1, level: 1, lyric: "\"Amazing grace, how sweet the ___\"", answer: "Sound", accept: ["sound"], start: null, cut: null },
+      { n: 15, level: 1, lyric: "\"What a friend we have in ___\"", answer: "Jesus", accept: ["jesus"], start: null, cut: null },
       { n: 52, level: 1, lyric: "\"On a hill far away stood an old rugged ___\"", answer: "Cross", accept: ["cross"], start: null, cut: null },
       { n: 37, level: 1, lyric: "\"What can wash away my sin? Nothing but the blood of ___\"", answer: "Jesus", accept: ["jesus"], start: null, cut: null },
       { n: 65, level: 1, lyric: "\"Blessed assurance, Jesus is ___\"", answer: "Mine", accept: ["mine"], start: null, cut: null },
+      { n: 8, level: 2, lyric: "\"Rock of Ages, cleft for ___\"", answer: "Me", accept: ["me"], start: null, cut: null },
       { n: 54, level: 2, lyric: "\"Come, Thou Fount of every ___\"", answer: "Blessing", accept: ["blessing"], start: null, cut: null },
       { n: 7, level: 2, lyric: "\"Holy, holy, holy! Lord God ___!\"", answer: "Almighty", accept: ["almighty"], start: null, cut: null },
+      { n: 4, level: 2, lyric: "\"All to Jesus I ___\"", answer: "Surrender", accept: ["surrender"], start: null, cut: null },
+      { n: 36, level: 2, lyric: "\"I need Thee, oh, I need Thee; every hour I need ___\"", answer: "Thee", accept: ["thee", "you"], start: null, cut: null },
       { n: 30, level: 3, lyric: "\"When peace like a ___ attendeth my way\"", answer: "River", accept: ["river"], start: null, cut: null },
       { n: 29, level: 3, lyric: "\"When I survey the wondrous ___\"", answer: "Cross", accept: ["cross"], start: null, cut: null },
+      { n: 20, level: 3, lyric: "\"Joyful, joyful, we adore Thee, God of glory, Lord of ___\"", answer: "Love", accept: ["love"], start: null, cut: null },
+      { n: 49, level: 3, lyric: "\"Jesus paid it all, all to Him I ___\"", answer: "Owe", accept: ["owe"], start: null, cut: null },
+      { n: 62, level: 4, lyric: "\"Softly and tenderly Jesus is ___\"", answer: "Calling", accept: ["calling"], start: null, cut: null },
+      { n: 22, level: 4, lyric: "\"Leaning, leaning, safe and secure from all ___\"", answer: "Alarms", accept: ["alarms", "alarm"], start: null, cut: null },
       { n: 32, level: 4, lyric: "\"A mighty fortress is our God, a bulwark never ___\"", answer: "Failing", accept: ["failing"], start: null, cut: null },
+      { n: 2, level: 4, lyric: "\"My hope is built on nothing less than Jesus’ blood and ___\"", answer: "Righteousness", accept: ["righteousness"], start: null, cut: null },
       { n: 44, level: 5, lyric: "\"Abide with me; fast falls the ___\"", answer: "Eventide", accept: ["eventide"], start: null, cut: null },
-      { n: 59, level: 5, lyric: "\"This is my Father’s world, and to my listening ___\"", answer: "Ears", accept: ["ears"], start: null, cut: null }
+      { n: 59, level: 5, lyric: "\"This is my Father’s world, and to my listening ___\"", answer: "Ears", accept: ["ears"], start: null, cut: null },
+      { n: 34, level: 5, lyric: "\"Fairest Lord Jesus, Ruler of all ___\"", answer: "Nature", accept: ["nature"], start: null, cut: null },
+      { n: 41, level: 5, lyric: "\"Praise to the Lord, the Almighty, the King of ___\"", answer: "Creation", accept: ["creation"], start: null, cut: null }
     ]
   }
 };

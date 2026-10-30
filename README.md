@@ -56,6 +56,8 @@ In every mode, higher points always means a harder question.
 - The built-in songs are public-domain hymns and carols, and the game plays their melodies itself.
 - **Spotify categories from your playlists:** `questions.js` has a `spotify` section listing songs from your worship and hymn playlists, each with a difficulty level. Paste each playlist's song links into `worshipLinks` and `hymnLinks` (in the Spotify desktop app: open the playlist, click a song, Ctrl+A / Cmd+A, then Ctrl+C / Cmd+C). The game then adds:
   - **Guess the Worship Song** and **Guess the Hymn:** a few seconds of the song play on the TV board. Harder rows play shorter clips, 12 seconds at 100 down to 3 seconds at 500.
+  - **Who Sings It?:** a clip plays and players name the artist.
+  - **Name That Intro:** the first few seconds of a worship song or hymn play, and players name the song.
   - **Finish the Hymn:** a public-domain hymn line appears with an underlined blank, and the recording plays and cuts off right before the missing word. Each question needs `start` and `cut` times in seconds, which you set after listening to that recording.
 - The host sees the answer, including a Spotify song card, on the iPad. When the host reveals the answer, the TV board shows the same card.
 - For full songs, the browser on the TV board laptop should be logged into Spotify. Without a login, Spotify plays only 30-second previews, which may not include the part you picked. If a clip doesn't start, tap **Play clip again** on the host screen.

@@ -177,6 +177,15 @@ const linkList=t=>String(t||'').match(/(?:open\.spotify\.com\/(?:intl-[a-z]+\/)?
     if(q.length>=5)BANK.push({id:'spotify-'+key,name,clipByRow:true,q})};
   guess('worship',wl,'Guess the Worship Song','Listen to the clip. Name this worship song.');
   guess('hymns',hl,'Guess the Hymn','Listen to the recording. Name this hymn.');
+  /* name the artist from the chorus */
+  const aq=(sp.worship||[]).map(e=>{const id=idFor(e,wl);if(!id||!e.artist)return null;const art=String(e.artist);
+    const alts=[art,...art.split(/\s*(?:&|,| and | feat\.? )\s*/i)].map(x=>x.toLowerCase().trim()).filter(Boolean);
+    return[Math.min(7,Math.max(1,+(e.artistLevel||e.level)||3)),'Listen to the clip. Who is the artist?',art,`The song is "${e.title}."`,alts.join('|'),{spotify:id,audio:'',start:toSec(e.start)??45,length:8,melody:'',bpm:100}]}).filter(Boolean);
+  if(aq.length>=5)BANK.push({id:'spotify-artist',name:'Who Sings It?',clipByRow:true,q:aq});
+  /* guess the song from its opening seconds; intros are harder, so each song counts one level higher */
+  const iq=[['worship',wl,'worship song'],['hymns',hl,'hymn']].flatMap(([key,list,kind])=>(sp[key]||[]).map(e=>{const id=idFor(e,list);if(!id||!e.title)return null;
+    return[Math.min(7,Math.max(1,(+e.level||3)+1)),`Listen to the intro. Name this ${kind}.`,String(e.title),e.artist?`Recorded by ${e.artist}.`:'',acc2(e),{spotify:id,audio:'',start:0,length:8,melody:'',bpm:100}]}).filter(Boolean));
+  if(iq.length>=5)BANK.push({id:'spotify-intro',name:'Name That Intro',clipByRow:true,q:iq});
   const lq=(sp.lyrics||[]).map(e=>{const id=idFor(e,hl),st=toSec(e.start),cut=toSec(e.cut);if(!id||st==null||cut==null||cut<=st||!e.lyric||!e.answer)return null;
     return[Math.min(7,Math.max(1,+e.level||3)),String(e.lyric),String(e.answer),'',(e.accept||[]).join('|'),{spotify:id,audio:'',start:st,length:Math.min(20,cut-st),melody:'',bpm:100}]}).filter(Boolean);
   if(lq.length>=5)BANK.push({id:'spotify-lyrics',name:'Finish the Hymn',q:lq});
