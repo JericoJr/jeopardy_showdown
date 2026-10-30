@@ -230,20 +230,39 @@ function sfx(kind){const ac=audio();if(!ac)return;const t=ac.currentTime+0.02;
   else{tone(ac,155.6,t,.55,'sawtooth',.18);tone(ac,146.8,t+.02,.6,'square',.08)}}
 /* original background music: a looping arpeggio over I-vi-IV-V (or the host's own file) */
 let musicVol=Number(store.get('ssw.vol',0.5));
-const Music={on:false,el:null,timer:null,bus:null,step:0,next:0,
-  start(){if(this.on)return;this.on=true;
-    if(this.el){this.el.loop=true;this.el.volume=musicVol;this.el.play().catch(()=>{});return}
-    const ac=audio();if(!ac){this.on=false;return}
-    this.bus=ac.createGain();this.bus.gain.value=musicVol*0.5;this.bus.connect(ac.destination);this.step=0;this.next=ac.currentTime+0.1;
-    this.timer=setInterval(()=>{const ac2=actx;if(!ac2||!this.bus)return;while(this.next<ac2.currentTime+0.35){this.note(this.next);this.next+=60/112/2;this.step++}},90)},
-  stop(){this.on=false;clearInterval(this.timer);this.timer=null;if(this.el)try{this.el.pause()}catch{};try{this.bus&&this.bus.disconnect()}catch{}this.bus=null},
-  vol(v){musicVol=v;store.set('ssw.vol',v);if(this.el)this.el.volume=v;if(this.bus)this.bus.gain.value=v*0.5},
-  file(f){const was=this.on;this.stop();try{this.el&&URL.revokeObjectURL(this.el.src)}catch{}this.el=f?new Audio(URL.createObjectURL(f)):null;if(was)this.start()},
-  note(t){const prog=[[0,4,7,12],[-3,0,4,9],[-7,-3,0,5],[-5,-1,2,7]],bar=Math.floor(this.step/8)%4,pat=[0,1,2,3,2,1,2,1],s=this.step%8,ch=prog[bar];
-    const f=n=>261.63*Math.pow(2,n/12);
-    tone(actx,f(ch[pat[s]]),t,.32,'triangle',.22,this.bus);
-    if(s===0||s===4)tone(actx,f(ch[0]-12),t,.6,'sine',.28,this.bus);
-    if(s%2===1)tone(actx,f(ch[2]+12),t,.08,'sine',.05,this.bus)}
+/* Two original tracks, played by the game itself:
+   'show'    an upbeat game-show theme for the board (or the host's own music file)
+   'tension' suspenseful countdown music that speeds up as the timer runs down */
+const Music={on:false,kind:null,el:null,timer:null,bus:null,step:0,next:0,prog:()=>0,
+  start(kind){if(this.on&&this.kind===kind)return;this.stop();this.on=true;this.kind=kind;
+    if(kind==='show'&&this.el){this.el.loop=true;this.el.volume=musicVol;this.el.currentTime=0;this.el.play().catch(()=>{});return}
+    const ac=audio();if(!ac){this.on=false;this.kind=null;return}
+    this.bus=ac.createGain();this.bus.gain.value=musicVol*0.55;this.bus.connect(ac.destination);this.step=0;this.next=ac.currentTime+0.1;
+    this.timer=setInterval(()=>{const a=actx;if(!a||!this.bus)return;while(this.next<a.currentTime+0.35){this.next+=this.kind==='tension'?this.tension(this.next):this.show(this.next);this.step++}},70)},
+  stop(){this.on=false;this.kind=null;clearInterval(this.timer);this.timer=null;if(this.el)try{this.el.pause()}catch{};try{this.bus&&this.bus.disconnect()}catch{}this.bus=null},
+  vol(v){musicVol=v;store.set('ssw.vol',v);if(this.el)this.el.volume=v;if(this.bus)this.bus.gain.value=v*0.55},
+  file(f){const k=this.kind;this.stop();try{this.el&&URL.revokeObjectURL(this.el.src)}catch{}this.el=f?new Audio(URL.createObjectURL(f)):null;if(k)this.start(k)},
+  show(t){
+    const e=60/132/2,s=this.step%64,bar=Math.floor(s/8),i=s%8,F=n=>174.61*Math.pow(2,n/12),b=this.bus;
+    const chords=[[0,4,7],[-3,0,4],[2,5,9],[7,11,14],[0,4,7],[5,9,12],[7,11,14],[0,4,7]];
+    const lead=[[12,null,9,12,14,null,12,null],[9,null,5,9,12,null,null,null],[10,9,7,null,5,7,9,null],[7,null,4,null,7,null,null,null],
+      [12,null,16,null,14,12,9,null],[10,null,14,null,17,null,14,null],[16,14,12,10,9,7,4,null],[5,null,null,null,0,null,null,null]];
+    const ch=chords[bar],root=ch[0];
+    if(i===0||i===4)tone(actx,F(root-12),t,e*1.8,'triangle',.34,b);
+    if(i===2||i===6)tone(actx,F(root-5),t,e*1.6,'triangle',.26,b);
+    if(i===3||i===7)ch.forEach(n=>tone(actx,F(n+12),t,e*.55,'sawtooth',.035,b));
+    const n=lead[bar][i];if(n!=null){const len=(lead[bar][i+1]==null?e*1.8:e*.9);tone(actx,F(n+12),t,len,'square',.06,b);tone(actx,F(n+12),t,len,'triangle',.16,b)}
+    tone(actx,i%2?7400:6200,t,.018,'sine',i%2?.03:.015,b);
+    return e},
+  tension(t){
+    const p=Math.min(1,Math.max(0,this.prog()||0)),e=60/(92*(1+0.55*p))/2,s=this.step,bar=Math.floor(s/8)%4,i=s%8,b=this.bus;
+    const A=n=>110*Math.pow(2,n/12),root=[0,1,2,3][bar];
+    tone(actx,A(root),t,e*.7,'sawtooth',.11,b);
+    if(i%2)tone(actx,A(root+12),t,e*.5,'sawtooth',.05,b);
+    if(i===0)[12,15,19].forEach(n=>tone(actx,A(root+n),t,e*7.5,'triangle',.05,b));
+    if(i%2===0)tone(actx,1900,t,.025,'sine',.12,b);
+    if(p>0.7){tone(actx,A(root+24),t,e*.4,'square',.035,b);if(i===4)tone(actx,A(root+27),t,e*3,'triangle',.06,b)}
+    return e}
 };
 function noteFreq(n){const m=/^([A-Ga-g])([#b]?)(-?\d)$/.exec(String(n||''));if(!m)return 0;const base={c:0,d:2,e:4,f:5,g:7,a:9,b:11}[m[1].toLowerCase()]+(m[2]==='#'?1:m[2]==='b'?-1:0);const midi=(+m[3]+1)*12+base;return 440*Math.pow(2,(midi-69)/12)}
 /* audio clips for song questions: a built-in melody or a sound file, cut off after a few seconds */
@@ -258,10 +277,11 @@ const Clip={timer:null,el:null,bus:null,playing:false,
 let hostClipN=null;
 function hostClip(){if(view!=='host'||!S||!S.clip)return;if(S.clip.n===hostClipN)return;hostClipN=S.clip.n;if(displayOn()||S.sound===false)return;if(S.clip.act==='play'){const cl=curClue();cl&&cl.m&&Clip.play(cl.m)}else Clip.stop()}
 function clipCmd(act){S.clip={n:(S.clip?.n||0)+1,act}}
-function setMusic(want){if(Clip.playing)want=false;if(want&&!Music.on)Music.start();else if(!want&&Music.on)Music.stop()}
+function setMusic(kind){if(Clip.playing)kind=null;if(!kind){if(Music.on)Music.stop()}else Music.start(kind)}
+function wantMusic(ph,run,tmusic,music){return tmusic&&run&&(ph==='clue'||ph==='final-clue')?'tension':music?'show':null}
 const displayOn=()=>[...conns.values()].some(v=>v.role==='display');
 function fire(kind){S.fx={n:(S.fx?.n||0)+1,k:kind};if(!displayOn()&&S.sound!==false)sfx(kind)}
-function hostAudio(){if(view==='host'&&S)setMusic(!!S.music&&!displayOn()&&S.sound!==false)}
+function hostAudio(){if(view!=='host'||!S)return;Music.prog=()=>S&&S.tmr?1-tLeft()/(S.tmr.len||1):0;if(displayOn()||S.sound===false){setMusic(null);return}setMusic(wantMusic(S.phase,!!S.tmr?.run,S.tmusic!==false,!!S.music))}
 function musicControlsHTML(){return `<div class="row"><label for="musicfile" class="lbl" style="margin:0">Your own music (optional)</label><input type="file" id="musicfile" accept="audio/*" data-music="file" style="width:auto;max-width:100%;min-width:0">${Music.el?'<button class="btn-sm btn-ghost" data-act="music-builtin">Use built-in music</button>':''}
   <label for="musicvol" class="lbl" style="margin:0">Volume</label><input type="range" id="musicvol" min="0" max="1" step="0.05" value="${musicVol}" data-music="vol" style="width:140px;padding:0"></div>`}
 let wakeLock=null;async function keepAwake(){try{if(navigator.wakeLock&&!wakeLock){wakeLock=await navigator.wakeLock.request('screen');wakeLock.addEventListener('release',()=>{wakeLock=null})}}catch{}}
@@ -457,7 +477,7 @@ function publicState(){
     teams:S.teams.map((t,i)=>({id:t.id,name:t.name,named:t.custom!==false,need:needName(i),score:t.score,m:members(i).map(m=>({p:m.pid,n:m.name,on:on.has(m.pid)}))})),
     loose:Object.entries(S.members).filter(([,m])=>!m.team||teamIdx(m.team)<0).map(([p,m])=>({p,n:m.name})),
     cap:S.settings.cap,create:S.settings.playersCreate,mode:S.settings.mode,ans:S.settings.answers,turn:S.turn,epoch:S.epoch,open:!!S.buzzOpen,
-    tm:{left:tLeft(),run:!!S.tmr.run,len:S.tmr.len},music:!!S.music,fx:S.fx||null,clip:S.clip||null,hi:activeTeam()};
+    tm:{left:tLeft(),run:!!S.tmr.run,len:S.tmr.len},music:!!S.music,tmusic:S.tmusic!==false,fx:S.fx||null,clip:S.clip||null,hi:activeTeam()};
   if(S.cur&&cl){st.clue={cat:g.cats[S.cur.c].name,val:clueValue(),dd:isDD(),
     q:ph==='clue'?cl.q:null,h:S.hint&&ph==='clue'?cl.h:null,a:S.revealed?cl.a:null,m:ph==='clue'&&cl.m?cl.m:null,
     who:S.answering,tried:S.tried,res:S.scored,queue:S.inbox.buzz.slice(0,6).map(p=>S.members[p]?.name||'Player')}}
@@ -475,7 +495,7 @@ function paintTimer(left,len){const bar=$('#tbar'),tx=$('#ttext');if(bar){bar.st
 
 /* ---------- client: receiving state ---------- */
 let lastFx=null,lastClip=null;
-function displayAudio(){if(view==='display')setMusic(!!(PS&&PS.music)&&!D.mute&&D.step==='live')}
+function displayAudio(){if(view!=='display')return;Music.prog=()=>{const left=pTimer.run?Math.max(0,pTimer.end-Date.now()):pTimer.left;return 1-left/(pTimer.len||1)};if(D.mute||D.step!=='live'||!PS){setMusic(null);return}setMusic(wantMusic(PS.ph,!!(PS.tm&&PS.tm.run),PS.tmusic!==false,!!PS.music))}
 function myTeamIdx(st){return st?st.teams.findIndex(t=>(t.m||[]).some(m=>m.p===P.pid)):-1}
 function applyState(st){
   if(!st||typeof st!=='object'||!Array.isArray(st.teams))return;
@@ -637,7 +657,8 @@ function hostHTML(){
   <div class="row">
     <button class="${allUsed?'btn-gold':''}" data-act="final">Final round</button>
     <button data-act="tv" aria-pressed="${S.tv}">${S.tv?'Hide answers: on':'Hide answers: off'}</button>
-    <button data-act="music" aria-pressed="${!!S.music}">${S.music?'Music: on':'Music: off'}</button>
+    <button data-act="music" aria-pressed="${!!S.music}">${S.music?'Theme music: on':'Theme music: off'}</button>
+    <button data-act="tmusic" aria-pressed="${S.tmusic!==false}">${S.tmusic!==false?'Timer music: on':'Timer music: off'}</button>
     <button data-act="sound" aria-pressed="${S.sound!==false}">${S.sound!==false?'Sounds: on':'Sounds: off'}</button>
     <button data-act="ed-host">Edit questions</button>
     <div class="spacer"></div><button class="btn-ghost" data-act="go-setup">New game</button><button class="btn-bad" data-act="end-game">End game</button>
@@ -645,7 +666,7 @@ function hostHTML(){
   ${confirmEnd?endConfirmHTML():''}
   <div class="note">${S.tv?'Answers and hints are hidden on this screen until you reveal them. Use “Peek” to check privately.':'Answers show on this screen. If this screen is ever on the TV, turn on “Hide answers”.'}${S.dds.length?` ${S.dds.length===1?'A Daily Double is':'Two Daily Doubles are'} hidden on the board.`:''}</div>
   <details class="card"><summary class="eyebrow" style="cursor:pointer">Music & sounds</summary>
-    <span class="note">${displayOn()?'The TV board is connected, so music and sounds play there.':'No TV board is connected, so music and sounds play on this device.'} The only sound effects are for correct and wrong answers.</span>
+    <span class="note">${displayOn()?'The TV board is connected, so music and sounds play there.':'No TV board is connected, so music and sounds play on this device.'} The theme plays on the board, and suspenseful timer music plays while the timer runs. The only sound effects are for correct and wrong answers.</span>
     ${displayOn()?'':musicControlsHTML()}</details>
   <div class="card" style="gap:6px"><div class="eyebrow">Players</div><div id="plist">${playersHTML()}</div></div>
   ${showLobby?`<div class="overlay" role="dialog" aria-label="Teams and join info"><div class="ov-in">${lobbyHTML(true)}</div></div>`:''}
@@ -913,6 +934,7 @@ document.addEventListener('click',e=>{
     case 'tv':S.tv=!S.tv;peek=false;commit();break;
     case 'sound':S.sound=S.sound===false;commit();break;
     case 'music':S.music=!S.music;commit();break;
+    case 'tmusic':S.tmusic=S.tmusic===false;commit();break;
     case 'clip-play':clipCmd('play');commit();break;
     case 'clip-stop':clipCmd('stop');commit();break;
     case 'music-builtin':Music.file(null);render();break;

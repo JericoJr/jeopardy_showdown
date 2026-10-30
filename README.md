@@ -32,8 +32,10 @@ A free Bible quiz game show for youth groups and young adults. The host runs the
 
 ### Music and sounds
 
-- The host turns background music on or off with the **Music** button. It plays on the TV board, or on the host's device if no TV board is connected.
-- The built-in music is an original loop. To use your own song, choose a music file under **Music on this screen** on the TV board. Use music you have the right to play.
+- **Theme music:** an original, upbeat game-show theme for the board. The host turns it on or off with the **Theme music** button.
+- **Timer music:** original suspenseful countdown music that plays while the timer is running and speeds up as time runs out. It stops when the timer is paused or ends. Turn it on or off with the **Timer music** button.
+- Music plays on the TV board, or on the host's device if no TV board is connected. Song clips pause the music while they play.
+- To use your own theme song instead, choose a music file under **Music on this screen** on the TV board. Use music you have the right to play.
 - The only sound effects are for correct and wrong answers.
 
 ### Song categories
