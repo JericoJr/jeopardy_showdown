@@ -38,8 +38,10 @@ In every mode, higher points always means a harder question.
 
 Pick one in setup:
 
-- **Classic Jeopardy** (default): the real show's rules. A right answer earns the points, and that team picks the next clue. A wrong answer loses the points, and the clue passes to the next team that hasn't tried it yet. If nobody gets it right, the team that picked keeps control.
+- **Classic Jeopardy** (default): a right answer earns the points, and that team picks the next clue. A wrong answer loses the points, and the clue passes to the next team in order. Each team gets one try. If nobody gets it right, nobody earns the points, and the next team in order after the one that picked gets to pick. (On the TV show, the player who picked would keep control. This game passes it on so every team gets turns.)
 - **Team Order:** teams take turns in order (Team 1, Team 2, Team 3, then back to Team 1), no matter who answers right. Wrong answers don't lose points unless the host turns that on. If a team misses, the host can pass the clue to any other team, once per clue.
+
+**Turn order graphic:** the iPad, TV and phones show every team in order at the top of the screen. The team picking or answering glows gold, teams that missed are crossed out, a correct team turns green, and the team that's up next has a dashed outline.
 
 In both styles, any player on the picking team can tap a clue on their phone to open it, or the host can tap it. The scoreboard highlights the team that's answering, and the highlight moves when the clue passes.
 
@@ -68,6 +70,7 @@ In both styles, any player on the picking team can tap a clue on their phone to 
 
 - **Scripture Snapshots:** an original illustration appears, like a burning bush or a ladder of angels, and players name the Bible story. Easy rows show iconic scenes (Noah's ark, David and Goliath); expert rows show subtler ones (Aaron's budding rod, Ezekiel's wheels). On the 400 and 500 rows, the TV and phones start **zoomed in** on part of the picture and slowly zoom out. The host always sees the whole picture.
 - **Emoji Testament:** a Bible story told in emojis, like 🐋🙏🏙️ for Jonah, from Noah's ark at 100 to Ehud and King Eglon at expert.
+- Pictures show on the iPad, the TV and every phone, including older iPhones and iPads.
 - The drawings live in `images.js`. To use your own picture, upload it to the repo and add `image: "images/your-photo.jpg"` to a question in `questions.js`. Use pictures you have the right to show.
 
 ### Song categories

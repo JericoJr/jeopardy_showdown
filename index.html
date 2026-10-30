@@ -173,6 +173,21 @@ body.tuning{padding-bottom:62vh}
 .artbox.tvsize{max-width:min(900px,100%)}
 .artbox svg,.artbox img{display:block;width:100%;height:100%;object-fit:cover}
 .artbox.zoom svg,.artbox.zoom img{transform-origin:var(--fx) var(--fy);animation:zoomout 28s cubic-bezier(.2,.6,.3,1) forwards;animation-delay:var(--zd,0s)}
+.order{display:flex;align-items:center;justify-content:center;gap:6px 8px;flex-wrap:wrap;background:var(--panel);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:8px 10px}
+.order .olab{width:100%;text-align:center;margin-bottom:-2px}
+.ochip{display:flex;flex-direction:column;align-items:center;gap:1px;padding:6px 14px;border-radius:999px;border:2px solid rgba(255,255,255,.12);background:rgba(255,255,255,.05);max-width:44vw;transition:all .3s}
+.ochip .onm{font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.ochip small{font-size:10px;letter-spacing:.08em;text-transform:uppercase;font-weight:800;opacity:.85}
+.ochip.now{background:var(--gold);border-color:var(--gold);color:var(--gold-ink);animation:opulse 1.6s ease-in-out infinite}
+.ochip.next{border-color:var(--gold);border-style:dashed}
+.ochip.miss{opacity:.5}.ochip.miss .onm{text-decoration:line-through}
+.ochip.ok{background:var(--good);border-color:var(--good);color:#06221a}
+.oarrow{opacity:.45;font-weight:800}
+@keyframes opulse{0%,100%{box-shadow:0 0 0 0 rgba(243,195,77,.55)}50%{box-shadow:0 0 0 8px rgba(243,195,77,0)}}
+body.tv .ochip{padding:8px 20px}body.tv .ochip .onm{font-size:22px}body.tv .ochip small{font-size:13px}body.tv .oarrow{font-size:22px}
+@media (prefers-reduced-motion:reduce){.ochip.now{animation:none}}
+/* pictures: fallback for browsers without aspect-ratio (older iPhone/iPad Safari) */
+@supports not (aspect-ratio:1/1){.artbox{height:0;padding-top:75%}.artbox svg,.artbox img{position:absolute;inset:0}}
 @keyframes zoomout{from{transform:scale(var(--z))}to{transform:scale(1)}}
 .emojiq{font-size:clamp(40px,8vw,96px)!important;line-height:1.25;letter-spacing:.06em;font-family:"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}.fxflash{animation:fxfade 1.7s linear forwards!important}}
@@ -375,7 +390,8 @@ const Clip={timer:null,el:null,bus:null,playing:false,paused:false,kind:'',endAt
         if(f)smoothNote(ac,f,t,dur,this.bus);t+=dur;if(t-ac.currentTime>len)break}}}
     this.arm(len*1000)},
   full:false,
-  playFull(m,at){this.stop();if(!m)return;this.playing=true;this.paused=false;this.full=true;if(Music.on)Music.stop();at=Math.max(0,+at||0);
+  playFull(m,at){if(m&&m.spotify&&this.kind==='spotify'&&this.full&&this.playing&&Spot.p){at=Math.max(0,+at||0);this.paused=false;Spot.play(m.spotify,at,0,{full:true});return}
+    this.stop();if(!m)return;this.playing=true;this.paused=false;this.full=true;if(Music.on)Music.stop();at=Math.max(0,+at||0);
     if(m.spotify){this.kind='spotify';Spot.play(m.spotify,at,0,{full:true});return}
     if(m.audio){this.kind='audio';try{const el=new Audio(m.audio);this.el=el;el.addEventListener('loadedmetadata',()=>{try{el.currentTime=at}catch{}el.play().catch(()=>{})},{once:true});el.load()}catch{}return}
     this.full=false;this.play(m)},
@@ -391,46 +407,54 @@ const Spot={api:null,ctl:null,waiting:[],loading:false,p:null,seeked:false,t:nul
     window.onSpotifyIframeApiReady=api=>{this.api=api;this.waiting.splice(0).forEach(f=>f(api))};
     const sc=document.createElement('script');sc.src='https://open.spotify.com/embed/iframe-api/v1';sc.async=true;document.body.appendChild(sc)},
   /* load a song into the hidden player without playing it, so Play starts right away */
-  cue(id){if(!id||this.cued===id||this.p)return;this.cued=id;this.load(api=>{const uri='spotify:track:'+id;
+  cue(id){if(!id||this.cued===id||this.p)return;this.cued=id;this.live=null;this.load(api=>{const uri='spotify:track:'+id;
     if(!this.ctl){this.make(api,uri,false)}else{try{this.ctl.loadUri(uri)}catch{}}})},
   make(api,uri,thenPlay){let w=document.getElementById('spotwrap');if(!w){w=document.createElement('div');w.id='spotwrap';w.setAttribute('aria-hidden','true');
       w.style.cssText='position:fixed;left:0;bottom:0;width:300px;height:80px;opacity:0;pointer-events:none;z-index:-1;overflow:hidden';document.body.appendChild(w)}
     const el=document.createElement('div');w.appendChild(el);
     api.createController(el,{uri,width:300,height:80},ctl=>{this.ctl=ctl;ctl.addListener('playback_update',e=>this.update(e));ctl.addListener('ready',()=>{if(this.p)this.go()});if(thenPlay)this.go()})},
   play(id,start,len,o){o=o||{};this.p={id,start:+start||0,len,auto:!!o.auto,frac:+o.frac||0.45,full:!!o.full};this.seeked=false;
+    if(o.full&&this.ctl&&this.cued===id&&this.live===id){clearTimeout(this.t);this.seeked=true;this.aim(this.p.start);try{this.ctl.resume?this.ctl.resume():this.ctl.togglePlay()}catch{}return}
     this.load(api=>{const uri='spotify:track:'+id;if(!this.p)return;
       if(this.ctl&&this.cued===id){this.go();return}
-      this.cued=id;
+      this.cued=id;this.live=null;
       if(!this.ctl){this.make(api,uri,true);return}
       try{this.ctl.loadUri(uri)}catch{}setTimeout(()=>this.go(),300)})},
   go(){if(!this.ctl||!this.p)return;try{this.ctl.play()}catch{}},
-  update(e){const p=this.p,d=(e&&e.data)||{};this.pos=(d.position||0)/1000;if(d.duration){const was=this.dur;this.dur=d.duration/1000;if(!p&&this.onDur&&Math.abs(was-this.dur)>1)this.onDur(this.dur)}if(this.onPos&&p&&this.seeked)this.onPos(this.pos,this.dur,!!d.isPaused);
+  /* seek, then keep checking until the song is really there (Spotify sometimes ignores a seek) */
+  aim(t){const p=this.p;this.tgt=t;this.tgtUntil=Date.now()+3500;try{this.ctl.seek(t)}catch{}let k=0;clearInterval(this.aimT);
+    this.aimT=setInterval(()=>{if(this.p!==p||++k>5){clearInterval(this.aimT);return}if(Math.abs(this.pos-t)<=3){clearInterval(this.aimT);this.tgt=null;return}try{this.ctl.seek(t)}catch{}},700)},
+  update(e){const p=this.p,d=(e&&e.data)||{};this.pos=(d.position||0)/1000;if(d.duration){const was=this.dur;this.dur=d.duration/1000;if(!p&&this.onDur&&Math.abs(was-this.dur)>1)this.onDur(this.dur)}
+    if(p&&!d.isPaused&&!d.isBuffering&&d.duration)this.live=this.cued;
+    if(this.tgt!=null&&(Math.abs(this.pos-this.tgt)<=3||Date.now()>this.tgtUntil))this.tgt=null;
+    if(this.onPos&&p&&this.seeked&&this.tgt==null)this.onPos(this.pos,this.dur,!!d.isPaused);
     if(!p||this.seeked||d.isPaused||d.isBuffering)return;this.seeked=true;
     if(p.auto&&this.dur>60)p.start=Math.max(30,Math.min(this.dur-15,Math.round(this.dur*p.frac)));
-    if(p.start>0){try{this.ctl.seek(p.start)}catch{};const tgt=p.start;setTimeout(()=>{if(this.p===p&&Math.abs(this.pos-tgt)>3){try{this.ctl.seek(tgt)}catch{}}},1200)}if(p.full)return;clearTimeout(this.t);const ms=(p.len+(p.start>0?0.7:0))*1000;this.endAt=Date.now()+ms;this.t=setTimeout(()=>this.stop(),ms)},
+    if(p.start>0)this.aim(p.start);if(p.full)return;clearTimeout(this.t);const ms=(p.len+(p.start>0?0.7:0))*1000;this.endAt=Date.now()+ms;this.t=setTimeout(()=>this.stop(),ms)},
   pause(){if(!this.p)return;clearTimeout(this.t);this.left=this.seeked?Math.max(300,this.endAt-Date.now()):0;try{this.ctl&&this.ctl.pause()}catch{}},
   resume(){if(!this.p||!this.ctl)return;try{this.ctl.resume?this.ctl.resume():this.ctl.togglePlay()}catch{}if(this.seeked){clearTimeout(this.t);this.endAt=Date.now()+this.left;this.t=setTimeout(()=>this.stop(),this.left)}},
   stop(){clearTimeout(this.t);this.t=null;this.p=null;try{this.ctl&&this.ctl.pause()}catch{}}};
-let hostClipN=null,songDrag=false,lastPosSend=0;
+let hostClipN=null,songDrag=false,songDragAt=0,lastPosSend=0,renderHeld=false;
+const dragging=()=>songDrag&&Date.now()-songDragAt<5000;
 let posTrail=null;
-Spot.onDur=dur=>{if(view==='display')send({t:'pos',pos:0,dur,paused:true});if(view==='host'&&S&&!displayOn()){S.spos=Object.assign({},S.spos,{dur});paintSongPos()}};
+Spot.onDur=dur=>{if(view==='display')send({t:'pos',pos:0,dur,paused:true,n:playingN,durOnly:1});if(view==='host'&&S&&!displayOn()){S.spos=Object.assign({},S.spos,{dur});paintSongPos()}};
 let playingN=0;
 Spot.onPos=(pos,dur,paused)=>{if(view==='display'&&Clip.playing){const go=()=>{lastPosSend=Date.now();send({t:'pos',pos:Spot.pos,dur:Spot.dur,paused,n:playingN})};clearTimeout(posTrail);if(Date.now()-lastPosSend>450)go();else posTrail=setTimeout(go,460)}
-  if(view==='host'&&S&&!displayOn()){S.spos={pos,dur,paused,at:Date.now()};paintSongPos()}};
+  if(view==='host'&&S&&!displayOn()&&clipState()!=='idle'){S.spos={pos,dur,paused,at:Date.now()};paintSongPos()}};
 /* where the song is right now: the TV's reported position, or the slider if nothing is playing */
 function currentSongPos(){const sp=(S&&S.spos)||{},c=(S&&S.clip)||{},el=$('#songpos');
   if(clipState()==='playing'||clipState()==='paused'){return Math.max(0,(sp.pos||0)+(clipState()==='playing'&&!sp.paused?(Date.now()-(sp.at||Date.now()))/1000:0))}
   return el?+el.value:0}
 function paintPlayer(){const cur=$('#songcur'),du=$('#songdur'),el=$('#songpos');if(!S)return;const sp=S.spos||{},dur=sp.dur||Spot.dur||0;
-  const full=!!(S.clip&&S.clip.full),st=clipState(),pos=songDrag&&el?+el.value:(full&&st!=='idle'?currentSongPos():(el?+el.value:0));
+  const full=!!(S.clip&&S.clip.full),st=clipState(),pos=dragging()&&el?+el.value:(full&&st!=='idle'?currentSongPos():(el?+el.value:0));
   if(cur)cur.textContent=fmtT(Math.floor(pos));if(du&&dur)du.textContent=fmtT(Math.floor(dur));if(el&&dur&&+el.max!==Math.ceil(dur))el.max=String(Math.ceil(dur));
-  if(el&&!songDrag&&full&&st!=='idle')el.value=String(Math.floor(pos));
+  if(el&&!dragging()&&full&&st!=='idle')el.value=String(Math.floor(pos));
   const tg=$('[data-act="song-toggle"]');if(tg){const want=full&&st==='playing'?'❚❚':'▶';if(tg.textContent!==want){tg.textContent=want;tg.setAttribute('aria-label',want==='▶'?'Play':'Pause')}}}
 function paintSongPos(){paintPlayer();const el=$('#songpos'),tx=$('#songtime');if(!S)return;const sp=S.spos||{},c=S.clip||{},live=c.full&&clipState()==='playing'&&!sp.paused;
   const pos=Math.max(0,(sp.pos||0)+(live?(Date.now()-(sp.at||Date.now()))/1000:0)),dur=sp.dur||Spot.dur||0;
-  if(el&&!songDrag){if(dur)el.max=String(Math.ceil(dur));if(c.full)el.value=String(Math.floor(pos))}
-  if(tx){const v=songDrag&&el?+el.value:pos;tx.textContent=`${fmtT(Math.floor(v))} / ${dur?fmtT(Math.floor(dur)):'—:——'}`}}
-setInterval(()=>{if(view==='host'&&S&&S.phase==='clue')paintSongPos()},500);
+  if(el&&!dragging()){if(dur)el.max=String(Math.ceil(dur));if(c.full)el.value=String(Math.floor(pos))}
+  if(tx){const v=dragging()&&el?+el.value:pos;tx.textContent=`${fmtT(Math.floor(v))} / ${dur?fmtT(Math.floor(dur)):'—:——'}`}}
+setInterval(()=>{if(view==='host'&&S&&S.phase==='clue')paintSongPos();if(renderHeld&&!dragging()){renderHeld=false;songDrag=false;render()}},500);
 function soundBlocked(){return !actx||actx.state!=='running'}
 function updateSoundWarn(){const el=$('#sndwarn');if(!el)return;const show=view==='display'&&D.step==='live'&&!D.mute&&soundBlocked()&&!Clip.paused;
   el.innerHTML=show?'<button class="btn-sm btn-gold" data-act="d-unlock">🔊 Click to turn on sound</button>':''}
@@ -441,7 +465,7 @@ function hostCue(){if(view!=='host'||!S||displayOn()||S.phase!=='clue')return;co
 function hostClip(){hostCue();if(view!=='host'||!S||!S.clip)return;if(S.clip.n===hostClipN)return;hostClipN=S.clip.n;if(displayOn()||S.sound===false){Clip.stop();return}const cl=curClue();runClip(S.clip.act,cl&&cl.m,S.clip.at,cl&&cl.full)}
 function clipCmd(act,at){const now=Date.now(),cl=curClue(),len=Math.min(20,Math.max(2,+(cl&&cl.m&&cl.m.length)||10))*1000,c=S.clip||{};
   let end=c.end||0,left=c.left||0,full=!!c.full;
-  if(act==='full'){S.clip={n:(c.n||0)+1,act:'full',at:Math.max(0,+at||0),full:true,end:0,left:0};S.spos={pos:+at||0,dur:S.spos?.dur||0,paused:false,at:now};return}
+  if(act==='full'){S.clip={n:(c.n||0)+1,act:'full',at:Math.max(0,+at||0),full:true,end:0,left:0,ts:now};S.spos={pos:+at||0,dur:S.spos?.dur||0,paused:false,at:now};return}
   if(act==='play'){end=now+len+(cl&&cl.m&&cl.m.spotify?1200:0);left=0}
   else if(act==='pause'){if(c.act!=='play'&&c.act!=='resume'&&c.act!=='full')return;left=full?0:Math.max(0,end-now)}
   else if(act==='resume'){if(c.act!=='pause')return;end=full?0:now+left}
@@ -570,7 +594,9 @@ function netChanged(){if(!S)return;pruneTeams();syncNames();routeAudio();hostAud
 function onMsg(c,m){
   if(!S||!m||typeof m!=='object')return;
   const info=conns.get(c);if(!info)return;
-  if(info.role==='display'&&m.t==='pos'){if(m.n!=null&&S.clip&&m.n!==S.clip.n){if(m.dur&&S.spos)S.spos.dur=+m.dur;return}const full=S.clip&&S.clip.full&&clipState()!=='idle';S.spos=full||!S.spos?{pos:+m.pos||0,dur:+m.dur||0,paused:!!m.paused,at:Date.now()}:Object.assign({},S.spos,{dur:+m.dur||S.spos.dur||0});paintSongPos();return}
+  if(info.role==='display'&&m.t==='pos'){const c=S.clip||{},onlyDur=m.durOnly||m.n==null||m.n!==c.n||(c.act==='full'&&Date.now()-(c.ts||0)<3500&&Math.abs((+m.pos||0)-(c.at||0))>4);
+    if(onlyDur||clipState()==='idle'){S.spos=Object.assign({pos:0,paused:true,at:Date.now()},S.spos,{dur:+m.dur||(S.spos&&S.spos.dur)||0});paintSongPos();return}
+    S.spos={pos:+m.pos||0,dur:+m.dur||0,paused:!!m.paused,at:Date.now()};paintSongPos();return}
   if(m.t==='hello'){
     if(m.role==='display'){info.role='display'}
     else{const pid=short(m.pid,16);if(!pid)return;info.role='player';info.pid=pid;const ex=S.members[pid];S.members[pid]={name:short(m.name,20)||ex?.name||'Player',team:ex?.team&&teamIdx(ex.team)>=0?ex.team:null};if(!S.members[pid].team)soloTeam(pid)}
@@ -625,13 +651,13 @@ async function songTitle(id){if(titleCache[id])return titleCache[id];
 function fillSongTitles(){if(!S)return;S.game.cats.forEach(cat=>cat.clues.forEach(cl=>{if(cl.song&&cl.m&&cl.m.spotify&&!cl.a){songTitle(cl.m.spotify).then(t=>{if(t&&S&&!cl.a){cl.a=t;cl.alt=t.toLowerCase().replace(/\s*[\(\[-].*$/,'')+'|'+t.toLowerCase();commit()}})}}))}
 function openTile(c,r){setTimeout(hostCue,0);
   if(S.used[c][r])return;
-  S.cur={c,r};S.revealed=false;S.hint=false;peek=false;newEpoch();S.scored={};S.tried=[];S.ddWager='';
+  S.cur={c,r};S.revealed=false;S.hint=false;peek=false;newEpoch();S.scored={};S.tried=[];S.ddWager='';S.spos={pos:0,dur:0,paused:true,at:Date.now()};S.picker=S.turn;
   const hasT=S.teams.length>0;if(S.turn>=S.teams.length)S.turn=0;S.answering=S.settings.mode==='turns'&&hasT?S.turn:null;S.ddTeam=hasT?S.turn:null;
   if(isDD()){S.phase='dd';S.buzzOpen=false;resetTimer(false);}
   else{S.phase='clue';S.buzzOpen=S.settings.mode==='buzz';resetTimer(S.settings.autoTimer);if(curClue().m&&S.settings.autoplay)clipCmd('play')}
   S.passes=0;commit();
 }
-function closeTile(){S.lastScored=Object.assign({},S.scored);if(S.cur&&curClue()?.m)clipCmd('stop');if(S.cur)S.used[S.cur.c][S.cur.r]=1;S.cur=null;S.phase='board';S.buzzOpen=false;S.tmr.run=false;if(!S.teams.length)S.turn=0;else if(classic()){const w=Object.keys(S.lastScored||{}).find(k=>S.lastScored[k]===1);if(w!=null)S.turn=+w}else S.turn=(S.turn+1)%S.teams.length;S.lastScored=null;commit()}
+function closeTile(){S.lastScored=Object.assign({},S.scored);if(S.cur&&curClue()?.m)clipCmd('stop');if(S.cur)S.used[S.cur.c][S.cur.r]=1;S.cur=null;S.phase='board';S.buzzOpen=false;S.tmr.run=false;if(!S.teams.length)S.turn=0;else if(classic()){const w=Object.keys(S.lastScored||{}).find(k=>S.lastScored[k]===1);S.turn=w!=null?+w:((S.picker??S.turn)+1)%S.teams.length}else S.turn=((S.picker??S.turn)+1)%S.teams.length;S.lastScored=null;commit()}
 function scoreTeam(i,sign,val,book){const prev=book[i]||0;S.teams[i].score-=prev*val;if(prev===sign){delete book[i]}else{S.teams[i].score+=sign*val;book[i]=sign}}
 const classic=()=>S&&S.settings.rules!=='order';
 function markClue(i,sign){
@@ -648,6 +674,7 @@ function passTo(t){
   if(t==null){S.answering=null;S.buzzOpen=true}else S.answering=t;
   resetTimer(S.settings.autoTimer);
 }
+function upNext(){const n=S.teams.length;if(!n||S.settings.mode!=='turns')return null;const from=S.answering??S.picker??S.turn;for(let k=1;k<=n;k++){const t=(from+k)%n;if(t!==S.answering&&!S.tried.includes(t))return t}return null}
 function nextTeam(){
   if(S.answering!=null&&!S.tried.includes(S.answering))S.tried.push(S.answering);
   newEpoch();
@@ -672,7 +699,7 @@ function publicState(){
   const st={ph,code:S.code,title:short(g.title,60),cats:g.cats.map(x=>short(x.name,40)),used:S.used,
     teams:S.teams.map((t,i)=>({id:t.id,name:t.name,named:t.custom!==false,need:needName(i),score:t.score,m:members(i).map(m=>({p:m.pid,n:m.name,on:on.has(m.pid)}))})),
     loose:Object.entries(S.members).filter(([,m])=>!m.team||teamIdx(m.team)<0).map(([p,m])=>({p,n:m.name})),
-    cap:S.settings.cap,create:S.settings.playersCreate,mode:S.settings.mode,ans:S.settings.answers,turn:S.turn,epoch:S.epoch,open:!!S.buzzOpen,
+    ord:orderState(),cap:S.settings.cap,create:S.settings.playersCreate,mode:S.settings.mode,ans:S.settings.answers,turn:S.turn,epoch:S.epoch,open:!!S.buzzOpen,
     tm:{left:tLeft(),run:!!S.tmr.run,len:S.tmr.len},music:!!S.music,tmusic:S.tmusic!==false,snd:S.sound!==false,fx:S.fx||null,clip:S.clip?{n:S.clip.n,act:S.clip.act,at:S.clip.at||0}:null,hi:activeTeam()};
   if(S.cur&&cl){st.clue={cat:g.cats[S.cur.c].name,val:clueValue(),dd:isDD(),
     q:ph==='clue'?cl.q:null,h:S.hint&&ph==='clue'?cl.h:null,a:S.revealed?(cl.a||(cl.song?'':null)):null,rev:!!S.revealed,m:ph==='clue'&&cl.m?cl.m:null,img:ph==='clue'&&cl.img?cl.img:null,full:ph==='clue'&&cl.full?cl.full:null,emoji:!!cl.emoji,zoom:ph==='clue'&&cl.img&&!S.revealed&&S.cur.r>=3?S.cur.r:0,ep:S.epoch,
@@ -711,6 +738,7 @@ function applyState(st){
 
 /* ---------- render ---------- */
 function render(){
+  if(view==='host'&&dragging()){renderHeld=true;return}
   document.body.classList.toggle('tv',view==='display');
   document.body.classList.toggle('tuning',view==='tuner');if(view!=='tuner')Tuner.close();
   $('#app').innerHTML=view==='tuner'?tunerHTML():view==='role'?roleHTML():view==='setup'?setupHTML():view==='editor'?editorHTML():view==='host'?hostHTML():view==='display'?displayHTML():playerHTML();
@@ -821,7 +849,7 @@ function setupHTML(){
     <div class="opt"><span class="lbl">Difficulty</span>${segHTML('level',[['all','All levels'],['inter','Intermediate'],['expert','Expert']])}
       <span class="note">${st.level==='expert'?'Hard to expert questions on every row: deep-cut names, places and verses for Bible buffs.':st.level==='inter'?'Starts at easy-medium and climbs to expert at 500. Good for teens who know their Bible.':'100 is easy, 300 is medium and 500 is hard. Good for mixed groups and newcomers.'}</span></div>
     <div class="opt"><span class="lbl">Game style</span>${segHTML('rules',[['classic','Classic Jeopardy'],['order','Team Order']])}
-      <span class="note">${st.rules==='order'?'<b>Team Order:</b> teams take turns picking in order, no matter who answers. If a team misses, you can pass the question once. Wrong answers only lose points if you turn that on below.':'<b>Classic Jeopardy:</b> the real show’s rules. Right answers earn the points and that team picks next. Wrong answers lose the points and the question moves to the next team. If nobody gets it, the team that picked keeps control.'}</span></div>
+      <span class="note">${st.rules==='order'?'<b>Team Order:</b> teams take turns picking in order, no matter who answers. If a team misses, you can pass the question once. Wrong answers only lose points if you turn that on below.':'<b>Classic Jeopardy:</b> the real show’s rules. Right answers earn the points and that team picks next. Wrong answers lose the points and the question moves to the next team. Each team gets one try. If nobody gets it, no one earns the points and the next team in order picks.'}</span></div>
     <div class="opt"><span class="lbl">Who answers first</span>${segHTML('mode',[['turns','Teams take turns'],['buzz','Buzz in (fastest team)']])}
       <span class="note">${st.mode==='turns'?'The team whose turn it is picks a clue and answers. If they miss, pass it to the next team to steal.':'Everyone can buzz in. The first team to buzz answers; if they miss, the other teams can buzz again.'}</span></div>
     <div class="opt"><span class="lbl">How players answer</span>${segHTML('answers',[['voice','Say it out loud, host scores'],['typed','Type it on a phone']])}</div>
@@ -856,6 +884,21 @@ function editorHTML(){
   ${editFrom==='host'?'<button data-act="ed-apply">Use in this game only</button>':''}<button class="btn-gold" data-act="ed-save">${editFrom==='host'?'Use & save to my games':'Save game'}</button></div>`;
 }
 
+function orderState(){if(!S||!S.teams.length||S.phase==='lobby')return null;const inClue=S.phase==='clue'||S.phase==='dd';
+  return {names:S.teams.map(t=>t.name),turn:S.turn,picker:inClue?(S.picker??S.turn):S.turn,who:S.phase==='clue'?S.answering:S.phase==='dd'?S.ddTeam:null,dd:S.phase==='dd'||(inClue&&isDD()),
+    tried:inClue?S.tried||[]:[],res:inClue?S.scored||{}:{},clue:inClue,next:S.phase==='clue'&&!S.revealed&&!isDD()&&!Object.values(S.scored||{}).includes(1)?upNext():null,
+    nextPick:S.phase==='board'&&!classic()?(S.turn+1)%S.teams.length:null,rules:S.settings.rules,rev:!!S.revealed}}
+function orderHTML(o){if(!o||!o.names.length)return '';const n=o.names.length;
+  const chip=i=>{const r=o.res[i];let cls='',tag='';
+    if(r===1){cls='ok';tag='✓ Correct'}
+    else if(o.clue&&o.who===i&&!o.rev){cls='now';tag=o.dd?'Daily Double':'Answering'}
+    else if(r===-1||o.tried.includes(i)){cls='miss';tag='✗ Missed'}
+    else if(!o.clue&&o.turn===i){cls='now';tag=o.rules==='order'?'Picking':'In control'}
+    else if(o.next===i){cls='next';tag='Up next'}
+    else if(o.nextPick===i){cls='next';tag='Picks next'}
+    else if(o.clue&&o.picker===i){cls='';tag='Picked it'}
+    return `<div class="ochip ${cls}"><span class="onm">${esc(o.names[i])}</span>${tag?`<small>${tag}</small>`:''}</div>`};
+  return `<div class="order" role="group" aria-label="Turn order"><span class="eyebrow olab">Turn order</span>${o.names.map((_,i)=>chip(i)+(i<n-1?'<span class="oarrow" aria-hidden="true">→</span>':'')).join('')}<span class="oarrow" aria-hidden="true" title="then back to the start">↺</span></div>`}
 function activeTeam(){if(!S||S.phase==='lobby')return -1;if((S.phase==='clue'||S.phase==='dd')&&S.answering!=null)return S.answering;return S.turn}
 function scoresInner(host){
   if(!S.teams.length)return '<span class="note">No teams yet.</span>';
@@ -912,6 +955,7 @@ function hostHTML(){
   const allUsed=S.used.every(c=>c.every(Boolean));
   return `<div class="row"><div><div class="eyebrow">Jeopardy Showdown · host</div><h1 style="font-family:var(--f-display);font-weight:400;font-size:clamp(24px,4vw,38px);letter-spacing:.02em;text-transform:uppercase">${esc(g.title)}</h1></div><div class="spacer"></div>
     <button class="btn-sm" data-act="show-lobby">Code ${esc(S.code)} · teams & QR</button><div id="conn">${connHTML()}</div></div>
+  ${orderHTML(orderState())}
   <div class="turnbar"><span class="eyebrow">${classic()?'In control':'Picking now'}</span><b>${esc(S.teams[S.turn]?.name||'No teams yet')}</b><span class="spacer"></span><span class="note">${classic()?'Classic Jeopardy':'Team Order'} · ${esc(LEVEL_NAMES[S.settings.level]||'All levels')} · ${S.settings.mode==='turns'?'next team steals':'buzz-in'} · ${S.settings.answers==='typed'?'typed answers'+(S.settings.auto?', auto-scored':''):'answers out loud'}</span></div>
   <div class="scores" id="scores">${scoresInner(true)}</div>
   ${boardHTML(g.cats,S.used,true)}
@@ -947,7 +991,7 @@ const songIdOf=cl=>(cl&&cl.m&&cl.m.spotify)||(cl&&cl.full)||'';
 /* Spotify-style player for the whole song, right inside the question (plays on the TV board, or here with no TV) */
 function songPlayer(cl){const id=songIdOf(cl),hasClip=!!(cl.m&&cl.m.spotify);if(!id&&!(cl.m&&cl.m.audio))return '';
   const sp=S.spos||{},full=!!(S.clip&&S.clip.full),st=clipState(),playing=full&&st==='playing',paused=full&&st==='paused';
-  const dur=Math.ceil(sp.dur||Spot.dur||0),pos=Math.floor(full?currentSongPos():0);
+  const dur=Math.ceil(sp.dur||Spot.dur||0),pos=Math.floor(full&&st!=='idle'?currentSongPos():(sp.pos||0));
   const title=cl.song?(cl.a||'This song'):(cl.full?((cl.h||'').replace(/^From the hymn "|\.?"$/g,'').replace(/^The hymn is "|\.?"$/g,'')||'This hymn'):'This song');
   return `<div class="card songplayer" style="gap:10px">
     <div class="row"><span style="font-size:26px" aria-hidden="true">🎵</span><div style="flex:1;min-width:0"><div class="eyebrow">Full song · ${esc(audioWhere().replace('🔊 Sound: ','plays on ').replace('this device','this device'))}</div><b>${esc(title)}</b></div></div>
@@ -1002,6 +1046,7 @@ function clueOverlay(){
   if(S.phase==='dd'){
     const t=S.ddTeam,max=Math.max(500,t!=null?S.teams[t].score:0);
     return `<div class="overlay" role="dialog" aria-label="Daily Double"><div class="ov-in">
+    ${orderHTML(orderState())}
     <div class="cluebox"><div class="eyebrow" style="text-align:center">${esc(g.cats[c.c].name)}</div><div class="dd">Daily Double!</div></div>
     <div class="card"><h3>${t!=null?esc(S.teams[t].name)+' found it!':'No team to play it'}</h3>
       <span class="note">Only the team that picked the Daily Double answers. They wager 5 up to ${max} (their score, or 500 if that’s higher). Right adds the wager, wrong subtracts it. The clue’s ${VALUES[c.r]} points don’t count.</span>
@@ -1014,6 +1059,7 @@ function clueOverlay(){
   return `<div class="overlay" role="dialog" aria-label="Clue"><div class="ov-in">
     <div class="row"><span class="eyebrow">${esc(g.cats[c.c].name)} · ${dd?'Daily Double · wager '+val:val+' points'}${cl.from?` · from ${esc(cl.from)}`:''}</span><div class="spacer"></div>
       ${!S.revealed&&!dd?'<button class="btn-sm btn-ghost" data-act="swap">Swap for a random question</button>':''}<button class="btn-gold" data-act="close">Back to board</button></div>
+    ${orderHTML(orderState())}
     ${cl.img?picHTML(cl.img,0,0):''}
     <div class="cluebox">${cl.m?'<div class="cliptag">♪ Audio clip</div>':''}<div class="clue ${cl.emoji?'emojiq':''}">${clueText(cl.q)}</div>${cl.img&&S.cur.r>=3&&!S.revealed?'<div class="note" style="text-align:center">The TV starts zoomed in on this picture and slowly zooms out.</div>':''}${S.hint&&cl.h?`<div class="hint">Hint: ${esc(cl.h)}</div>`:''}</div>
     ${cl.m?`<div class="row"><span class="note" style="flex:1;min-width:0">♪ This clue has ${cl.m.spotify?'a Spotify clip':'an audio clip'} · <b>${audioWhere()}</b>. Tap Play clip when you’re ready; it plays ${displayOn()?'on the TV board':'on this device'}.${cl.m.spotify?' The TV board’s browser should be logged into Spotify for full songs.':''}</span></div><div class="row"><span class="pill" id="clipstat" aria-live="polite">${esc(clipStatusText())}</span>
@@ -1030,7 +1076,7 @@ function clueOverlay(){
         <div class="row"><button class="btn-good ${S.scored[ans]===1?'on-good':''}" data-act="mark" data-i="${ans}" data-s="1">Correct +${val}</button>
         <button class="btn-bad ${S.scored[ans]===-1?'on-good':''}" data-act="mark" data-i="${ans}" data-s="-1">Wrong${S.settings.wrongLose||dd||classic()?' −'+val:''}</button>
 </div>
-        ${classic()&&!dd&&!S.revealed?`<span class="note">Classic rules: a wrong answer loses ${val} points and ${mode==='turns'?(left.length?`the question goes to ${esc(S.teams[left[0]]?.name||'the next team')}`:'there are no teams left to try'):'the other teams can buzz in'}. A right answer earns ${val} and picks next.</span>`:''}
+        ${classic()&&!dd&&!S.revealed?`<span class="note">Classic rules: a wrong answer loses ${val} points and ${mode==='turns'?(upNext()!=null?`the question goes to ${esc(S.teams[upNext()].name)}, next in order`:'no teams are left to try, so nobody earns the points and the next team in order picks'):'the other teams can buzz in'}. A right answer earns ${val} and picks next.</span>`:''}
         ${!classic()&&!dd&&!S.revealed&&!(S.passes>0)&&left.length?(mode==='turns'?`<span class="eyebrow">Pass this question to (one pass per question)</span><div class="row">${left.map(i=>`<button class="btn-sm" data-act="pass" data-i="${i}">${esc(S.teams[i].name)}</button>`).join('')}</div>`:'<div class="row"><button data-act="pass" data-i="-1">Reopen buzzers for other teams (one time)</button></div>'):''}
         ${!classic()&&S.passes>0&&!S.revealed&&!dd?'<span class="note">This question has already been passed once.</span>':''}
         ${S.judged[ans]?`<span class="${S.judged[ans]===1?'ok':'no'}">${S.settings.auto?'Auto-scored':'Typed answer looks'} ${S.judged[ans]===1?'correct':'wrong'}${S.settings.auto?'. Tap a button to change it.':''}</span>`:''}`
@@ -1116,15 +1162,15 @@ function playerHTML(){
     <button class="btn-gold" data-act="p-random">Put me on any team (random)</button>`:'<div class="card status">No teams yet. Ask the host to add one.</div>'}
     <button class="btn-ghost btn-sm" data-act="p-leave">Leave game</button>`;
   let main='';
-  if(st.ph==='board')main=`<div class="card"><span class="big-status">${st.turn===mi?'Your team picks!':esc(st.teams[st.turn]?.name)+' is picking'}</span><div class="status muted">${st.turn===mi?'Anyone on your team can tap a clue below.':'Get ready…'}</div></div>${boardHTML(st.cats,st.used,st.turn===mi?'p-pick':false)}`;
-  else if(st.ph==='dd')main=`<div class="cluebox"><div class="eyebrow" style="text-align:center">${esc(st.clue?.cat)}</div><div class="dd">Daily Double!</div><div class="status">One team plays this clue and sets a wager.</div></div>`;
+  if(st.ph==='board')main=`${orderHTML(st.ord)}<div class="card"><span class="big-status">${st.turn===mi?'Your team picks!':esc(st.teams[st.turn]?.name)+' is picking'}</span><div class="status muted">${st.turn===mi?'Anyone on your team can tap a clue below.':'Get ready…'}</div></div>${boardHTML(st.cats,st.used,st.turn===mi?'p-pick':false)}`;
+  else if(st.ph==='dd')main=`${orderHTML(st.ord)}<div class="cluebox"><div class="eyebrow" style="text-align:center">${esc(st.clue?.cat)}</div><div class="dd">Daily Double!</div><div class="status">${st.ord&&st.ord.who===mi?'Your team found it! Agree on a wager and tell the host.':esc(st.teams[st.ord?.who]?.name||'The picking team')+' plays this one alone and sets a wager.'}</div></div>`;
   else if(st.ph==='clue'&&st.clue){
     const c=st.clue,who=c.who,mine=who===mi,tried=(c.tried||[]).includes(mi),res=c.res||{};let act='';
     if(c.a)act=`<div class="answer revealed"><span class="eyebrow">Answer</span><span class="a">${esc(c.a)}</span></div>${res[mi]===1?'<div class="big-status" style="color:var(--good)">Your team got it!</div>':res[mi]===-1?'<div class="status no">Not this time.</div>':''}`;
     else if(mine)act=`<div class="big-status">Your team is answering!</div>`+(st.ans==='typed'?`<div class="card"><label for="p-ans">Your team’s answer</label><textarea id="p-ans" maxlength="80" data-pd="ans" ${pSent.ans===st.epoch?'disabled':''}>${esc(pDraft.ans)}</textarea><button class="btn-gold" data-act="p-ans" ${pSent.ans===st.epoch?'disabled':''}>${pSent.ans===st.epoch?'Sent ✓':'Send answer'}</button><span class="note">Anyone on your team can answer. The first answer sent counts.</span></div>`:`<div class="status">Anyone on your team can say the answer out loud.</div>`)+(res[mi]===-1?'<div class="status no">The host marked that wrong.</div>':'');
     else if(st.mode==='buzz'&&who==null){const buzzed=pSent.buzz===st.epoch;act=tried?`<div class="status muted">Your team already tried this one.</div>`:`<button class="buzz" data-act="p-buzz" ${!st.open||buzzed?'disabled':''}>${buzzed?'IN!':'BUZZ'}</button><div class="status muted">${buzzed?'Buzzed! Waiting…':st.open?'Tap BUZZ when your team knows it.':'Buzzers are closed.'}</div>`}
     else act=`<div class="status"><b>${esc(who!=null?st.teams[who]?.name:'Another team')}</b> is answering.${tried?' Your team already tried.':''}</div>`;
-    main=`<div class="eyebrow">${esc(c.cat)} · ${c.dd?'Daily Double':c.val+' points'}</div>
+    main=`${orderHTML(st.ord)}<div class="eyebrow">${esc(c.cat)} · ${c.dd?'Daily Double · wager '+c.val:c.val+' points'}</div>
     ${c.img?picHTML(c.img,c.zoom,c.ep):''}
     <div class="cluebox" style="min-height:130px">${c.m?'<div class="cliptag">♪ Listen to the clip on the TV</div>':''}<div class="clue ${c.emoji?'emojiq':''}" style="${c.emoji?'':'font-size:clamp(20px,5.5vw,34px)'}">${clueText(c.q||'')}</div>${c.h?`<div class="hint">Hint: ${esc(c.h)}</div>`:''}</div>
     ${!c.a?timerP():''}${act}`;
@@ -1163,11 +1209,11 @@ function displayHTML(){
       <div class="col"><span class="eyebrow">Scan to join, or enter this code</span><div class="tvcode">${esc(st.code)}</div><span class="muted" style="font-size:18px">Open the game on your phone, tap <b>Join a game</b>, then pick or create a team.</span></div></div></div>
       ${st.teams.length?`<div class="grid2">${st.teams.map(t=>`<div class="spot"><h3>${esc(t.name)}</h3><span class="muted">${(t.m||[]).length}${st.cap?` / ${st.cap}`:''} players</span><span style="font-size:18px">${(t.m||[]).length?esc(t.m.map(m=>m.n).join(', ')):'<span class="muted">Waiting for players…</span>'}</span></div>`).join('')}</div>`:'<div class="status muted" style="font-size:20px">Teams will appear here as they’re created.</div>'}
       ${(st.loose||[]).length?`<div class="status muted">Still choosing: ${esc(st.loose.map(m=>m.n).join(', '))}</div>`:''}`;
-  if(st.ph==='board')main=`<div class="turnbar"><span class="eyebrow">${st.mode==='turns'?'Picking now':'Picks next'}</span><b>${esc(st.teams[st.turn]?.name)}</b></div>${boardHTML(st.cats,st.used,false)}`;
-  else if(st.ph==='dd')main=`<div class="tvbox"><div class="eyebrow" style="text-align:center">${esc(st.clue?.cat)}</div><div class="dd">Daily Double!</div></div>`;
+  if(st.ph==='board')main=`${orderHTML(st.ord)}${boardHTML(st.cats,st.used,false)}`;
+  else if(st.ph==='dd')main=`${orderHTML(st.ord)}<div class="tvbox"><div class="eyebrow" style="text-align:center">${esc(st.clue?.cat)}</div><div class="dd">Daily Double!</div></div>`;
   else if(st.ph==='clue'&&st.clue){
     const c=st.clue,who=c.who,res=c.res||{},r=who!=null?res[who]:null;
-    main=`<div class="row"><span class="eyebrow" style="font-size:15px">${esc(c.cat)} · ${c.dd?'Daily Double · '+c.val:c.val+' points'}</span><div class="spacer"></div>${who!=null?`<span class="answering">${esc(st.teams[who]?.name)} answering</span>`:''}</div>
+    main=`${orderHTML(st.ord)}<div class="row"><span class="eyebrow" style="font-size:15px">${esc(c.cat)} · ${c.dd?'Daily Double · '+c.val:c.val+' points'}</span><div class="spacer"></div>${who!=null?`<span class="answering">${esc(st.teams[who]?.name)} answering</span>`:''}</div>
     ${c.img?picHTML(c.img,c.zoom,c.ep,'tvsize'):''}
     <div class="tvbox" style="${c.img?'min-height:0':''}">${c.m?`<div class="cliptag" style="font-size:18px">♪ Listen${c.m.spotify?' · playing from Spotify':''}</div>`:''}<div class="tvclue ${c.emoji?'emojiq':''}">${clueText(c.q||'')}</div>${c.h?`<div class="hint" style="font-size:clamp(18px,2.6vw,30px)">Hint: ${esc(c.h)}</div>`:''}</div>
     ${!c.a?timerP(true):''}
@@ -1330,7 +1376,7 @@ document.addEventListener('input',e=>{
   else if(d.pd){pDraft[d.pd]=t.value}
   else if(d.d){D.code=t.value.toUpperCase();t.value=D.code}
   else if(d.music==='vol'){Music.vol(+t.value)}
-  else if(d.songpos!==undefined){songDrag=true;paintSongPos()}
+  else if(d.songpos!==undefined){songDrag=true;songDragAt=Date.now();paintSongPos()}
   else if(d.ed){const c=+d.c,r=+d.r,v=t.value;
     if(d.ed==='title')edit.title=v;else if(d.ed==='cat')edit.cats[c].name=v;
     else if(['q','a','h','alt'].includes(d.ed))edit.cats[c].clues[r][d.ed]=v;
@@ -1338,7 +1384,7 @@ document.addEventListener('input',e=>{
 });
 document.addEventListener('change',e=>{
   const d=e.target.dataset;
-  if(d.songpos!==undefined&&S){songDrag=false;clipCmd('full',+e.target.value);commit();return}
+  if(d.songpos!==undefined&&S){songDrag=false;renderHeld=false;clipCmd('full',+e.target.value);commit();return}
   if(d.music==='file'){const f=e.target.files&&e.target.files[0];if(f){Music.file(f);render()}return}
   if(d.opt){setup.settings[d.opt]=e.target.checked;saveSetup();render()}
   if(d.rename!==undefined&&S){if(!renameTeam(d.rename,e.target.value)){e.target.value='';e.target.placeholder='That name is taken'}commit();return}
