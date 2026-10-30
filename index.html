@@ -149,6 +149,14 @@ body.tv .wrap{max-width:1600px}
 body.tv .qr img,body.tv .qr canvas{width:260px;height:260px}
 .blank{display:inline-block;min-width:4.5ch;border-bottom:4px solid currentColor;margin:0 .15em;vertical-align:baseline;height:1em}
 .cliptag{display:inline-flex;gap:6px;align-items:center;justify-content:center;font-weight:800;color:var(--gold);letter-spacing:.06em;text-transform:uppercase;font-size:13px}
+.dock{position:fixed;left:0;right:0;bottom:0;z-index:30;background:var(--stage2);border-top:2px solid var(--gold);max-height:62vh;overflow:auto;
+  padding:12px max(16px,env(safe-area-inset-right,0px)) calc(12px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));display:flex;flex-direction:column;gap:10px}
+.dock[hidden]{display:none!important}
+body.tuning{padding-bottom:62vh}
+.tlist{display:flex;flex-direction:column;gap:6px}
+.titem{display:flex;gap:10px;align-items:center;text-align:left;width:100%}
+.titem.sel{border-color:var(--gold);background:var(--panel)}
+.tpos{font-family:var(--f-display);font-size:34px;color:var(--gold);font-variant-numeric:tabular-nums}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
 </head>
@@ -169,30 +177,39 @@ if(!FINALS.length)FINALS.push(['The Disciples','Before following Jesus, this dis
 /* Spotify categories built from your playlists (questions.js: spotify). Links are matched by playlist position. */
 const toSec=v=>{if(v==null||v==='')return null;if(typeof v==='number')return v;const m=/(\d+):(\d{1,2})/.exec(String(v));return m?(+m[1])*60+(+m[2]):(/^\s*\d+(\.\d+)?\s*$/.test(String(v))?+v:null)};
 const linkList=t=>String(t||'').match(/(?:open\.spotify\.com\/(?:intl-[a-z]+\/)?track\/|spotify:track:)[A-Za-z0-9]{22}/g)?.map(spotifyId)||[];
-(()=>{const sp=QB.spotify;if(!sp)return;const wl=linkList(sp.worshipLinks),hl=linkList(sp.hymnLinks);
+/* times set in the Song Tuner are saved on the host device and override questions.js */
+function tuneGet(){try{return JSON.parse(localStorage.getItem('ssw.tune')||'{}')||{}}catch{return {}}}
+function tuneSet(t){try{localStorage.setItem('ssw.tune',JSON.stringify(t))}catch{}}
+const lyricKey=(id,ans)=>'L:'+id+':'+String(ans||'').toLowerCase().replace(/[^a-z0-9]+/g,'');
+let FL_ORIG=null;
+function buildSpotify(){const sp=QB.spotify;if(!sp)return;const wl=linkList(sp.worshipLinks),hl=linkList(sp.hymnLinks),T=tuneGet();
+  for(let i=BANK.length-1;i>=0;i--)if(BANK[i].id.startsWith('spotify-'))BANK.splice(i,1);
+  const flc=BANK.find(b=>b.name==='Finish the Lyric');if(flc){if(!FL_ORIG)FL_ORIG=flc.q.slice();flc.q=FL_ORIG.slice()}
+  const songStart=(id,e)=>T['S:'+id]?.start??toSec(e.start)??45;
   const idFor=(e,list)=>spotifyId(e.link)||(e.n>0?list[e.n-1]||'':'');
   const acc2=e=>[...(e.accept||[]),String(e.title||'').toLowerCase().replace(/\s*[\(\[].*$/,'')].filter(Boolean).join('|');
   const guess=(key,list,name,question)=>{const q=(sp[key]||[]).map(e=>{const id=idFor(e,list);if(!id||!e.title)return null;
-      return[Math.min(7,Math.max(1,+e.level||3)),question,String(e.title),e.artist?`Recorded by ${e.artist}.`:'',acc2(e),{spotify:id,audio:'',start:toSec(e.start)??45,length:8,melody:'',bpm:100}]}).filter(Boolean);
+      return[Math.min(7,Math.max(1,+e.level||3)),question,String(e.title),e.artist?`Recorded by ${e.artist}.`:'',acc2(e),{spotify:id,audio:'',start:songStart(id,e),length:8,melody:'',bpm:100}]}).filter(Boolean);
     if(q.length>=5)BANK.push({id:'spotify-'+key,name,clipByRow:true,q})};
   guess('worship',wl,'Guess That Song','Listen to the clip. Name this worship song.');
   guess('hymns',hl,'Name the Hymn','Listen to the recording. Name this hymn.');
   /* name the artist from the chorus */
   const aq=(sp.worship||[]).map(e=>{const id=idFor(e,wl);if(!id||!e.artist)return null;const art=String(e.artist);
     const alts=[art,...art.split(/\s*(?:&|,| and | feat\.? )\s*/i)].map(x=>x.toLowerCase().trim()).filter(Boolean);
-    return[Math.min(7,Math.max(1,+(e.artistLevel||e.level)||3)),'Listen to the clip. Who is the artist?',art,`The song is "${e.title}."`,alts.join('|'),{spotify:id,audio:'',start:toSec(e.start)??45,length:8,melody:'',bpm:100}]}).filter(Boolean);
+    return[Math.min(7,Math.max(1,+(e.artistLevel||e.level)||3)),'Listen to the clip. Who is the artist?',art,`The song is "${e.title}."`,alts.join('|'),{spotify:id,audio:'',start:songStart(id,e),length:8,melody:'',bpm:100}]}).filter(Boolean);
   if(aq.length>=5)BANK.push({id:'spotify-artist',name:'Who Sings It?',clipByRow:true,q:aq});
   /* guess the song from its opening seconds; intros are harder, so each song counts one level higher */
   const iq=[['worship',wl,'worship song'],['hymns',hl,'hymn']].flatMap(([key,list,kind])=>(sp[key]||[]).map(e=>{const id=idFor(e,list);if(!id||!e.title)return null;
     return[Math.min(7,Math.max(1,(+e.level||3)+1)),`Listen to the intro. Name this ${kind}.`,String(e.title),e.artist?`Recorded by ${e.artist}.`:'',acc2(e),{spotify:id,audio:'',start:0,length:8,melody:'',bpm:100}]}).filter(Boolean));
   if(iq.length>=5)BANK.push({id:'spotify-intro',name:'Name That Intro',clipByRow:true,q:iq});
-  const lq=(sp.lyrics||[]).map(e=>{const id=idFor(e,hl),st=toSec(e.start),cut=toSec(e.cut);if(!id||st==null||cut==null||cut<=st||!e.lyric||!e.answer)return null;
+  const lq=(sp.lyrics||[]).map(e=>{const id=idFor(e,hl),tk=T[lyricKey(id,e.answer)]||{},st=tk.start??toSec(e.start),cut=tk.cut??toSec(e.cut);if(!id||st==null||cut==null||cut<=st||!e.lyric||!e.answer)return null;
     return[Math.min(7,Math.max(1,+e.level||3)),String(e.lyric),String(e.answer),'',(e.accept||[]).join('|'),{spotify:id,audio:'',start:st,length:Math.min(20,cut-st),melody:'',bpm:100}]}).filter(Boolean);
   /* lines with times play the real recording and join Finish the Lyric, replacing the built-in tune for the same line */
   if(lq.length){let fl=BANK.find(b=>b.name==='Finish the Lyric');if(!fl){fl={id:'finish-the-lyric',name:'Finish the Lyric',q:[]};BANK.push(fl)}
     const key=t=>String(t).toLowerCase().replace(/_{3,}/g,' ').replace(/[^a-z0-9 ]+/g,' ').replace(/\s+/g,' ').trim();const have=new Set(lq.map(x=>key(x[1])+'|'+key(x[2])));
     fl.q=fl.q.filter(x=>!have.has(key(x[1])+'|'+key(x[2]))).concat(lq)}
-})();
+}
+buildSpotify();
 const CLIP_SECONDS=[12,10,8,5,3];
 const PRESETS=[{id:'random',name:'Random categories'},{id:'pick',name:'Pick my own categories'}];
 
@@ -574,9 +591,11 @@ function applyState(st){
 /* ---------- render ---------- */
 function render(){
   document.body.classList.toggle('tv',view==='display');
-  $('#app').innerHTML=view==='role'?roleHTML():view==='setup'?setupHTML():view==='editor'?editorHTML():view==='host'?hostHTML():view==='display'?displayHTML():playerHTML();
+  document.body.classList.toggle('tuning',view==='tuner');if(view!=='tuner')Tuner.close();
+  $('#app').innerHTML=view==='tuner'?tunerHTML():view==='role'?roleHTML():view==='setup'?setupHTML():view==='editor'?editorHTML():view==='host'?hostHTML():view==='display'?displayHTML():playerHTML();
   if(view==='host'&&S&&(S.phase==='lobby'||showLobby))drawQR(joinLink(S.code),200);
   if(view==='display'&&PS&&PS.ph==='lobby')drawQR(joinLink(PS.code),260);
+  if(view==='tuner')Tuner.paint();
 }
 function refreshParts(){
   if(view!=='host'||!S)return;
@@ -586,6 +605,59 @@ function refreshParts(){
 function drawQR(text,size){const el=$('#qr');if(!el)return;el.innerHTML='';if(!window.QRCode){el.textContent='QR code unavailable';return}try{new QRCode(el,{text,width:size,height:size,colorDark:'#0b0e2c',colorLight:'#ffffff',correctLevel:QRCode.CorrectLevel.M})}catch{el.textContent='QR code unavailable'}}
 function header(sub){return `<div class="row"><div class="brand">Jeopardy Showdown<small>${esc(sub)}</small></div><div class="spacer"></div><div id="conn">${connHTML()}</div></div>`}
 
+/* ---------- Song Tuner: mark where each song's chorus starts, and where lyric lines start and cut ---------- */
+let tunerFrom='setup';
+const fmtT=t=>t==null?'—':Math.floor(t/60)+':'+String(Math.floor(t%60)).padStart(2,'0')+(t%1?'.'+Math.round((t%1)*10):'');
+function tunerItems(){const sp=QB.spotify;if(!sp)return[];const wl=linkList(sp.worshipLinks),hl=linkList(sp.hymnLinks),T=tuneGet();
+  const idFor=(e,list)=>spotifyId(e.link)||(e.n>0?list[e.n-1]||'':'');const out=[];
+  (sp.worship||[]).forEach(e=>{const id=idFor(e,wl);if(id)out.push({kind:'worship',id,key:'S:'+id,title:e.title,sub:e.artist,level:e.level,start:T['S:'+id]?.start??toSec(e.start),tuned:T['S:'+id]?.start!=null})});
+  (sp.hymns||[]).forEach(e=>{const id=idFor(e,hl);if(id)out.push({kind:'hymn',id,key:'S:'+id,title:e.title,sub:e.artist,level:e.level,start:T['S:'+id]?.start??toSec(e.start),tuned:T['S:'+id]?.start!=null})});
+  (sp.lyrics||[]).forEach(e=>{const id=idFor(e,hl);if(!id)return;const k=lyricKey(id,e.answer),t=T[k]||{},h=(sp.hymns||[]).find(x=>x.n===e.n);
+    out.push({kind:'lyric',id,key:k,title:h?h.title:'Hymn',sub:e.lyric,answer:e.answer,level:e.level,start:t.start??toSec(e.start),cut:t.cut??toSec(e.cut),tuned:t.start!=null||t.cut!=null})});
+  return out}
+const Tuner={ctl:null,pos:0,paused:true,sel:null,tab:'worship',stopT:null,
+  dock(){let d=$('#tunerdock');if(!d){d=document.createElement('div');d.id='tunerdock';d.className='dock';d.setAttribute('role','region');d.setAttribute('aria-label','Song Tuner player');
+      d.innerHTML='<div id="tunerctl"></div><div id="tunerplayer" style="border-radius:12px;overflow:hidden"></div>';document.body.appendChild(d)}return d},
+  open(it){this.sel=it;this.pos=0;const d=this.dock();d.hidden=false;
+    Spot.load(api=>{const uri='spotify:track:'+it.id;
+      if(!this.ctl){const el=document.createElement('div');$('#tunerplayer').appendChild(el);
+        api.createController(el,{uri,width:'100%',height:152},c=>{this.ctl=c;c.addListener('playback_update',e=>{const x=(e&&e.data)||{};this.pos=(x.position||0)/1000;this.paused=!!x.isPaused;const p=$('#tpos');if(p)p.textContent=fmtT(this.pos)})})}
+      else{try{this.ctl.loadUri(uri)}catch{}}})},
+  play(){try{this.paused&&this.pos>0&&this.ctl.resume?this.ctl.resume():this.ctl.play()}catch{}},
+  pause(){clearTimeout(this.stopT);try{this.ctl&&this.ctl.pause()}catch{}},
+  nudge(d){if(!this.ctl)return;const t=Math.max(0,this.pos+d);this.pos=t;try{this.ctl.seek(t)}catch{}const p=$('#tpos');if(p)p.textContent=fmtT(t)},
+  mark(field){const it=this.sel;if(!it)return;const T=tuneGet();const v=Math.max(0,Math.round(this.pos*10)/10);T[it.key]=Object.assign({},T[it.key],{[field]:v});tuneSet(T);
+    buildSpotify();this.sel=tunerItems().find(x=>x.key===it.key)||it;render()},
+  reset(){const it=this.sel;if(!it)return;const T=tuneGet();delete T[it.key];tuneSet(T);buildSpotify();this.sel=tunerItems().find(x=>x.key===it.key)||it;render()},
+  test(){const it=this.sel;if(!it||!this.ctl)return;const st=it.start??45,end=it.kind==='lyric'?it.cut:st+8;if(end==null||end<=st)return;
+    clearTimeout(this.stopT);try{this.ctl.play()}catch{}setTimeout(()=>{try{this.ctl.seek(st)}catch{}},350);
+    this.stopT=setTimeout(()=>{try{this.ctl.pause()}catch{}},(end-st)*1000+700)},
+  close(){const d=$('#tunerdock');if(d)d.hidden=true;this.pause()},
+  paint(){const el=$('#tunerctl');if(!el)return;const it=this.sel;
+    if(!it){el.innerHTML='<span class="note">Pick a song above to load it here.</span>';return}
+    const lyr=it.kind==='lyric';
+    el.innerHTML=`<div class="row"><div style="flex:1;min-width:0"><div class="eyebrow">${lyr?'Finish the Lyric':it.kind==='hymn'?'Name the Hymn':'Guess That Song'}</div><b>${esc(it.title)}</b>${it.sub?` <span class="muted">· ${lyr?clueText(it.sub):esc(it.sub)}</span>`:''}</div><span class="tpos" id="tpos">${fmtT(this.pos)}</span></div>
+    <div class="row"><button class="btn-sm" data-act="t-play">▶ Play</button><button class="btn-sm" data-act="t-pause">❚❚ Pause</button>
+      <button class="btn-sm" data-act="t-nudge" data-v="-5">−5s</button><button class="btn-sm" data-act="t-nudge" data-v="-1">−1s</button><button class="btn-sm" data-act="t-nudge" data-v="1">+1s</button><button class="btn-sm" data-act="t-nudge" data-v="5">+5s</button></div>
+    <div class="row">${lyr?`<button class="btn-gold btn-sm" data-act="t-mark" data-v="start">Line starts here</button><button class="btn-gold btn-sm" data-act="t-mark" data-v="cut">Cut here (right before “${esc(it.answer)}”)</button>`
+      :`<button class="btn-gold btn-sm" data-act="t-mark" data-v="start">Chorus starts here</button>`}
+      <button class="btn-sm" data-act="t-test">Test the clip</button><button class="btn-sm btn-ghost" data-act="t-reset">Reset</button></div>
+    <span class="note">${lyr?`Line starts: <b>${fmtT(it.start)}</b> · Cut: <b>${fmtT(it.cut)}</b>${it.start!=null&&it.cut!=null&&it.cut>it.start?' · ready':' · set both to use the real recording'}`:`Clip starts: <b>${fmtT(it.start??45)}</b>${it.tuned?'':' (default guess)'}`}. Play the song, pause or nudge to the right spot, then tap the gold button.</span>`}};
+function tunerExport(){const items=tunerItems().filter(x=>x.tuned);if(!items.length)return 'No times set yet.';
+  return items.map(x=>x.kind==='lyric'?`${x.title} (lyric "${x.answer}"): line ${fmtT(x.start)}, cut ${fmtT(x.cut)}`:`${x.title} (${x.sub||''}): chorus ${fmtT(x.start)}`).join('\n')}
+function tunerHTML(){
+  const all=tunerItems(),tabs=[['worship','Guess That Song'],['hymn','Name the Hymn'],['lyric','Finish the Lyric']],list=all.filter(x=>x.kind===Tuner.tab),done=list.filter(x=>x.kind==='lyric'?(x.start!=null&&x.cut!=null):x.tuned).length;
+  return `${header('Song Tuner')}
+  <div class="card"><span class="muted">Mark where each song’s chorus starts so clips play the part everyone knows. For Finish the Lyric, mark where the line starts and where to cut off, right before the missing word. Times are saved on this device and used in your games right away.</span>
+    <div class="row"><button class="btn-ghost btn-sm" data-act="t-back">Done</button><div class="spacer"></div><button class="btn-sm" data-act="t-copy">Copy all my times</button></div>
+    <textarea id="texport" hidden readonly rows="5" aria-label="Your saved times"></textarea>
+    <span class="note">Using the game on another device? Tap “Copy all my times” and send them to be saved into questions.js.</span></div>
+  <div class="seg">${tabs.map(([k,l])=>`<button class="${Tuner.tab===k?'sel':''}" data-act="t-tab" data-v="${k}">${l}</button>`).join('')}</div>
+  <span class="note">${done} of ${list.length} set${Tuner.tab==='lyric'?' (a line uses the real recording once both times are set)':''}.</span>
+  <div class="tlist">${list.length?list.map(x=>{const ok=x.kind==='lyric'?(x.start!=null&&x.cut!=null):x.tuned;return `<button class="titem ${Tuner.sel&&Tuner.sel.key===x.key?'sel':''}" data-act="t-pick" data-k="${esc(x.key)}">
+      <span class="pill" style="min-width:44px;justify-content:center">L${x.level}</span><span style="flex:1;min-width:0"><b>${esc(x.title)}</b> <span class="muted">${x.kind==='lyric'?clueText(x.sub):esc(x.sub||'')}</span></span>
+      <span class="${ok?'ok':'muted'}">${ok?'✓ '+(x.kind==='lyric'?fmtT(x.start)+'–'+fmtT(x.cut):fmtT(x.start)):(x.kind==='lyric'?'needs times':'0:45 guess')}</span></button>`}).join(''):'<span class="note">No songs with links yet.</span>'}</div>`;
+}
 function roleHTML(){
   return `${header('A Bible game show for youth & young adults')}
   <div class="grid2">
@@ -608,7 +680,7 @@ function setupHTML(){
       ${setup.preset==='pick'?`<span class="lbl">Pick 5 categories (${setup.pick.length}/5)</span><div class="catpick">${BANK.map(b=>`<button class="${setup.pick.includes(b.id)?'sel':''}" data-act="pickcat" data-v="${b.id}">${esc(b.name)}</button>`).join('')}</div>`:
 '<span class="note">Five random categories with random questions every game.</span>'}
       <span class="note">${BANK.length} categories loaded. Add your own categories and questions in the questions.js file.</span>
-      <div class="row"><button class="btn-sm" data-act="ed-new">Write a game from scratch</button></div>`
+      <div class="row"><button class="btn-sm" data-act="ed-new">Write a game from scratch</button><button class="btn-sm" data-act="tuner">Song Tuner: set chorus and lyric cut points</button></div>`
     :`${custom.length?`<div class="chips">${custom.map(c=>`<button class="chip ${setup.customId===c.id?'sel':''}" data-act="pickcustom" data-v="${esc(c.id)}">${esc(c.title)}</button>`).join('')}</div>
       <div class="row"><button class="btn-sm" data-act="ed-custom" ${setup.customId?'':'disabled'}>Edit this game</button><button class="btn-sm" data-act="ed-new">Write a new game</button></div>`
       :`<span class="note">No saved games yet. Write one from scratch, or start a game from the bank and tap “Edit questions” to save your own copy.</span><div><button class="btn-sm" data-act="ed-new">Write a game from scratch</button></div>`}`}
@@ -722,6 +794,7 @@ function hostHTML(){
     <button data-act="tmusic" aria-pressed="${S.tmusic!==false}">${S.tmusic!==false?'Timer music: on':'Timer music: off'}</button>
     <button data-act="sound" aria-pressed="${S.sound!==false}">${S.sound!==false?'Sounds: on':'Sounds: off'}</button>
     <button data-act="ed-host">Edit questions</button>
+    <button data-act="tuner">Song Tuner</button>
     <div class="spacer"></div><button class="btn-ghost" data-act="go-setup">New game</button><button class="btn-bad" data-act="end-game">End game</button>
   </div>
   ${confirmEnd?endConfirmHTML():''}
@@ -955,6 +1028,17 @@ document.addEventListener('click',e=>{
     case 'go-role':if(view!=='host')netClose();if(view==='display')Music.stop();view='role';render();break;
     case 'go-host':if(S)goHost();else{view='setup';render()}break;
     case 'go-setup':view='setup';confirmNew=false;render();window.scrollTo(0,0);break;
+    case 'tuner':tunerFrom=view;Clip.stop();setMusic(null);view='tuner';render();window.scrollTo(0,0);break;
+    case 't-back':view=tunerFrom==='host'&&S?'host':'setup';render();hostAudio();break;
+    case 't-tab':Tuner.tab=b.dataset.v;render();break;
+    case 't-pick':{const it=tunerItems().find(x=>x.key===b.dataset.k);if(it)Tuner.open(it);render();break}
+    case 't-play':Tuner.play();break;
+    case 't-pause':Tuner.pause();break;
+    case 't-nudge':Tuner.nudge(+b.dataset.v);break;
+    case 't-mark':Tuner.mark(b.dataset.v);break;
+    case 't-test':Tuner.test();break;
+    case 't-reset':Tuner.reset();break;
+    case 't-copy':{const txt=tunerExport();const ta=$('#texport');if(ta){ta.value=txt;ta.hidden=false}try{navigator.clipboard.writeText(txt).then(()=>{b.textContent='Copied'},()=>{ta&&ta.select()})}catch{ta&&ta.select()}break}
     case 'go-player':view='player';render();break;
     case 'go-display':view='display';if(D.step==='live'&&D.code){PS=null;PSkey='';clientOpen(D.code,'display');keepAwake()}render();break;
     case 'src':setup.source=b.dataset.v;if(setup.source==='custom'&&!setup.customId&&custom[0])setup.customId=custom[0].id;saveSetup();render();break;

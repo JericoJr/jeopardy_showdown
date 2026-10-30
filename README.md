@@ -58,6 +58,7 @@ In every mode, higher points always means a harder question.
   - **Who Sings It?:** a clip plays and players name the artist.
   - **Name That Intro:** the first few seconds of a worship song or hymn play, and players name the song.
   - **Finish the Lyric:** lines in the `lyrics` list play your hymn recording and cut off right before the missing word once you set their `start` and `cut` times in seconds.
+- **Song Tuner** (in setup and on the host screen): play each song and tap **Chorus starts here** so clips play the part everyone knows. For Finish the Lyric, tap **Line starts here** and **Cut here** right before the missing word, and the real recording then plays the line and stops at the blank. Times are saved on that device and used right away. To keep them for every device, tap **Copy all my times** and add them to `questions.js` (as `start` and `cut`).
 - The host sees the answer, including a Spotify song card, on the iPad. When the host reveals the answer, the TV board shows the same card.
 - For full songs, the browser on the TV board laptop should be logged into Spotify. Without a login, Spotify plays only 30-second previews, which may not include the part you picked. If a clip doesn't start, tap **Play clip again** on the host screen.
 
