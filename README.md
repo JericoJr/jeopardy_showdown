@@ -23,6 +23,8 @@ Every game uses the same scale: **100** is the easiest, **200** easy, **300** me
 
 ### Teams
 
+- **No phones needed:** the host can run the whole game alone. In the lobby, tap **Add 2 teams**, **Add 3** or **Add 4** (or type a team name and tap **Add team**), then type each player's name into their team's **Add a player's name** box. Rename teams in their name box. Start the game, pick clues and score everything from the host screen; the TV board shows the teams and names. Phones can still join the same game at any time.
+
 - Every player starts on their own team, named Team 1, Team 2, Team 3 in the order they join.
 - In the lobby, players can leave their team to join another one, or go back to playing solo. Teams can be any size, and sizes can differ.
 - Renaming a team is optional. Any player on the team, or the host, can do it.

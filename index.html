@@ -11,8 +11,8 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=Fraunces:opsz,wght@9..144,500;9..144,700&family=Figtree:wght@400;600;800&display=swap">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
-<script src="images.js?v=202610301745-71f232"></script>
-<script src="questions.js?v=202610301745-71f232"></script>
+<script src="images.js?v=202610301749-71f232"></script>
+<script src="questions.js?v=202610301749-71f232"></script>
 <style>
 html{{-webkit-text-size-adjust:100%}}
 body{{margin:0;padding-top:max(16px,env(safe-area-inset-top,0px))}}
@@ -380,7 +380,7 @@ if(!PRESETS.some(p=>p.id===setup.preset))setup.preset='random';
 setup.pick=(setup.pick||[]).filter(id=>BANK.some(b=>b.id===id));
 let spotOpen=false,volOpen=false,netOpen=false,cidDraft='';
 /* TV board size, remembered on the TV laptop: 90% by default so nothing gets cut off on a TV */
-const APP_VERSION='202610301745-71f232';
+const APP_VERSION='202610301749-71f232';
 const TV_SIZES=[0.7,0.75,0.8,0.85,0.9,0.95,1];
 const tvSize=()=>{const v=+D.tvSize;return TV_SIZES.includes(v)?v:0.9};
 function applyTvSize(){const z=view==='display'?tvSize():1;try{document.body.style.setProperty('--tvz',z)}catch{}}
@@ -1269,7 +1269,7 @@ function playersHTML(){
   return `<span class="note">${on.length} online, ${all.length} joined${loose.length?` · No team yet: ${esc(loose.map(p=>S.members[p].name).join(', '))}`:''}</span>`;
 }
 function playerChip(pid,name){
-  const on=onlinePids().includes(pid);
+  const on=onlinePids().includes(pid)||!!(S.members[pid]&&S.members[pid].local);
   return `<span class="pill" style="${on?'':'opacity:.55'}">${esc(name)}<select class="mv" data-mv="${esc(pid)}" aria-label="Move ${esc(name)}" style="width:auto;padding:2px 6px;font-size:12px">
     <option value="">Move to…</option>${S.teams.map(t=>`<option value="${t.id}">${esc(t.name)}</option>`).join('')}<option value="-">No team</option><option value="x">Remove player</option></select></span>`;
 }
@@ -1279,8 +1279,9 @@ function lobbyTeamsHTML(){
   return `${S.teams.length?`<div class="grid2">${S.teams.map((t,i)=>{const ms=members(i);return `<div class="spot ${needName(i)?'mine':''}"><div class="row"><h3 style="flex:1;min-width:0">${esc(t.name)}</h3><button class="btn-sm btn-ghost" data-act="rm-team" data-id="${t.id}" aria-label="Delete ${esc(t.name)}">Delete</button></div>
     <span class="muted">${ms.length}${cap?` / ${cap}`:''} player${ms.length===1?'':'s'}${needName(i)?' · <span class="no">needs a team name</span>':''}</span>
     <input id="tn-${t.id}" data-rename="${t.id}" maxlength="24" value="${t.custom===false?'':esc(t.name)}" placeholder="Rename (optional)" aria-label="Team name">
-    <div class="row" style="gap:6px">${ms.length?ms.map(m=>playerChip(m.pid,m.name)).join(''):'<span class="muted">Waiting for players…</span>'}</div></div>`}).join('')}</div>`
-    :'<span class="note">No teams yet. Each player gets their own team when they join.</span>'}
+    <div class="row" style="gap:6px">${ms.length?ms.map(m=>playerChip(m.pid,m.name)).join(''):'<span class="muted">No players yet</span>'}</div>
+    <div class="row" style="gap:6px"><input id="an-${t.id}" maxlength="20" placeholder="Add a player’s name" style="flex:1;min-width:0" aria-label="Add a player to ${esc(t.name)}"><button class="btn-sm" data-act="add-name" data-id="${t.id}">Add</button></div></div>`}).join('')}</div>`
+    :'<span class="note">No teams yet. Players who join on a phone get their own team, or add teams yourself below.</span>'}
   ${loose.length?`<div class="col"><span class="lbl">Not on a team yet</span><div class="row" style="gap:6px">${loose.map(([p,m])=>playerChip(p,m.name)).join('')}</div></div>`:''}
   <div id="plist">${playersHTML()}</div>`;
 }
@@ -1296,7 +1297,8 @@ function lobbyHTML(inOverlay){
       <button class="btn-sm" data-act="mix" data-n="0" ${S.teams.length>=2?'':'disabled'}>Shuffle players across these teams</button>
       <button class="btn-sm" data-act="mix" data-n="2">Make 2 random teams</button><button class="btn-sm" data-act="mix" data-n="3">Make 3</button><button class="btn-sm" data-act="mix" data-n="4">Make 4</button></div>
     <div id="lobbyteams" class="col">${lobbyTeamsHTML()}</div>
-    <div class="row"><input id="newteam" maxlength="24" placeholder="Add an empty team (name optional)" style="flex:1;min-width:0" aria-label="New team name"><button class="btn-sm" data-act="add-team">Add team</button></div>
+    <div class="row"><input id="newteam" maxlength="24" placeholder="New team name (optional)" style="flex:1;min-width:0" aria-label="New team name"><button class="btn-sm" data-act="add-team">Add team</button></div>
+    <div class="row"><span class="note"><b style="color:var(--text)">No phones?</b> Make the teams yourself, then type each player’s name into their team. You run the whole game and score it from here.</span><div class="spacer"></div><button class="btn-sm" data-act="quick-teams" data-n="2">Add 2 teams</button><button class="btn-sm" data-act="quick-teams" data-n="3">Add 3</button><button class="btn-sm" data-act="quick-teams" data-n="4">Add 4</button></div>
     <span class="note">Every player starts on their own team (Team 1, Team 2, ...). Teams can be any size, and players can leave their team to join another. Renaming a team is optional.</span></div>
   <div class="row">${inOverlay?'<button class="btn-gold" data-act="hide-lobby">Back to the board</button>':`<button class="btn-ghost" data-act="go-setup">Change setup</button><div class="spacer"></div><span class="note">${esc(startProblem())}</span><button class="btn-bad btn-sm" data-act="end-game">End game</button><button class="btn-gold" data-act="begin" ${startProblem()?'disabled':''}>Start the game</button>`}</div>
   ${confirmEnd?endConfirmHTML():''}`;
@@ -1655,6 +1657,9 @@ document.addEventListener('click',e=>{
     case 'show-lobby':showLobby=true;render();break;
     case 'hide-lobby':showLobby=false;render();break;
     case 'copy':{const inp=$('#joinlink');try{navigator.clipboard.writeText(joinLink(S.code)).then(()=>{b.textContent='Copied'},()=>{inp.select()})}catch{inp&&inp.select()}break}
+    case 'add-name':{const id=b.dataset.id,inp=$('#an-'+id),name=short(inp?inp.value:'',20);if(!name||teamIdx(id)<0){inp&&inp.focus();return}
+      S.members['h-'+uid()]={name,team:id,local:true};if(inp)inp.value='';commit();setTimeout(()=>{const x=$('#an-'+id);x&&x.focus()},30);break}
+    case 'quick-teams':{const n=+b.dataset.n;for(let k=0;k<n;k++)addTeam('',false);commit();break}
     case 'add-team':{const inp=$('#newteam');const t=addTeam(inp?inp.value:'');if(!t){inp&&inp.focus();return}if(inp)inp.value='';commit();break}
     case 'rm-team':{const id=b.dataset.id;if(S.phase!=='lobby'&&S.teams.find(t=>t.id===id)?.score){if(confirmRm!==id){confirmRm=id;b.textContent='Tap again to delete';return}}
       confirmRm=null;const k=teamIdx(id);if(k<0)return;Object.values(S.members).forEach(m=>{if(m.team===id)m.team=null});S.teams.splice(k,1);if(S.turn>=S.teams.length)S.turn=0;commit();break}
@@ -1798,6 +1803,7 @@ document.addEventListener('keydown',e=>{
   const id=e.target.id;if(e.key!=='Enter')return;
   const map={'p-code':'p-join','p-name':'p-join','d-code':'d-code','newteam':'add-team','p-newteam':'p-create'};
   if(map[id]){e.preventDefault();$(`[data-act="${map[id]}"]`)?.click()}
+  else if(id&&id.startsWith('an-')){e.preventDefault();$(`[data-act="add-name"][data-id="${id.slice(3)}"]`)?.click()}
 });
 /* resume as a player or board after a reload */
 if(view==='role'&&D.step==='live'&&D.code&&!S){/* wait for a tap; avoid auto-joining */}
