@@ -11,11 +11,21 @@ A free Bible quiz game show for youth groups and young adults. The host runs the
 
 ## Running a game
 
-1. **Host (iPad):** open the site, tap **Host a game**, choose your rules, then tap **Create game**. Every new game picks 5 random categories with random questions.
+1. **Host (iPad):** open the site, tap **Host a game**, choose a difficulty and your rules, then tap **Create game**. Every new game picks 5 random categories with random questions.
 2. **TV board (laptop on AirPlay):** open the site, tap **Show the board**, enter the 4-letter code, then tap **Full screen**. Music and sound effects play from this screen.
 3. **Players (any phone):** scan the QR code on the TV and enter a name. Scanning always opens the game for that code, even if the phone was in an earlier game. Each player starts on their own team and can join another team in the lobby.
 4. When you're ready, the host taps **Start the game**. You can start with no teams or players; anyone who joins later gets their own team.
 5. When you're done, the host taps **End game**, which sends every player and the TV board back to the start screen.
+
+### Difficulty modes
+
+| Mode | 100 | 200 | 300 | 400 | 500 | Good for |
+|---|---|---|---|---|---|---|
+| **All levels** | easy | easy | medium | hard | hard | mixed groups and newcomers |
+| **Intermediate** | easy | medium | hard | hard | expert | teens who know their Bible |
+| **Expert** | hard | hard | expert | expert | expert | Bible buffs and leaders |
+
+In every mode, higher points always means a harder question.
 
 ### Teams
 
@@ -61,10 +71,10 @@ Each category looks like this:
 },
 ```
 
-- **level** is 1 to 5: 1 is easiest (the 100 row) and 5 is hardest (the 500 row).
+- **level** is 1 to 7: 1–2 easy, 3 medium, 4–5 hard, 6–7 expert. "All levels" games use levels 1–5, and Intermediate and Expert games use the harder levels.
 - **hint** is optional. The host can show it to players.
 - **accept** is optional: other answers that count as correct when players type their answers.
-- Give each category at least one question per level. Two or more per level means more variety between games.
+- Give each category at least one question for each level from 1 to 5, plus a few at 6–7 so it can appear in Expert games. Two or more per level means more variety between games.
 - Final round questions are in the `finals` list at the bottom of the file.
 - **Audio:** add `melody` (notes like `"C4:1 E4:1 G4:2"`) and `bpm`, or `audio` (a sound file you uploaded to the repo, like `"songs/clip.mp3"`) with `start` and `length` in seconds. Use clips you have the right to play.
 - **Lyrics:** write three or more underscores `___` where the missing word goes, and the game shows an underlined blank.

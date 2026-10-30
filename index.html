@@ -161,7 +161,7 @@ const QB=window.QUESTION_BANK||{categories:[],finals:[]};
 const media=q=>(q.audio||q.melody)?{audio:q.audio?String(q.audio):'',start:+q.start||0,length:Math.min(20,Math.max(2,+q.length||8)),melody:q.melody?String(q.melody):'',bpm:+q.bpm||100}:null;
 const acc=x=>(Array.isArray(x)?x:String(x||'').split('|')).map(v=>String(v).trim()).filter(Boolean).join('|');
 const BANK=(QB.categories||[]).filter(c=>c&&c.name&&Array.isArray(c.questions)).map((c,i)=>({id:String(c.name).toLowerCase().replace(/[^a-z0-9]+/g,'-')+'-'+i,name:String(c.name),
-  q:c.questions.filter(q=>q&&q.question&&q.answer).map(q=>[Math.min(5,Math.max(1,parseInt(q.level,10)||3)),String(q.question),String(q.answer),String(q.hint||''),acc(q.accept),media(q)])})).filter(c=>c.q.length);
+  q:c.questions.filter(q=>q&&q.question&&q.answer).map(q=>[Math.min(7,Math.max(1,parseInt(q.level,10)||3)),String(q.question),String(q.answer),String(q.hint||''),acc(q.accept),media(q)])})).filter(c=>c.q.length);
 const FINALS=(QB.finals||[]).filter(f=>f&&f.question&&f.answer).map(f=>[String(f.category||'Final Round'),String(f.question),String(f.answer),String(f.hint||''),acc(f.accept)]);
 if(!FINALS.length)FINALS.push(['The Disciples','Before following Jesus, this disciple was a tax collector. The first Gospel carries his name.','Matthew','He was also called Levi.','matthew|levi']);
 const PRESETS=[{id:'random',name:'Random categories'},{id:'pick',name:'Pick my own categories'}];
@@ -182,12 +182,20 @@ function newCode(){const L='ABCDEFGHJKLMNPQRSTUVWXYZ';let s='';for(let i=0;i<4;i
 const BASE=location.href.split('#')[0];
 const joinLink=code=>BASE+'#'+code;
 const PREFIX='scripture-showdown-v1-';
-function buildBoard(catIds){
-  return{title:'Jeopardy Showdown',cats:catIds.map(id=>{const b=BANK.find(x=>x.id===id);return{name:b.name,bank:id,clues:pickClues(b)}}),
+/* difficulty modes: which question level goes on each row (100 to 500) */
+const LEVELS={all:[1,2,3,4,5],inter:[2,3,4,5,6],expert:[4,5,6,6,7]};
+const LEVEL_NAMES={all:'All levels',inter:'Intermediate',expert:'Expert'};
+/* random categories, preferring ones with enough questions at the levels this mode needs */
+function exactRows(b,lv){const used=new Set();let n=0;lv.forEach(d=>{const k=b.q.findIndex((q,i)=>!used.has(i)&&q[0]===d);if(k>=0){used.add(k);n++}});return n}
+function randomCats(mode){const lv=LEVELS[mode]||LEVELS.all;
+  for(const need of [5,4,3]){const ok=BANK.filter(b=>exactRows(b,lv)>=need);if(ok.length>=5)return shuffle(ok.map(b=>b.id)).slice(0,5)}
+  return shuffle(BANK.map(b=>b.id)).slice(0,5)}
+function buildBoard(catIds,mode){const lv=LEVELS[mode]||LEVELS.all;
+  return{title:'Jeopardy Showdown',levels:lv,cats:catIds.map(id=>{const b=BANK.find(x=>x.id===id);return{name:b.name,bank:id,clues:pickClues(b,lv)}}),
     final:(f=>({cat:f[0],q:f[1],a:f[2],h:f[3],alt:f[4]}))(rnd(FINALS))};
 }
-function pickClues(b){const used=new Set();return [1,2,3,4,5].map(d=>{let best=null;
-  for(let dist=0;dist<5&&!best;dist++){const pool=b.q.filter((q,k)=>!used.has(k)&&Math.abs(q[0]-d)===dist);if(pool.length)best=rnd(pool)}
+function pickClues(b,lv){const used=new Set();return (lv||LEVELS.all).map(d=>{let best=null;
+  for(let dist=0;dist<7&&!best;dist++){for(const lvl of (d>=4?[d+dist,d-dist]:[d-dist,d+dist])){const pool=b.q.filter((q,k)=>!used.has(k)&&q[0]===lvl);if(pool.length){best=rnd(pool);break}}}
   if(!best)best=rnd(b.q);used.add(b.q.indexOf(best));return mkClue(best)})}
 const norm=s=>String(s||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/\([^)]*\)/g,' ').replace(/&/g,' and ').replace(/[^a-z0-9 ]+/g,' ')
   .replace(/^\s*(what|who|where|when)\s+(is|are|was|were)\s+/,'').replace(/\b(the|a|an)\b/g,' ').replace(/\s+/g,' ').trim();
@@ -200,7 +208,7 @@ function judge(text,clue){
 }
 
 /* ---------- local state ---------- */
-const DEF_SET={mode:'turns',answers:'voice',auto:true,timer:30,autoTimer:true,hintHalf:true,wrongLose:false,cap:0,dd:1,playersCreate:true};
+const DEF_SET={level:'all',mode:'turns',answers:'voice',auto:true,timer:30,autoTimer:true,hintHalf:true,wrongLose:false,cap:0,dd:1,playersCreate:true};
 let custom=store.get('ssw.custom',[]);
 let S=store.get('ssw.host',null);
 let setup=Object.assign({preset:'random',pick:[],source:'bank',customId:null,settings:clone(DEF_SET)},store.get('ssw.setup',{}));
@@ -413,8 +421,8 @@ function createGame(){
   let g;
   if(setup.source==='custom'){const c=custom.find(x=>x.id===setup.customId);if(!c)return;g=clone(c)}
   else{let ids;const pr=PRESETS.find(p=>p.id===setup.preset);
-    if(setup.preset==='pick')ids=setup.pick.slice(0,5);else if(pr&&pr.cats)ids=pr.cats;else ids=shuffle(BANK.map(b=>b.id)).slice(0,5);
-    if(ids.length<5)return;g=buildBoard(ids);if(pr&&pr.cats)g.title=pr.name}
+    if(setup.preset==='pick')ids=setup.pick.slice(0,5);else if(pr&&pr.cats)ids=pr.cats;else ids=randomCats(setup.settings.level);
+    if(ids.length<5)return;g=buildBoard(ids,setup.settings.level);if(pr&&pr.cats)g.title=pr.name}
   const dds=[];while(dds.length<setup.settings.dd){const c=Math.floor(Math.random()*5),r=1+Math.floor(Math.random()*4);if(!dds.some(d=>d[0]===c&&d[1]===r))dds.push([c,r])}
   const keep=S&&S.phase==='lobby'?S:null;
   S={code:keep?.code||newCode(),game:g,settings:clone(setup.settings),teams:keep?.teams||[],members:keep?.members||{},phase:'lobby',used:[0,1,2,3,4].map(()=>[0,0,0,0,0]),dds,
@@ -562,6 +570,8 @@ function setupHTML(){
   </div>
   <div class="card">
     <h2>3. How to play</h2>
+    <div class="opt"><span class="lbl">Difficulty</span>${segHTML('level',[['all','All levels'],['inter','Intermediate'],['expert','Expert']])}
+      <span class="note">${st.level==='expert'?'Hard to expert questions on every row: deep-cut names, places and verses for Bible buffs.':st.level==='inter'?'Starts at easy-medium and climbs to expert at 500. Good for teens who know their Bible.':'100 is easy, 300 is medium and 500 is hard. Good for mixed groups and newcomers.'}</span></div>
     <div class="opt"><span class="lbl">Who answers</span>${segHTML('mode',[['turns','Teams take turns'],['buzz','Buzz in (fastest team)']])}
       <span class="note">${st.mode==='turns'?'The team whose turn it is picks a clue and answers. If they miss, pass it to the next team to steal.':'Everyone can buzz in. The first team to buzz answers; if they miss, the other teams can buzz again.'}</span></div>
     <div class="opt"><span class="lbl">How players answer</span>${segHTML('answers',[['voice','Say it out loud, host scores'],['typed','Type it on a phone']])}</div>
@@ -651,7 +661,7 @@ function hostHTML(){
   const allUsed=S.used.every(c=>c.every(Boolean));
   return `<div class="row"><div><div class="eyebrow">Jeopardy Showdown · host</div><h1 style="font-family:var(--f-display);font-weight:400;font-size:clamp(24px,4vw,38px);letter-spacing:.02em;text-transform:uppercase">${esc(g.title)}</h1></div><div class="spacer"></div>
     <button class="btn-sm" data-act="show-lobby">Code ${esc(S.code)} · teams & QR</button><div id="conn">${connHTML()}</div></div>
-  <div class="turnbar"><span class="eyebrow">${S.settings.mode==='turns'?'Picking now':'Picks the next clue'}</span><b>${esc(S.teams[S.turn]?.name||'No teams yet')}</b><span class="spacer"></span><span class="note">${S.settings.mode==='turns'?'Teams take turns':'Buzz-in mode'} · ${S.settings.answers==='typed'?'typed answers'+(S.settings.auto?', auto-scored':''):'answers out loud'}</span></div>
+  <div class="turnbar"><span class="eyebrow">${S.settings.mode==='turns'?'Picking now':'Picks the next clue'}</span><b>${esc(S.teams[S.turn]?.name||'No teams yet')}</b><span class="spacer"></span><span class="note">${esc(LEVEL_NAMES[S.settings.level]||'All levels')} · ${S.settings.mode==='turns'?'Teams take turns':'Buzz-in mode'} · ${S.settings.answers==='typed'?'typed answers'+(S.settings.auto?', auto-scored':''):'answers out loud'}</span></div>
   <div class="scores" id="scores">${scoresInner(true)}</div>
   ${boardHTML(g.cats,S.used,true)}
   <div class="row">
@@ -946,8 +956,8 @@ document.addEventListener('click',e=>{
     case 't-pause':S.tmr.left=tLeft();S.tmr.run=false;commit();break;
     case 't-resume':S.tmr.end=Date.now()+S.tmr.left;S.tmr.run=true;S.timeUp=false;commit();break;
     case 't-reset':resetTimer(false);commit();break;
-    case 'swap':{if(curClue()?.m)clipCmd('stop');const c=S.cur,cat=S.game.cats[c.c],d=c.r+1,curQ=curClue().q;let pool=[];
-      const b0=cat.bank&&BANK.find(x=>x.id===cat.bank);if(b0)pool=b0.q.filter(q=>q[0]===d&&q[1]!==curQ).map(q=>({x:q,from:null}));
+    case 'swap':{if(curClue()?.m)clipCmd('stop');const c=S.cur,cat=S.game.cats[c.c],d=(S.game.levels||LEVELS.all)[c.r],curQ=curClue().q;let pool=[];const onBoard=new Set(cat.clues.map(x=>x.q));
+      const b0=cat.bank&&BANK.find(x=>x.id===cat.bank);if(b0)for(let dist=0;dist<2&&!pool.length;dist++)pool=b0.q.filter(q=>Math.abs(q[0]-d)===dist&&!onBoard.has(q[1])).map(q=>({x:q,from:null}));
       if(!pool.length)BANK.forEach(bk=>bk.q.forEach(q=>{if(q[0]===d&&q[1]!==curQ)pool.push({x:q,from:bk.name})}));
       const pk=rnd(pool);const nc=mkClue(pk.x);if(pk.from&&pk.from!==cat.name)nc.from=pk.from;cat.clues[c.r]=nc;S.hint=false;newEpoch();S.scored={};resetTimer(S.settings.autoTimer);if(nc.m)clipCmd('play');commit();break}
     case 'buzz-open':S.buzzOpen=true;commit();break;
