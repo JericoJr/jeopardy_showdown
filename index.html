@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
+<meta http-equiv="Cache-Control" content="no-cache">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0b0e2c">
 <meta name="description" content="Jeopardy Showdown: a free Bible quiz game show for youth groups. Host on a tablet, show the board on a TV, and play on any phone.">
@@ -10,8 +11,8 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=Fraunces:opsz,wght@9..144,500;9..144,700&family=Figtree:wght@400;600;800&display=swap">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
-<script src="images.js"></script>
-<script src="questions.js"></script>
+<script src="images.js?v=202610301659"></script>
+<script src="questions.js?v=202610301659"></script>
 <style>
 html{{-webkit-text-size-adjust:100%}}
 body{{margin:0;padding-top:max(16px,env(safe-area-inset-top,0px))}}
@@ -376,6 +377,7 @@ if(!PRESETS.some(p=>p.id===setup.preset))setup.preset='random';
 setup.pick=(setup.pick||[]).filter(id=>BANK.some(b=>b.id===id));
 let spotOpen=false,volOpen=false,cidDraft='';
 /* TV board size, remembered on the TV laptop: 90% by default so nothing gets cut off on a TV */
+const APP_VERSION='202610301659';
 const TV_SIZES=[0.7,0.75,0.8,0.85,0.9,0.95,1];
 const tvSize=()=>{const v=+D.tvSize;return TV_SIZES.includes(v)?v:0.9};
 function applyTvSize(){const z=view==='display'?tvSize():1;try{document.body.style.setProperty('--tvz',z)}catch{}}
@@ -1531,7 +1533,7 @@ function displayHTML(){
       <button class="btn-ghost btn-sm" data-act="go-role">Back</button></div>`;
   const st=PS;
   const bar=`<div class="row"><span class="eyebrow">${esc(st?.title||'Jeopardy Showdown')} · Join with code <b style="color:var(--gold)">${esc(D.code)}</b></span><div class="spacer"></div><div id="conn">${connHTML()}</div>
-    <span id="sndwarn"></span><button class="btn-sm btn-ghost" data-act="d-sound">${D.mute?'Sound: off':'Sound: on'}</button>${canFull()?`<button class="btn-sm btn-ghost" data-act="fs">${isFull()?'Exit full screen':'⛶ Full screen'}</button>`:''}<span class="tvsize" role="group" aria-label="Board size"><button class="btn-sm btn-ghost" data-act="tv-smaller" aria-label="Smaller">−</button><span class="note">Size ${Math.round(tvSize()*100)}%</span><button class="btn-sm btn-ghost" data-act="tv-bigger" aria-label="Bigger">+</button></span><button class="btn-sm btn-ghost" data-act="d-leave">Exit</button></div>${tvSpotCardHTML()}`;
+    <span id="sndwarn"></span><button class="btn-sm btn-ghost" data-act="d-sound">${D.mute?'Sound: off':'Sound: on'}</button>${canFull()?`<button class="btn-sm btn-ghost" data-act="fs">${isFull()?'Exit full screen':'⛶ Full screen'}</button>`:''}<span class="tvsize" role="group" aria-label="Board size"><button class="btn-sm btn-ghost" data-act="tv-smaller" aria-label="Smaller">−</button><span class="note">Size ${Math.round(tvSize()*100)}%</span><button class="btn-sm btn-ghost" data-act="tv-bigger" aria-label="Bigger">+</button></span><button class="btn-sm btn-ghost" data-act="d-leave">Exit</button><span class="muted" style="font-size:10px" title="Game version">v${APP_VERSION}</span></div>${tvSpotCardHTML()}`;
   if(!st)return `${bar}<div class="tvbox"><div class="big-status">${net==='live'?'Loading…':'Connecting to the host…'}</div>${netNote()}</div>`;
   const scores=`<div class="scores">${st.teams.map((t,i)=>`<div class="team ${st.hi===i?'turn':''}">${st.hi===i?`<span class="badge">${st.ph==='clue'&&st.clue&&st.clue.who===i?'Answering':st.ph==='board'?'Picking':'Their turn'}</span>`:''}<span class="nm">${esc(t.name)}</span><span class="sc ${t.score<0?'neg':''}">${t.score}</span><span class="mem">${esc((t.m||[]).map(m=>m.n).join(', '))}</span></div>`).join('')}</div>`;
   let main='';
