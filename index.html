@@ -158,10 +158,12 @@ body.tv .qr img,body.tv .qr canvas{width:260px;height:260px}
 const VALUES=[100,200,300,400,500];
 /* ---------- question bank: edit questions.js to add categories and questions ---------- */
 const QB=window.QUESTION_BANK||{categories:[],finals:[]};
-const media=q=>(q.audio||q.melody)?{audio:q.audio?String(q.audio):'',start:+q.start||0,length:Math.min(20,Math.max(2,+q.length||8)),melody:q.melody?String(q.melody):'',bpm:+q.bpm||100}:null;
+/* accepts a Spotify share link, a spotify:track: URI, or a bare track ID */
+const spotifyId=v=>{const m=/(?:track[\/:])([A-Za-z0-9]{22})/.exec(String(v||''))||/^([A-Za-z0-9]{22})$/.exec(String(v||'').trim());return m?m[1]:''};
+const media=q=>(q.audio||q.melody||spotifyId(q.spotify))?{spotify:spotifyId(q.spotify),audio:q.audio?String(q.audio):'',start:+q.start||0,length:Math.min(20,Math.max(2,+q.length||8)),melody:q.melody?String(q.melody):'',bpm:+q.bpm||100}:null;
 const acc=x=>(Array.isArray(x)?x:String(x||'').split('|')).map(v=>String(v).trim()).filter(Boolean).join('|');
 const BANK=(QB.categories||[]).filter(c=>c&&c.name&&Array.isArray(c.questions)).map((c,i)=>({id:String(c.name).toLowerCase().replace(/[^a-z0-9]+/g,'-')+'-'+i,name:String(c.name),
-  q:c.questions.filter(q=>q&&q.question&&q.answer).map(q=>[Math.min(7,Math.max(1,parseInt(q.level,10)||3)),String(q.question),String(q.answer),String(q.hint||''),acc(q.accept),media(q)])})).filter(c=>c.q.length);
+  q:c.questions.filter(q=>q&&q.question&&q.answer&&!('spotify' in q&&!spotifyId(q.spotify))).map(q=>[Math.min(7,Math.max(1,parseInt(q.level,10)||3)),String(q.question),String(q.answer),String(q.hint||''),acc(q.accept),media(q)])})).filter(c=>c.q.length);
 const FINALS=(QB.finals||[]).filter(f=>f&&f.question&&f.answer).map(f=>[String(f.category||'Final Round'),String(f.question),String(f.answer),String(f.hint||''),acc(f.accept)]);
 if(!FINALS.length)FINALS.push(['The Disciples','Before following Jesus, this disciple was a tax collector. The first Gospel carries his name.','Matthew','He was also called Levi.','matthew|levi']);
 const PRESETS=[{id:'random',name:'Random categories'},{id:'pick',name:'Pick my own categories'}];
@@ -276,12 +278,28 @@ function noteFreq(n){const m=/^([A-Ga-g])([#b]?)(-?\d)$/.exec(String(n||''));if(
 /* audio clips for song questions: a built-in melody or a sound file, cut off after a few seconds */
 const Clip={timer:null,el:null,bus:null,playing:false,
   play(m){this.stop();if(!m)return;const len=Math.min(20,Math.max(2,+m.length||8));this.playing=true;if(Music.on)Music.stop();
+    if(m.spotify){Spot.play(m.spotify,m.start,len);this.timer=setTimeout(()=>this.stop(),(len+4)*1000);return}
     if(m.audio){try{const el=new Audio(m.audio);this.el=el;const go=()=>{try{el.currentTime=+m.start||0}catch{}el.play().catch(()=>{})};el.addEventListener('loadedmetadata',go,{once:true});el.load()}catch{}}
     else if(m.melody){const ac=audio();if(ac){this.bus=ac.createGain();this.bus.gain.value=1;this.bus.connect(ac.destination);const beat=60/(+m.bpm||100);let t=ac.currentTime+0.08;
       for(const tok of String(m.melody).trim().split(/\s+/)){const [n,d]=tok.split(':');const dur=(parseFloat(d)||1)*beat;const f=noteFreq(n);
         if(f){tone(ac,f,t,Math.max(.08,dur*.92),'triangle',.42,this.bus);tone(ac,f*2,t,Math.max(.06,dur*.4),'sine',.05,this.bus)}t+=dur;if(t-ac.currentTime>len)break}}}
     this.timer=setTimeout(()=>this.stop(),len*1000)},
-  stop(){clearTimeout(this.timer);this.timer=null;if(this.el){try{this.el.pause()}catch{}this.el=null}try{this.bus&&this.bus.disconnect()}catch{}this.bus=null;const was=this.playing;this.playing=false;if(was){hostAudio();displayAudio()}}};
+  stop(){clearTimeout(this.timer);this.timer=null;Spot.stop();if(this.el){try{this.el.pause()}catch{}this.el=null}try{this.bus&&this.bus.disconnect()}catch{}this.bus=null;const was=this.playing;this.playing=false;if(was){hostAudio();displayAudio()}}};
+const Spot={api:null,ctl:null,waiting:[],loading:false,p:null,seeked:false,t:null,
+  load(cb){if(this.api)return cb(this.api);this.waiting.push(cb);if(this.loading)return;this.loading=true;
+    window.onSpotifyIframeApiReady=api=>{this.api=api;this.waiting.splice(0).forEach(f=>f(api))};
+    const sc=document.createElement('script');sc.src='https://open.spotify.com/embed/iframe-api/v1';sc.async=true;document.body.appendChild(sc)},
+  play(id,start,len){this.p={id,start:+start||0,len};this.seeked=false;
+    this.load(api=>{const uri='spotify:track:'+id;if(!this.p)return;
+      if(!this.ctl){let w=document.getElementById('spotwrap');if(!w){w=document.createElement('div');w.id='spotwrap';w.setAttribute('aria-hidden','true');
+          w.style.cssText='position:fixed;left:0;bottom:0;width:300px;height:80px;opacity:0;pointer-events:none;z-index:-1;overflow:hidden';document.body.appendChild(w)}
+        const el=document.createElement('div');w.appendChild(el);
+        api.createController(el,{uri,width:300,height:80},ctl=>{this.ctl=ctl;ctl.addListener('playback_update',e=>this.update(e));ctl.addListener('ready',()=>this.go());this.go()})}
+      else{try{this.ctl.loadUri(uri)}catch{}setTimeout(()=>this.go(),300)}})},
+  go(){if(!this.ctl||!this.p)return;try{this.ctl.play()}catch{}},
+  update(e){const p=this.p,d=(e&&e.data)||{};if(!p||this.seeked||d.isPaused||d.isBuffering)return;this.seeked=true;
+    if(p.start>0)try{this.ctl.seek(p.start)}catch{};clearTimeout(this.t);this.t=setTimeout(()=>this.stop(),(p.len+(p.start>0?0.7:0))*1000)},
+  stop(){clearTimeout(this.t);this.t=null;this.p=null;try{this.ctl&&this.ctl.pause()}catch{}}};
 let hostClipN=null;
 function hostClip(){if(view!=='host'||!S||!S.clip)return;if(S.clip.n===hostClipN)return;hostClipN=S.clip.n;if(displayOn()||S.sound===false)return;if(S.clip.act==='play'){const cl=curClue();cl&&cl.m&&Clip.play(cl.m)}else Clip.stop()}
 function clipCmd(act){S.clip={n:(S.clip?.n||0)+1,act}}
@@ -728,7 +746,7 @@ function clueOverlay(){
     <div class="row"><span class="eyebrow">${esc(g.cats[c.c].name)} · ${dd?'Daily Double · wager '+val:val+' points'}${cl.from?` · from ${esc(cl.from)}`:''}</span><div class="spacer"></div>
       ${!S.revealed&&!dd?'<button class="btn-sm btn-ghost" data-act="swap">Swap for a random question</button>':''}<button class="btn-gold" data-act="close">Back to board</button></div>
     <div class="cluebox">${cl.m?'<div class="cliptag">♪ Audio clip</div>':''}<div class="clue">${clueText(cl.q)}</div>${S.hint&&cl.h?`<div class="hint">Hint: ${esc(cl.h)}</div>`:''}</div>
-    ${cl.m?`<div class="row"><span class="note" style="flex:1;min-width:0">♪ This clue has an audio clip. It plays ${displayOn()?'on the TV board':'on this device'} when the clue opens.</span><button class="btn-sm btn-gold" data-act="clip-play">Play clip again</button><button class="btn-sm" data-act="clip-stop">Stop</button></div>`:''}
+    ${cl.m?`<div class="row"><span class="note" style="flex:1;min-width:0">♪ This clue has ${cl.m.spotify?'a Spotify clip':'an audio clip'}. It plays ${displayOn()?'on the TV board':'on this device'} when the clue opens.${cl.m.spotify?' If it doesn’t start, tap Play clip again. The TV board’s browser should be logged into Spotify for full songs.':''}</span><button class="btn-sm btn-gold" data-act="clip-play">Play clip again</button><button class="btn-sm" data-act="clip-stop">Stop</button></div>`:''}
     ${hintRow(cl.h)}
     ${answerBox(cl.a)}
     ${timerHTML()}
@@ -872,7 +890,7 @@ function displayHTML(){
   else if(st.ph==='clue'&&st.clue){
     const c=st.clue,who=c.who,res=c.res||{},r=who!=null?res[who]:null;
     main=`<div class="row"><span class="eyebrow" style="font-size:15px">${esc(c.cat)} · ${c.dd?'Daily Double · '+c.val:c.val+' points'}</span><div class="spacer"></div>${who!=null?`<span class="answering">${esc(st.teams[who]?.name)} answering</span>`:''}</div>
-    <div class="tvbox">${c.m?'<div class="cliptag" style="font-size:18px">♪ Listen</div>':''}<div class="tvclue">${clueText(c.q||'')}</div>${c.h?`<div class="hint" style="font-size:clamp(18px,2.6vw,30px)">Hint: ${esc(c.h)}</div>`:''}</div>
+    <div class="tvbox">${c.m?`<div class="cliptag" style="font-size:18px">♪ Listen${c.m.spotify?' · playing from Spotify':''}</div>`:''}<div class="tvclue">${clueText(c.q||'')}</div>${c.h?`<div class="hint" style="font-size:clamp(18px,2.6vw,30px)">Hint: ${esc(c.h)}</div>`:''}</div>
     ${!c.a?timerP():''}
     ${r===1?`<div class="result ok">Correct! ${esc(st.teams[who]?.name)} +${c.val}</div>`:r===-1&&!c.a?'<div class="result no">Not quite</div>':''}
     ${c.a?`<div class="answer revealed"><span class="eyebrow">Answer</span><span class="a" style="font-size:clamp(22px,3.4vw,44px)">${esc(c.a)}</span></div>`:''}
