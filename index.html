@@ -166,6 +166,15 @@ const BANK=(QB.categories||[]).filter(c=>c&&c.name&&Array.isArray(c.questions)).
   q:c.questions.filter(q=>q&&q.question&&q.answer&&!('spotify' in q&&!spotifyId(q.spotify))).map(q=>[Math.min(7,Math.max(1,parseInt(q.level,10)||3)),String(q.question),String(q.answer),String(q.hint||''),acc(q.accept),media(q)])})).filter(c=>c.q.length);
 const FINALS=(QB.finals||[]).filter(f=>f&&f.question&&f.answer).map(f=>[String(f.category||'Final Round'),String(f.question),String(f.answer),String(f.hint||''),acc(f.accept)]);
 if(!FINALS.length)FINALS.push(['The Disciples','Before following Jesus, this disciple was a tax collector. The first Gospel carries his name.','Matthew','He was also called Levi.','matthew|levi']);
+/* Spotify song lists (questions.js: songs, hymnRecordings). Each entry is a song link, optionally followed by
+   where to start, like "https://open.spotify.com/track/... 1:05". Harder rows play a shorter clip. */
+const toSec=v=>{const m=/(\d+):(\d{1,2})/.exec(String(v||''));return m?(+m[1])*60+(+m[2]):(/^\s*\d+\s*$/.test(String(v||''))?+v:null)};
+function songEntries(list){return (Array.isArray(list)?list:[]).map(e=>{const raw=typeof e==='string'?e:(e&&e.link)||'';const id=spotifyId(raw);if(!id)return null;
+  const rest=typeof e==='string'?e.replace(/\S*spotify\S*/,''):(e.start??'');const st=toSec(rest);return{id,start:st==null?45:st,title:typeof e==='object'&&e.title||''}}).filter(Boolean)}
+[['songs','Name That Song','Listen to the clip. Name this song.'],['hymnRecordings','Hymns on Spotify','Listen to the recording. Name this hymn.']].forEach(([key,name,question])=>{
+  const list=songEntries(QB[key]);if(list.length<5)return;
+  BANK.push({id:'spotify-'+key,name,song:true,q:list.map(e=>[3,question,e.title||'',e.title?'':'',e.title?e.title.toLowerCase():'',{spotify:e.id,audio:'',start:e.start,length:8,melody:'',bpm:100}])})});
+const CLIP_SECONDS=[12,10,8,5,3];
 const PRESETS=[{id:'random',name:'Random categories'},{id:'pick',name:'Pick my own categories'}];
 
 /* ---------- helpers ---------- */
@@ -188,7 +197,7 @@ const PREFIX='scripture-showdown-v1-';
 const LEVELS={all:[1,2,3,4,5],inter:[2,3,4,5,6],expert:[4,5,6,6,7]};
 const LEVEL_NAMES={all:'All levels',inter:'Intermediate',expert:'Expert'};
 /* random categories, preferring ones with enough questions at the levels this mode needs */
-function exactRows(b,lv){const used=new Set();let n=0;lv.forEach(d=>{const k=b.q.findIndex((q,i)=>!used.has(i)&&q[0]===d);if(k>=0){used.add(k);n++}});return n}
+function exactRows(b,lv){if(b.song)return 5;const used=new Set();let n=0;lv.forEach(d=>{const k=b.q.findIndex((q,i)=>!used.has(i)&&q[0]===d);if(k>=0){used.add(k);n++}});return n}
 function randomCats(mode){const lv=LEVELS[mode]||LEVELS.all;
   for(const need of [5,4,3]){const ok=BANK.filter(b=>exactRows(b,lv)>=need);if(ok.length>=5)return shuffle(ok.map(b=>b.id)).slice(0,5)}
   return shuffle(BANK.map(b=>b.id)).slice(0,5)}
@@ -196,7 +205,7 @@ function buildBoard(catIds,mode){const lv=LEVELS[mode]||LEVELS.all;
   return{title:'Jeopardy Showdown',levels:lv,cats:catIds.map(id=>{const b=BANK.find(x=>x.id===id);return{name:b.name,bank:id,clues:pickClues(b,lv)}}),
     final:(f=>({cat:f[0],q:f[1],a:f[2],h:f[3],alt:f[4]}))(rnd(FINALS))};
 }
-function pickClues(b,lv){const used=new Set();return (lv||LEVELS.all).map(d=>{let best=null;
+function pickClues(b,lv){if(b.song)return shuffle(b.q).slice(0,5).map((x,r)=>{const c=mkClue(x);c.m=Object.assign({},c.m,{length:CLIP_SECONDS[r]});c.song=true;return c});const used=new Set();return (lv||LEVELS.all).map(d=>{let best=null;
   for(let dist=0;dist<7&&!best;dist++){for(const lvl of (d>=4?[d+dist,d-dist]:[d-dist,d+dist])){const pool=b.q.filter((q,k)=>!used.has(k)&&q[0]===lvl);if(pool.length){best=rnd(pool);break}}}
   if(!best)best=rnd(b.q);used.add(b.q.indexOf(best));return mkClue(best)})}
 const norm=s=>String(s||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/\([^)]*\)/g,' ').replace(/&/g,' and ').replace(/[^a-z0-9 ]+/g,' ')
@@ -454,6 +463,11 @@ function clueValue(){if(isDD())return parseInt(S.ddWager,10)||0;const v=VALUES[S
 function resetTimer(run){const len=S.settings.timer*1000;S.tmr={len,left:len,run:!!run,end:run?Date.now()+len:0};S.timeUp=false}
 function tLeft(){return S.tmr.run?Math.max(0,S.tmr.end-Date.now()):S.tmr.left}
 function newEpoch(){S.epoch++;S.inbox={buzz:[],ans:{},wag:{},fans:{}};S.judged={}}
+const titleCache=store.get('ssw.titles',{});
+async function songTitle(id){if(titleCache[id])return titleCache[id];
+  try{const r=await fetch('https://open.spotify.com/oembed?url='+encodeURIComponent('https://open.spotify.com/track/'+id));if(!r.ok)return '';const j=await r.json();const t=String(j.title||'').trim();
+    if(t){titleCache[id]=t;store.set('ssw.titles',titleCache)}return t}catch{return ''}}
+function fillSongTitles(){if(!S)return;S.game.cats.forEach(cat=>cat.clues.forEach(cl=>{if(cl.song&&cl.m&&cl.m.spotify&&!cl.a){songTitle(cl.m.spotify).then(t=>{if(t&&S&&!cl.a){cl.a=t;cl.alt=t.toLowerCase().replace(/\s*[\(\[-].*$/,'')+'|'+t.toLowerCase();commit()}})}}))}
 function openTile(c,r){
   if(S.used[c][r])return;
   S.cur={c,r};S.revealed=false;S.hint=false;peek=false;newEpoch();S.scored={};S.tried=[];S.ddWager='';
@@ -505,7 +519,7 @@ function publicState(){
     cap:S.settings.cap,create:S.settings.playersCreate,mode:S.settings.mode,ans:S.settings.answers,turn:S.turn,epoch:S.epoch,open:!!S.buzzOpen,
     tm:{left:tLeft(),run:!!S.tmr.run,len:S.tmr.len},music:!!S.music,tmusic:S.tmusic!==false,fx:S.fx||null,clip:S.clip||null,hi:activeTeam()};
   if(S.cur&&cl){st.clue={cat:g.cats[S.cur.c].name,val:clueValue(),dd:isDD(),
-    q:ph==='clue'?cl.q:null,h:S.hint&&ph==='clue'?cl.h:null,a:S.revealed?cl.a:null,m:ph==='clue'&&cl.m?cl.m:null,
+    q:ph==='clue'?cl.q:null,h:S.hint&&ph==='clue'?cl.h:null,a:S.revealed?(cl.a||(cl.song?'':null)):null,rev:!!S.revealed,m:ph==='clue'&&cl.m?cl.m:null,
     who:S.answering,tried:S.tried,res:S.scored,queue:S.inbox.buzz.slice(0,6).map(p=>S.members[p]?.name||'Player')}}
   if(ph.startsWith('final')||ph==='over')st.fin={cat:g.final.cat,q:ph!=='final-cat'?g.final.q:null,h:S.hint&&ph==='final-clue'?g.final.h:null,a:(ph==='final-reveal'||ph==='over')?g.final.a:null,res:S.final.marks};
   return st;
@@ -706,6 +720,7 @@ function timerHTML(){
   return `<div class="row"><div class="timer"><i id="tbar" class="${left<=5000?'low':''}" style="width:${100*left/(S.tmr.len||1)}%"></i></div><span class="ttext" id="ttext">${Math.ceil(left/1000)}s</span></div>
   <div class="row">${run?'<button class="btn-sm" data-act="t-pause">Pause timer</button>':left>0&&left<S.tmr.len?'<button class="btn-sm btn-gold" data-act="t-resume">Resume timer</button>':'<button class="btn-sm btn-gold" data-act="t-start">Start timer</button>'}<button class="btn-sm" data-act="t-reset">Reset</button>${S.timeUp&&!run?'<span class="no">Time’s up</span>':''}</div>`;
 }
+const songCard=(id,h)=>`<div style="border-radius:12px;overflow:hidden;max-width:100%"><iframe title="Spotify song" src="https://open.spotify.com/embed/track/${esc(id)}?utm_source=generator" width="100%" height="${h||80}" frameborder="0" allow="encrypted-media" loading="lazy" style="display:block;border:0"></iframe></div>`;
 function answerBox(a){
   const show=S.revealed||!S.tv||peek;
   return `<div class="answer ${S.revealed?'revealed':''}"><span class="eyebrow">${S.revealed?'Answer (everyone can see it)':'Answer · host only'}</span><span class="a">${show?esc(a):'Hidden'}</span>
@@ -748,7 +763,8 @@ function clueOverlay(){
     <div class="cluebox">${cl.m?'<div class="cliptag">♪ Audio clip</div>':''}<div class="clue">${clueText(cl.q)}</div>${S.hint&&cl.h?`<div class="hint">Hint: ${esc(cl.h)}</div>`:''}</div>
     ${cl.m?`<div class="row"><span class="note" style="flex:1;min-width:0">♪ This clue has ${cl.m.spotify?'a Spotify clip':'an audio clip'}. It plays ${displayOn()?'on the TV board':'on this device'} when the clue opens.${cl.m.spotify?' If it doesn’t start, tap Play clip again. The TV board’s browser should be logged into Spotify for full songs.':''}</span><button class="btn-sm btn-gold" data-act="clip-play">Play clip again</button><button class="btn-sm" data-act="clip-stop">Stop</button></div>`:''}
     ${hintRow(cl.h)}
-    ${answerBox(cl.a)}
+    ${answerBox(cl.a||(cl.song?'See the Spotify song card below':''))}
+    ${cl.song&&cl.m&&cl.m.spotify&&(S.revealed||!S.tv||peek)?`<span class="note">Answer card from Spotify${S.revealed?'':' (only you can see this; don’t press play here)'}:</span>${songCard(cl.m.spotify)}`:''}
     ${timerHTML()}
     <div class="card" style="gap:10px">
       ${ans!=null?`<span class="eyebrow">Answering now</span><span class="answering">${esc(S.teams[ans].name)}</span>
@@ -893,7 +909,7 @@ function displayHTML(){
     <div class="tvbox">${c.m?`<div class="cliptag" style="font-size:18px">♪ Listen${c.m.spotify?' · playing from Spotify':''}</div>`:''}<div class="tvclue">${clueText(c.q||'')}</div>${c.h?`<div class="hint" style="font-size:clamp(18px,2.6vw,30px)">Hint: ${esc(c.h)}</div>`:''}</div>
     ${!c.a?timerP():''}
     ${r===1?`<div class="result ok">Correct! ${esc(st.teams[who]?.name)} +${c.val}</div>`:r===-1&&!c.a?'<div class="result no">Not quite</div>':''}
-    ${c.a?`<div class="answer revealed"><span class="eyebrow">Answer</span><span class="a" style="font-size:clamp(22px,3.4vw,44px)">${esc(c.a)}</span></div>`:''}
+    ${c.a||(c.rev&&c.m&&c.m.spotify)?`<div class="answer revealed"><span class="eyebrow">Answer</span><span class="a" style="font-size:clamp(22px,3.4vw,44px)">${esc(c.a||'')}</span></div>${c.m&&c.m.spotify?songCard(c.m.spotify,152):''}`:''}
     ${st.mode==='buzz'&&who==null&&!c.a?`<div class="status" style="font-size:22px">${st.open?'Buzzers are open!':'Buzzers closed'}</div>`:''}
     ${(c.queue||[]).length&&!c.a?`<div class="row" style="justify-content:center">${c.queue.map((n,i)=>`<span class="pill" style="font-size:16px">${i+1}. ${esc(n)}</span>`).join('')}</div>`:''}
     ${(c.tried||[]).length&&!c.a?`<div class="status muted">Already tried: ${esc(c.tried.map(i=>st.teams[i]?.name).join(', '))}</div>`:''}`;
@@ -911,7 +927,7 @@ function displayHTML(){
 }
 
 /* ---------- events ---------- */
-function goHost(){view='host';if(!peer||netCode!==S.code||!conns)hostOpen(false);keepAwake();render();broadcast()}
+function goHost(){setTimeout(fillSongTitles,500);view='host';if(!peer||netCode!==S.code||!conns)hostOpen(false);keepAwake();render();broadcast()}
 document.addEventListener('click',e=>{
   const b=e.target.closest('[data-act]');if(!b||b.disabled)return;
   const a=b.dataset.act,i=+b.dataset.i;
@@ -930,7 +946,7 @@ document.addEventListener('click',e=>{
     case 'resume':goHost();break;
     case 'create':if(S&&S.phase!=='over'&&S.phase!=='lobby'){confirmNew=true;render();break}
     /* falls through */
-    case 'new-yes':{confirmNew=false;const go=()=>{const fresh=createGame();if(!S)return;view='host';if(fresh||netCode!==S.code||!peer)hostOpen(true);keepAwake();commit();window.scrollTo(0,0)};
+    case 'new-yes':{confirmNew=false;const go=()=>{const fresh=createGame();if(!S)return;view='host';if(fresh||netCode!==S.code||!peer)hostOpen(true);keepAwake();commit();fillSongTitles();window.scrollTo(0,0)};
       if(S&&S.phase!=='lobby'&&conns.size){sendEnded();setTimeout(go,600)}else go();break}
     case 'end-game':confirmEnd=true;render();break;
     case 'end-no':confirmEnd=false;render();break;

@@ -54,7 +54,10 @@ In every mode, higher points always means a harder question.
 - **Finish the Lyric** shows a line with an underlined blank and plays the tune, and players fill in the missing word.
 - Clips play on the TV board (or the host's device if no TV board is connected) when the clue opens, then stop after a few seconds. The host can replay or stop a clip.
 - The built-in songs are public-domain hymns and carols, and the game plays their melodies itself.
-- **Spotify categories:** Name That Worship Song, Who Sings It? and Hymns on Spotify play a few seconds of a real recording through Spotify's official player, starting at the part you choose. Each question needs a Spotify link first (see below); until then, those questions are skipped.
+- **Spotify categories:** paste song links into the `songs` list (and `hymnRecordings` for hymns) at the bottom of `questions.js`. The game makes a **Name That Song** category (and **Hymns on Spotify**), picks 5 random songs per board, and plays each through Spotify's official player on the TV board. Harder rows play shorter clips: 12 seconds at 100, down to 3 seconds at 500.
+- Clips start 45 seconds in unless you add a start time after the link, like `"https://open.spotify.com/track/... 1:05"`.
+- The host sees the answer as a Spotify song card on the iPad. When the host reveals the answer, the TV board shows the same card.
+- To copy many links at once, open a playlist in the Spotify desktop app, click one song, press Ctrl+A (Cmd+A on Mac), then Ctrl+C (Cmd+C), and paste into the list. A list needs at least 5 songs to appear in games.
 - For full songs, the browser on the TV board laptop should be logged into Spotify. Without a login, Spotify plays only 30-second previews, which may not include the part you picked. If a clip doesn't start, tap **Play clip again** on the host screen.
 
 ## Adding your own questions
@@ -79,7 +82,7 @@ Each category looks like this:
 - Give each category at least one question for each level from 1 to 5, plus a few at 6–7 so it can appear in Expert games. Two or more per level means more variety between games.
 - Final round questions are in the `finals` list at the bottom of the file.
 - **Audio:** add `melody` (notes like `"C4:1 E4:1 G4:2"`) and `bpm`, or `audio` (a sound file you uploaded to the repo, like `"songs/clip.mp3"`) with `start` and `length` in seconds. Use clips you have the right to play.
-- **Spotify:** in Spotify, open a song, tap **Share → Copy Song Link**, and paste it as the question's `spotify` value. Set `start` to where the best-known part begins, in seconds (1:05 = 65), and `length` to how many seconds to play.
+- **Spotify:** a question can also have a `spotify` song link instead of audio, with `start` in seconds (1:05 = 65) and `length`. For a whole category of songs, the `songs` list is easier.
 - **Lyrics:** write three or more underscores `___` where the missing word goes, and the game shows an underlined blank.
 - Keep the commas between items and the "double quotes" around text. If the game stops loading questions after an edit, a missing comma or quote is the usual cause.
 

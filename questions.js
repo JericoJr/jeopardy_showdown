@@ -472,58 +472,6 @@ window.QUESTION_BANK = {
         { level: 5, question: "\"Praise God, from whom all ___ flow\"", answer: "Blessings", hint: "This is \"The Doxology.\"", accept: ["blessings"], melody: "G4:2 G4:1 F#4:1 E4:1 D4:2 G4:1 A4:1 B4:2 B4:1 B4:1 A4:1 G4:1 C5:1 B4:1 A4:2", bpm: 92, length: 10 },
         { level: 5, question: "\"When peace like a ___ attendeth my way\"", answer: "River", hint: "The hymn is \"It Is Well with My Soul.\"", accept: ["river"] }
       ]
-    },
-    {
-      name: "Name That Worship Song",
-      questions: [
-        { level: 1, question: "Listen to the clip. Name this worship song.", answer: "Way Maker", hint: "It was recorded by Leeland.", accept: ["way maker"], spotify: "", start: 0, length: 10 },
-        { level: 1, question: "Listen to the clip. Name this worship song.", answer: "Goodness of God", hint: "It was recorded by Bethel Music.", accept: ["goodness of god"], spotify: "", start: 0, length: 10 },
-        { level: 1, question: "Listen to the clip. Name this worship song.", answer: "What A Beautiful Name", hint: "It was recorded by Hillsong Worship.", accept: ["what a beautiful name"], spotify: "", start: 0, length: 10 },
-        { level: 2, question: "Listen to the clip. Name this worship song.", answer: "10,000 Reasons (Bless the Lord)", hint: "It was recorded by Matt Redman.", accept: ["10000 reasons", "10 000 reasons", "ten thousand reasons", "bless the lord"], spotify: "", start: 0, length: 10 },
-        { level: 2, question: "Listen to the clip. Name this worship song.", answer: "Oceans (Where Feet May Fail)", hint: "It was recorded by Hillsong UNITED.", accept: ["oceans", "where feet may fail"], spotify: "", start: 0, length: 10 },
-        { level: 2, question: "Listen to the clip. Name this worship song.", answer: "How Great Is Our God", hint: "It was recorded by Chris Tomlin.", accept: ["how great is our god"], spotify: "", start: 0, length: 10 },
-        { level: 3, question: "Listen to the clip. Name this worship song.", answer: "Reckless Love", hint: "It was recorded by Cory Asbury.", accept: ["reckless love"], spotify: "", start: 0, length: 10 },
-        { level: 3, question: "Listen to the clip. Name this worship song.", answer: "Build My Life", hint: "It was recorded by Pat Barrett.", accept: ["build my life"], spotify: "", start: 0, length: 10 },
-        { level: 3, question: "Listen to the clip. Name this worship song.", answer: "Graves Into Gardens", hint: "It was recorded by Elevation Worship.", accept: ["graves into gardens"], spotify: "", start: 0, length: 10 },
-        { level: 4, question: "Listen to the clip. Name this worship song.", answer: "Gratitude", hint: "It was recorded by Brandon Lake.", accept: ["gratitude"], spotify: "", start: 0, length: 10 },
-        { level: 4, question: "Listen to the clip. Name this worship song.", answer: "Living Hope", hint: "It was recorded by Phil Wickham.", accept: ["living hope"], spotify: "", start: 0, length: 10 },
-        { level: 4, question: "Listen to the clip. Name this worship song.", answer: "Cornerstone", hint: "It was recorded by Hillsong Worship.", accept: ["cornerstone"], spotify: "", start: 0, length: 10 },
-        { level: 5, question: "Listen to the clip. Name this worship song.", answer: "Firm Foundation (He Won’t)", hint: "It was recorded by Cody Carnes.", accept: ["firm foundation", "he wont"], spotify: "", start: 0, length: 10 },
-        { level: 5, question: "Listen to the clip. Name this worship song.", answer: "Raise a Hallelujah", hint: "It was recorded by Bethel Music.", accept: ["raise a hallelujah"], spotify: "", start: 0, length: 10 },
-        { level: 5, question: "Listen to the clip. Name this worship song.", answer: "Jireh", hint: "It was recorded by Elevation Worship & Maverick City Music.", accept: ["jireh"], spotify: "", start: 0, length: 10 },
-        { level: 6, question: "Listen to the clip. Name this worship song.", answer: "The Blessing", hint: "It was recorded by Kari Jobe & Cody Carnes.", accept: ["the blessing", "blessing"], spotify: "", start: 0, length: 10 },
-        { level: 6, question: "Listen to the clip. Name this worship song.", answer: "King of Kings", hint: "It was recorded by Hillsong Worship.", accept: ["king of kings"], spotify: "", start: 0, length: 10 }
-      ]
-    },
-    {
-      name: "Who Sings It?",
-      questions: [
-        { level: 1, question: "Listen to the clip. Who recorded this worship song?", answer: "Leeland", hint: "The song is \"Way Maker.\"", accept: ["leeland", "sinach"], spotify: "", start: 0, length: 10 },
-        { level: 2, question: "Listen to the clip. Who recorded this worship song?", answer: "Hillsong UNITED", hint: "The song is \"Oceans (Where Feet May Fail).\"", accept: ["hillsong united", "hillsong"], spotify: "", start: 0, length: 10 },
-        { level: 2, question: "Listen to the clip. Who recorded this worship song?", answer: "Matt Redman", hint: "The song is \"10,000 Reasons (Bless the Lord).\"", accept: ["matt redman", "redman"], spotify: "", start: 0, length: 10 },
-        { level: 3, question: "Listen to the clip. Who recorded this worship song?", answer: "Bethel Music", hint: "The song is \"Goodness of God.\"", accept: ["bethel music", "bethel", "jenn johnson"], spotify: "", start: 0, length: 10 },
-        { level: 3, question: "Listen to the clip. Who recorded this worship song?", answer: "Cory Asbury", hint: "The song is \"Reckless Love.\"", accept: ["cory asbury", "asbury"], spotify: "", start: 0, length: 10 },
-        { level: 4, question: "Listen to the clip. Who recorded this worship song?", answer: "Phil Wickham", hint: "The song is \"Living Hope.\"", accept: ["phil wickham", "wickham"], spotify: "", start: 0, length: 10 },
-        { level: 4, question: "Listen to the clip. Who recorded this worship song?", answer: "Brandon Lake", hint: "The song is \"Gratitude.\"", accept: ["brandon lake"], spotify: "", start: 0, length: 10 },
-        { level: 5, question: "Listen to the clip. Who recorded this worship song?", answer: "Elevation Worship", hint: "The song is \"Graves Into Gardens.\"", accept: ["elevation worship", "elevation", "brandon lake"], spotify: "", start: 0, length: 10 },
-        { level: 5, question: "Listen to the clip. Who recorded this worship song?", answer: "Chris Tomlin", hint: "The song is \"How Great Is Our God.\"", accept: ["chris tomlin", "tomlin"], spotify: "", start: 0, length: 10 },
-        { level: 6, question: "Listen to the clip. Who recorded this worship song?", answer: "Pat Barrett", hint: "The song is \"Build My Life.\"", accept: ["pat barrett", "housefires"], spotify: "", start: 0, length: 10 },
-        { level: 6, question: "Listen to the clip. Who recorded this worship song?", answer: "Hillsong Worship", hint: "The song is \"Cornerstone.\"", accept: ["hillsong worship", "hillsong"], spotify: "", start: 0, length: 10 }
-      ]
-    },
-    {
-      name: "Hymns on Spotify",
-      questions: [
-        { level: 1, question: "Listen to the recording. Name this hymn.", answer: "Amazing Grace (My Chains Are Gone)", hint: "This version is by Chris Tomlin.", accept: ["amazing grace", "my chains are gone"], spotify: "", start: 0, length: 10 },
-        { level: 2, question: "Listen to the recording. Name this hymn.", answer: "How Great Thou Art", hint: "It is a classic hymn sung in churches for generations.", accept: ["how great thou art"], spotify: "", start: 0, length: 10 },
-        { level: 2, question: "Listen to the recording. Name this hymn.", answer: "It Is Well with My Soul", hint: "It is a classic hymn sung in churches for generations.", accept: ["it is well", "it is well with my soul"], spotify: "", start: 0, length: 10 },
-        { level: 3, question: "Listen to the recording. Name this hymn.", answer: "Great Is Thy Faithfulness", hint: "It is a classic hymn sung in churches for generations.", accept: ["great is thy faithfulness"], spotify: "", start: 0, length: 10 },
-        { level: 3, question: "Listen to the recording. Name this hymn.", answer: "Holy, Holy, Holy", hint: "It is a classic hymn sung in churches for generations.", accept: ["holy holy holy"], spotify: "", start: 0, length: 10 },
-        { level: 4, question: "Listen to the recording. Name this hymn.", answer: "Be Thou My Vision", hint: "It is a classic hymn sung in churches for generations.", accept: ["be thou my vision"], spotify: "", start: 0, length: 10 },
-        { level: 4, question: "Listen to the recording. Name this hymn.", answer: "Come Thou Fount of Every Blessing", hint: "It is a classic hymn sung in churches for generations.", accept: ["come thou fount", "come thou fount of every blessing"], spotify: "", start: 0, length: 10 },
-        { level: 5, question: "Listen to the recording. Name this hymn.", answer: "Blessed Assurance", hint: "It is a classic hymn sung in churches for generations.", accept: ["blessed assurance"], spotify: "", start: 0, length: 10 },
-        { level: 5, question: "Listen to the recording. Name this hymn.", answer: "Crown Him with Many Crowns", hint: "It is a classic hymn sung in churches for generations.", accept: ["crown him with many crowns"], spotify: "", start: 0, length: 10 }
-      ]
     }
   ],
   finals: [
@@ -539,5 +487,26 @@ window.QUESTION_BANK = {
     { category: "Paul’s Journeys", question: "Paul and Silas sang hymns at midnight in a jail in this city before an earthquake.", answer: "Philippi", hint: "It is in Acts 16.", accept: ["philippi"] },
     { category: "Kings", question: "This king of Babylon saw a hand write on the wall during his feast.", answer: "Belshazzar", hint: "It is in Daniel 5.", accept: ["belshazzar"] },
     { category: "Women of the Bible", question: "A Moabite woman, she is the great-grandmother of King David.", answer: "Ruth", hint: "A book of the Bible is named after her.", accept: ["ruth"] }
+  ],
+
+  /*
+    SPOTIFY SONGS
+    Paste Spotify song links here, one per line, inside "double quotes" with a comma after each.
+    The game turns them into a "Name That Song" category, picks 5 random songs per board,
+    and plays each one from Spotify on the TV board. Harder rows play shorter clips:
+    100 = 12 seconds, 200 = 10, 300 = 8, 400 = 5, 500 = 3.
+
+    Each clip starts 45 seconds into the song unless you add a time after the link,
+    like "https://open.spotify.com/track/... 1:05" to start at the chorus.
+
+    Quick way to get links: in the Spotify desktop app, open a playlist, click one song,
+    press Ctrl+A (Cmd+A on Mac) to select all, then Ctrl+C (Cmd+C) to copy every song link.
+    You need at least 5 songs in a list for its category to appear.
+  */
+  songs: [
+  ],
+
+  /* Hymn recordings, same format. These become a "Hymns on Spotify" category. */
+  hymnRecordings: [
   ]
 };
