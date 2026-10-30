@@ -184,7 +184,7 @@ const VALUES=[100,200,300,400,500];
 const QB=window.QUESTION_BANK||{categories:[],finals:[]};
 /* accepts a Spotify share link, a spotify:track: URI, or a bare track ID */
 const spotifyId=v=>{const m=/(?:track[\/:])([A-Za-z0-9]{22})/.exec(String(v||''))||/^([A-Za-z0-9]{22})$/.exec(String(v||'').trim());return m?m[1]:''};
-const media=q=>(q.audio||q.melody||spotifyId(q.spotify))?{spotify:spotifyId(q.spotify),audio:q.audio?String(q.audio):'',start:+q.start||0,length:Math.min(20,Math.max(2,+q.length||8)),melody:q.melody?String(q.melody):'',bpm:+q.bpm||100}:null;
+const media=q=>(q.audio||q.melody||spotifyId(q.spotify))?{spotify:spotifyId(q.spotify),audio:q.audio?String(q.audio):'',start:+q.start||0,length:Math.min(20,Math.max(2,+q.length||10)),melody:q.melody?String(q.melody):'',bpm:+q.bpm||100}:null;
 const acc=x=>(Array.isArray(x)?x:String(x||'').split('|')).map(v=>String(v).trim()).filter(Boolean).join('|');
 const BANK=(QB.categories||[]).filter(c=>c&&c.name&&Array.isArray(c.questions)).map((c,i)=>({id:String(c.name).toLowerCase().replace(/[^a-z0-9]+/g,'-')+'-'+i,name:String(c.name),
   q:c.questions.filter(q=>q&&q.question&&q.answer&&!('spotify' in q&&!spotifyId(q.spotify))).map(q=>[Math.min(7,Math.max(1,parseInt(q.level,10)||3)),String(q.question),String(q.answer),String(q.hint||''),acc(q.accept),media(q),(q.image||c.style==='emoji')?{img:q.image?String(q.image):'',emoji:c.style==='emoji'}:null])})).filter(c=>c.q.length);
@@ -214,25 +214,30 @@ function buildSpotify(){const sp=QB.spotify;if(!sp)return;const wl=linkList(sp.w
   const idFor=(e,list)=>spotifyId(e.link)||(e.n>0?list[e.n-1]||'':'');
   const acc2=e=>[...(e.accept||[]),String(e.title||'').toLowerCase().replace(/\s*[\(\[].*$/,'')].filter(Boolean).join('|');
   const guess=(key,list,name,question)=>{const frac=key==='hymns'?0.33:0.45;const q=(sp[key]||[]).map(e=>{const id=idFor(e,list);if(!id||!e.title)return null;
-      return[Math.min(7,Math.max(1,+e.level||3)),question,String(e.title),e.artist?`Recorded by ${e.artist}.`:'',acc2(e),{spotify:id,audio:'',start:songStart(id,e)??45,auto:songStart(id,e)==null,frac,length:8,melody:'',bpm:100}]}).filter(Boolean);
+      return[Math.min(7,Math.max(1,+e.level||3)),question,String(e.title),e.artist?`Recorded by ${e.artist}.`:'',acc2(e),{spotify:id,audio:'',start:songStart(id,e)??45,auto:songStart(id,e)==null,frac,length:10,melody:'',bpm:100}]}).filter(Boolean);
     if(q.length>=5)BANK.push({id:'spotify-'+key,name,clipByRow:true,q})};
   guess('worship',wl,'Guess That Song','Listen to the clip. Name this worship song.');
   guess('hymns',hl,'Name the Hymn','Listen to the recording. Name this hymn.');
   /* name the artist from the chorus */
   const aq=(sp.worship||[]).map(e=>{const id=idFor(e,wl);if(!id||!e.artist)return null;const art=String(e.artist);
     const alts=[art,...art.split(/\s*(?:&|,| and | feat\.? )\s*/i)].map(x=>x.toLowerCase().trim()).filter(Boolean);
-    return[Math.min(7,Math.max(1,+(e.artistLevel||e.level)||3)),'Listen to the clip. Who is the artist?',art,`The song is "${e.title}."`,alts.join('|'),{spotify:id,audio:'',start:songStart(id,e)??45,auto:songStart(id,e)==null,frac:0.45,length:8,melody:'',bpm:100}]}).filter(Boolean);
+    return[Math.min(7,Math.max(1,+(e.artistLevel||e.level)||3)),'Listen to the clip. Who is the artist?',art,`The song is "${e.title}."`,alts.join('|'),{spotify:id,audio:'',start:songStart(id,e)??45,auto:songStart(id,e)==null,frac:0.45,length:10,melody:'',bpm:100}]}).filter(Boolean);
   if(aq.length>=5)BANK.push({id:'spotify-artist',name:'Who Sings It?',clipByRow:true,q:aq});
   /* guess the song from its opening seconds; intros are harder, so each song counts one level higher */
   const iq=[['worship',wl,'worship song'],['hymns',hl,'hymn']].flatMap(([key,list,kind])=>(sp[key]||[]).map(e=>{const id=idFor(e,list);if(!id||!e.title)return null;
-    return[Math.min(7,Math.max(1,(+e.level||3)+1)),`Listen to the intro. Name this ${kind}.`,String(e.title),e.artist?`Recorded by ${e.artist}.`:'',acc2(e),{spotify:id,audio:'',start:0,length:8,melody:'',bpm:100}]}).filter(Boolean));
+    return[Math.min(7,Math.max(1,(+e.level||3)+1)),`Listen to the intro. Name this ${kind}.`,String(e.title),e.artist?`Recorded by ${e.artist}.`:'',acc2(e),{spotify:id,audio:'',start:0,length:10,melody:'',bpm:100}]}).filter(Boolean));
   if(iq.length>=5)BANK.push({id:'spotify-intro',name:'Name That Intro',clipByRow:true,q:iq});
   const lq=(sp.lyrics||[]).map(e=>{const id=idFor(e,hl),tk=T[lyricKey(id,e.answer)]||{},st=tk.start??toSec(e.start),cut=tk.cut??toSec(e.cut);if(!id||st==null||cut==null||cut<=st||!e.lyric||!e.answer)return null;
     return[Math.min(7,Math.max(1,+e.level||3)),String(e.lyric),String(e.answer),'',(e.accept||[]).join('|'),{spotify:id,audio:'',start:st,length:Math.min(20,cut-st),melody:'',bpm:100}]}).filter(Boolean);
-  /* Finish the Lyric uses the built-in tunes, so recorded lyric lines are not added */
+  /* Finish the Lyric keeps its built-in tune clip; each line also links to the hymn's recording so the host can play the full song */
+  if(flc){const key=t=>String(t).toLowerCase().replace(/_{3,}/g,' ').replace(/[^a-z0-9 ]+/g,' ').replace(/\s+/g,' ').trim();
+    (sp.lyrics||[]).forEach(e=>{const id=idFor(e,hl);if(!id||!e.lyric||!e.answer)return;const h=(sp.hymns||[]).find(x=>x.n===e.n);
+      const hit=flc.q.find(x=>key(x[1])===key(e.lyric)&&key(x[2])===key(e.answer));
+      if(hit){hit[6]=Object.assign({},hit[6],{full:id})}
+      else flc.q.push([Math.min(7,Math.max(1,+e.level||3)),String(e.lyric),String(e.answer),h?`From the hymn "${h.title}."`:'',(e.accept||[]).join('|'),null,{full:id}])})}
 }
 buildSpotify();
-const CLIP_SECONDS=[12,10,8,5,3];
+const CLIP_SECONDS=[10,10,10,10,10];
 const PRESETS=[{id:'random',name:'Random categories'},{id:'pick',name:'Pick my own categories'}];
 
 /* ---------- helpers ---------- */
@@ -242,7 +247,7 @@ const clone=o=>JSON.parse(JSON.stringify(o));
 const $=s=>document.querySelector(s);
 const rnd=a=>a[Math.floor(Math.random()*a.length)];
 const shuffle=a=>{a=[...a];for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
-const mkClue=x=>Object.assign({q:x[1],a:x[2],h:x[3]||'',alt:x[4]||''},x[5]?{m:x[5]}:{},x[6]?{img:x[6].img||'',emoji:!!x[6].emoji}:{});
+const mkClue=x=>Object.assign({q:x[1],a:x[2],h:x[3]||'',alt:x[4]||''},x[5]?{m:x[5]}:{},x[6]?{img:x[6].img||'',emoji:!!x[6].emoji,full:x[6].full||''}:{});
 /* pictures for Scripture Snapshots: "art:key" uses a built-in drawing (images.js), anything else is an image file */
 const zoomSeen={};
 function picHTML(img,zoom,ep,size){if(!img)return '';let inner,fx=50,fy=50;
@@ -425,9 +430,9 @@ function updateSoundWarn(){const el=$('#sndwarn');if(!el)return;const show=view=
   el.innerHTML=show?'<button class="btn-sm btn-gold" data-act="d-unlock">🔊 Click to turn on sound</button>':''}
 setInterval(()=>{updateSoundWarn();if(view==='host'&&S&&S.clip){const el=$('#clipstat');if(el){const t=clipStatusText();if(el.textContent!==t)el.textContent=t;
   if(t==='Ready'&&S.clip.act!=='stop'&&S.clip.act!=='pause'&&!S.clip._done){S.clip._done=true;render()}}}},500);
-function runClip(act,m,at){if(act==='full'){m&&Clip.playFull(m,at)}else if(act==='play'){m&&Clip.play(m)}else if(act==='pause')Clip.pause();else if(act==='resume')Clip.resume();else Clip.stop()}
-function hostClip(){if(view!=='host'||!S||!S.clip)return;if(S.clip.n===hostClipN)return;hostClipN=S.clip.n;if(displayOn()||S.sound===false){Clip.stop();return}const cl=curClue();runClip(S.clip.act,cl&&cl.m,S.clip.at)}
-function clipCmd(act,at){const now=Date.now(),cl=curClue(),len=Math.min(20,Math.max(2,+(cl&&cl.m&&cl.m.length)||8))*1000,c=S.clip||{};
+function runClip(act,m,at,full){if(act==='full'){const fm=full?{spotify:full}:m;fm&&Clip.playFull(fm,at)}else if(act==='play'){m&&Clip.play(m)}else if(act==='pause')Clip.pause();else if(act==='resume')Clip.resume();else Clip.stop()}
+function hostClip(){if(view!=='host'||!S||!S.clip)return;if(S.clip.n===hostClipN)return;hostClipN=S.clip.n;if(displayOn()||S.sound===false){Clip.stop();return}const cl=curClue();runClip(S.clip.act,cl&&cl.m,S.clip.at,cl&&cl.full)}
+function clipCmd(act,at){const now=Date.now(),cl=curClue(),len=Math.min(20,Math.max(2,+(cl&&cl.m&&cl.m.length)||10))*1000,c=S.clip||{};
   let end=c.end||0,left=c.left||0,full=!!c.full;
   if(act==='full'){S.clip={n:(c.n||0)+1,act:'full',at:Math.max(0,+at||0),full:true,end:0,left:0};S.spos={pos:+at||0,dur:S.spos?.dur||0,paused:false,at:now};return}
   if(act==='play'){end=now+len+(cl&&cl.m&&cl.m.spotify?1200:0);left=0}
@@ -653,7 +658,7 @@ function publicState(){
     cap:S.settings.cap,create:S.settings.playersCreate,mode:S.settings.mode,ans:S.settings.answers,turn:S.turn,epoch:S.epoch,open:!!S.buzzOpen,
     tm:{left:tLeft(),run:!!S.tmr.run,len:S.tmr.len},music:!!S.music,tmusic:S.tmusic!==false,snd:S.sound!==false,fx:S.fx||null,clip:S.clip?{n:S.clip.n,act:S.clip.act,at:S.clip.at||0}:null,hi:activeTeam()};
   if(S.cur&&cl){st.clue={cat:g.cats[S.cur.c].name,val:clueValue(),dd:isDD(),
-    q:ph==='clue'?cl.q:null,h:S.hint&&ph==='clue'?cl.h:null,a:S.revealed?(cl.a||(cl.song?'':null)):null,rev:!!S.revealed,m:ph==='clue'&&cl.m?cl.m:null,img:ph==='clue'&&cl.img?cl.img:null,emoji:!!cl.emoji,zoom:ph==='clue'&&cl.img&&!S.revealed&&S.cur.r>=3?S.cur.r:0,ep:S.epoch,
+    q:ph==='clue'?cl.q:null,h:S.hint&&ph==='clue'?cl.h:null,a:S.revealed?(cl.a||(cl.song?'':null)):null,rev:!!S.revealed,m:ph==='clue'&&cl.m?cl.m:null,img:ph==='clue'&&cl.img?cl.img:null,full:ph==='clue'&&cl.full?cl.full:null,emoji:!!cl.emoji,zoom:ph==='clue'&&cl.img&&!S.revealed&&S.cur.r>=3?S.cur.r:0,ep:S.epoch,
     who:S.answering,tried:S.tried,res:S.scored,queue:S.inbox.buzz.slice(0,6).map(p=>S.members[p]?.name||'Player')}}
   if(ph.startsWith('final')||ph==='over')st.fin={cat:g.final.cat,q:ph!=='final-cat'?g.final.q:null,h:S.hint&&ph==='final-clue'?g.final.h:null,a:(ph==='final-reveal'||ph==='over')?g.final.a:null,res:S.final.marks};
   return st;
@@ -675,7 +680,7 @@ function applyState(st){
   if(!st||typeof st!=='object'||!Array.isArray(st.teams))return;
   if(st.tm)pTimer={left:st.tm.left,run:st.tm.run,len:st.tm.len||1,end:Date.now()+st.tm.left};
   if(view==='display'){const n=st.fx?st.fx.n:0;if(lastFx!=null&&n!==lastFx&&st.fx){if(!D.mute&&st.snd!==false)sfx(st.fx.k);flash(st.fx.k)}lastFx=n;
-    const on=!D.mute&&st.snd!==false,cn=st.clip?st.clip.n:0;if(lastClip!=null&&cn!==lastClip&&st.clip){if(on)runClip(st.clip.act,st.clue&&st.clue.m,st.clip.at);else Clip.stop()}lastClip=cn;
+    const on=!D.mute&&st.snd!==false,cn=st.clip?st.clip.n:0;if(lastClip!=null&&cn!==lastClip&&st.clip){if(on)runClip(st.clip.act,st.clue&&st.clue.m,st.clip.at,st.clue&&st.clue.full);else Clip.stop()}lastClip=cn;
     if(!on&&Clip.playing)Clip.stop();if(st.ph==='clue'&&st.clue&&st.clue.m&&st.clue.m.spotify&&!Clip.playing)Spot.cue(st.clue.m.spotify);if(st.ph!=='clue'&&Clip.playing)Clip.stop();PS=st;displayAudio()}
   const k=JSON.stringify(Object.assign({},st,{tm:{run:st.tm?.run,left:st.tm?.run?0:st.tm?.left}}));
   if(k===PSkey)return;
@@ -917,6 +922,20 @@ function timerHTML(){
   return `<div class="row"><div class="timer"><i id="tbar" class="${left<=5000?'low':''}" style="width:${100*left/(S.tmr.len||1)}%"></i></div><span class="ttext" id="ttext">${Math.ceil(left/1000)}s</span></div>
   <div class="row">${run?'<button class="btn-sm" data-act="t-pause">Pause timer</button>':left>0&&left<S.tmr.len?'<button class="btn-sm btn-gold" data-act="t-resume">Resume timer</button>':'<button class="btn-sm btn-gold" data-act="t-start">Start timer</button>'}<button class="btn-sm" data-act="t-reset">Reset</button>${S.timeUp&&!run?'<span class="no">Time’s up</span>':''}</div>`;
 }
+/* the song behind a question: its Spotify clip, or the recording linked to a Finish the Lyric line */
+const songIdOf=cl=>(cl&&cl.m&&cl.m.spotify)||(cl&&cl.full)||'';
+function fullSongPanel(cl){const id=songIdOf(cl),hasClip=!!(cl.m&&cl.m.spotify);if(!id&&!(cl.m&&cl.m.audio))return '';
+  return `<details class="card" style="gap:8px" ${S.clip&&S.clip.full||(!cl.m&&cl.full)?'open':''}><summary class="eyebrow" style="cursor:pointer">Full song: play any part, pause and play (no cut-off)</summary>
+    <input type="range" id="songpos" min="0" max="${Math.ceil((S.spos&&S.spos.dur)||Spot.dur||300)}" step="1" value="${Math.floor((S.clip&&S.clip.full&&S.spos&&S.spos.pos)||0)}" data-songpos aria-label="Position in the song">
+    <div class="row"><span class="pill" id="songtime">0:00 / —:——</span><div class="spacer"></div>
+      ${clipState()==='playing'&&S.clip.full?'<button class="btn-sm" data-act="clip-pause">❚❚ Pause</button>':clipState()==='paused'&&S.clip.full?'<button class="btn-sm btn-gold" data-act="clip-resume">▶ Play</button>':''}
+      <button class="btn-sm btn-gold" data-act="clip-full">▶ Play from here</button></div>
+    ${id?`<span class="lbl">Saved spots in this song</span>
+    <div class="row" id="marklist">${songMarks(id).map(m=>`<span class="pill" style="padding:0;overflow:hidden"><button class="btn-sm" style="border:0;border-radius:0" data-act="mark-go" data-t="${m.t}">▶ ${fmtT(m.t)} ${esc(m.label)}</button>${hasClip?`<button class="btn-sm btn-ghost" style="border:0;border-radius:0" data-act="mark-start" data-t="${m.t}">Set as clip start</button>`:''}<button class="btn-sm btn-ghost" style="border:0;border-radius:0" data-act="mark-del" data-t="${m.t}" data-l="${esc(m.label)}" aria-label="Delete this saved spot">✕</button></span>`).join('')||'<span class="note">None yet. Play the song, then save the spots you want to come back to.</span>'}</div>
+    <div class="row"><select id="marklabel" aria-label="Name for this spot" style="width:auto">${['Chorus','Verse','Bridge','Intro','Ending','Best part'].map(x=>`<option>${x}</option>`).join('')}</select>
+      <button class="btn-sm btn-gold" data-act="mark-save">＋ Save this spot</button>${hasClip?'<button class="btn-sm" data-act="mark-start" data-t="now">Use this spot as the clip start</button>':''}</div>
+    ${hasClip?`<span class="note">Clip start for this song: <b>${fmtT(cl.m.start)}</b>${cl.m.auto?' (automatic guess)':''}.</span>`:'<span class="note">This plays your hymn playlist’s recording of this hymn. The question’s clip stays the built-in tune.</span>'}`:''}
+    <span class="note">Drag the slider and let go to jump there, or tap Play from here. It plays ${displayOn()?'on the TV':'here'} until you pause or stop. The full length shows once it starts.</span></details>`}
 const songCard=(id,h)=>`<div style="border-radius:12px;overflow:hidden;max-width:100%"><iframe title="Spotify song" src="https://open.spotify.com/embed/track/${esc(id)}?utm_source=generator" width="100%" height="${h||80}" frameborder="0" allow="encrypted-media" loading="lazy" style="display:block;border:0"></iframe></div>`;
 function answerBox(a){
   const show=S.revealed||!S.tv||peek;
@@ -962,15 +981,8 @@ function clueOverlay(){
     ${cl.m?`<div class="row"><span class="note" style="flex:1;min-width:0">♪ This clue has ${cl.m.spotify?'a Spotify clip':'an audio clip'}. Tap Play clip when you’re ready; it plays ${displayOn()?'on the TV board':'on this device'}.${cl.m.spotify?' The TV board’s browser should be logged into Spotify for full songs.':''}</span></div><div class="row"><span class="pill" id="clipstat" aria-live="polite">${esc(clipStatusText())}</span>
       ${clipState()==='playing'?'<button class="btn-sm" data-act="clip-pause">❚❚ Pause</button>':clipState()==='paused'?'<button class="btn-sm btn-gold" data-act="clip-resume">▶ Resume</button>':''}
       <button class="btn-sm ${clipState()==='idle'?'btn-gold':''}" data-act="clip-play">${clipState()==='idle'?'▶ Play clip':'↺ Play from the start'}</button><button class="btn-sm" data-act="clip-stop">■ Stop</button></div>
-      ${cl.m.spotify||cl.m.audio?`<details class="card" style="gap:8px" ${S.clip&&S.clip.full?'open':''}><summary class="eyebrow" style="cursor:pointer">Full song: drag to any part and play it (no cut-off)</summary>
-        <input type="range" id="songpos" min="0" max="${Math.ceil((S.spos&&S.spos.dur)||Spot.dur||300)}" step="1" value="${Math.floor((S.clip&&S.clip.full&&S.spos&&S.spos.pos)||0)}" data-songpos aria-label="Position in the song">
-        <div class="row"><span class="pill" id="songtime">0:00 / —:——</span><div class="spacer"></div><button class="btn-sm btn-gold" data-act="clip-full">▶ Play from here</button></div>
-        ${cl.m.spotify?`<span class="lbl">Saved spots in this song</span>
-        <div class="row" id="marklist">${songMarks(cl.m.spotify).map(m=>`<span class="pill" style="padding:0;overflow:hidden"><button class="btn-sm" style="border:0;border-radius:0" data-act="mark-go" data-t="${m.t}">▶ ${fmtT(m.t)} ${esc(m.label)}</button><button class="btn-sm btn-ghost" style="border:0;border-radius:0" data-act="mark-start" data-t="${m.t}" title="Use as this song’s clip start">Set as clip start</button><button class="btn-sm btn-ghost" style="border:0;border-radius:0" data-act="mark-del" data-t="${m.t}" data-l="${esc(m.label)}" aria-label="Delete this saved spot">✕</button></span>`).join('')||'<span class="note">None yet. Play the song, then save the spots you want to come back to.</span>'}</div>
-        <div class="row"><select id="marklabel" aria-label="Name for this spot" style="width:auto">${['Chorus','Verse','Bridge','Intro','Ending','Best part'].map(x=>`<option>${x}</option>`).join('')}</select>
-          <button class="btn-sm btn-gold" data-act="mark-save">＋ Save this spot</button><button class="btn-sm" data-act="mark-start" data-t="now">Use this spot as the clip start</button></div>
-        <span class="note">Clip start for this song: <b>${fmtT(cl.m.start)}</b>${cl.m.auto?' (automatic guess)':''}. Saved spots stay on this device and are included in “Copy all my times” in the Song Tuner.</span>`:''}
-        <span class="note">Drag the slider and let go to jump there. The song keeps playing ${displayOn()?'on the TV':'here'} until you pause or stop it. The full length shows once it starts.</span></details>`:''}`:''}
+      ${fullSongPanel(cl)}`:''}
+    ${!cl.m&&cl.full?`<div class="row"><span class="pill" id="clipstat" aria-live="polite">${esc(clipStatusText())}</span>${clipState()==='playing'?'<button class="btn-sm" data-act="clip-pause">❚❚ Pause</button>':clipState()==='paused'?'<button class="btn-sm btn-gold" data-act="clip-resume">▶ Resume</button>':''}<button class="btn-sm" data-act="clip-stop">■ Stop</button></div>${fullSongPanel(cl)}`:''}
     ${hintRow(cl.h)}
     ${answerBox(cl.a||'(see questions.js)')}
     ${cl.song&&cl.m&&cl.m.spotify?`<span class="note">${displayOn()?'The song plays on the TV board only. Nothing plays on this device.':'No TV board is connected, so clips play on this device.'} The TV shows the Spotify song card when you reveal the answer.</span>`:''}
@@ -1211,8 +1223,8 @@ document.addEventListener('click',e=>{
     case 'clip-resume':clipCmd('resume');commit();break;
     case 'clip-full':{const el=$('#songpos');clipCmd('full',el?+el.value:0);commit();break}
     case 'mark-go':{clipCmd('full',+b.dataset.t);commit();break}
-    case 'mark-save':{const cl=curClue();if(!cl||!cl.m||!cl.m.spotify)return;const lab=($('#marklabel')||{}).value||'Spot';addMark(cl.m.spotify,currentSongPos(),lab);render();break}
-    case 'mark-del':{const cl=curClue();if(!cl||!cl.m)return;removeMark(cl.m.spotify,+b.dataset.t,b.dataset.l);render();break}
+    case 'mark-save':{const cl=curClue(),id=songIdOf(cl);if(!id)return;const lab=($('#marklabel')||{}).value||'Spot';addMark(id,currentSongPos(),lab);render();break}
+    case 'mark-del':{const cl=curClue(),id=songIdOf(cl);if(!id)return;removeMark(id,+b.dataset.t,b.dataset.l);render();break}
     case 'mark-start':{const cl=curClue();if(!cl||!cl.m||!cl.m.spotify)return;const t=b.dataset.t==='now'?currentSongPos():+b.dataset.t;setSongStart(cl.m.spotify,t);
       S.game.cats.forEach(cat=>cat.clues.forEach(x=>{if(x.m&&x.m.spotify===cl.m.spotify&&x.m.start!==0){x.m.start=Math.round(t*10)/10;x.m.auto=false}}));commit();break}
     case 'music-builtin':Music.file(null);render();break;
