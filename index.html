@@ -221,9 +221,9 @@ function buildBoard(catIds,mode){const lv=LEVELS[mode]||LEVELS.all;
   return{title:'Jeopardy Showdown',levels:lv,cats:catIds.map(id=>{const b=BANK.find(x=>x.id===id);return{name:b.name,bank:id,clues:pickClues(b,lv)}}),
     final:(f=>({cat:f[0],q:f[1],a:f[2],h:f[3],alt:f[4]}))(rnd(FINALS))};
 }
-function pickClues(b,lv){if(b.clipByRow)return pickClues({q:b.q},lv).map((c,r)=>{c.m=Object.assign({},c.m,{length:CLIP_SECONDS[r]});c.song=true;return c});const used=new Set();return (lv||LEVELS.all).map(d=>{let best=null;
-  for(let dist=0;dist<7&&!best;dist++){for(const lvl of (d>=4?[d+dist,d-dist]:[d-dist,d+dist])){const pool=b.q.filter((q,k)=>!used.has(k)&&q[0]===lvl);if(pool.length){best=rnd(pool);break}}}
-  if(!best)best=rnd(b.q);used.add(b.q.indexOf(best));return mkClue(best)})}
+function pickClues(b,lv){if(b.clipByRow)return pickClues({q:b.q},lv).map((c,r)=>{c.m=Object.assign({},c.m,{length:CLIP_SECONDS[r]});c.song=true;return c});const used=new Set(),seenAns=new Set();return (lv||LEVELS.all).map(d=>{let best=null;
+  for(let dist=0;dist<7&&!best;dist++){for(const lvl of (d>=4?[d+dist,d-dist]:[d-dist,d+dist])){const pool=b.q.filter((q,k)=>!used.has(k)&&q[0]===lvl&&!seenAns.has(norm(q[2])));if(pool.length){best=rnd(pool);break}}}
+  if(!best)best=rnd(b.q.filter((q,k)=>!used.has(k)&&!seenAns.has(norm(q[2]))))||rnd(b.q.filter((q,k)=>!used.has(k)))||rnd(b.q);used.add(b.q.indexOf(best));seenAns.add(norm(best[2]));return mkClue(best)})}
 const norm=s=>String(s||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/\([^)]*\)/g,' ').replace(/&/g,' and ').replace(/[^a-z0-9 ]+/g,' ')
   .replace(/^\s*(what|who|where|when)\s+(is|are|was|were)\s+/,'').replace(/\b(the|a|an)\b/g,' ').replace(/\s+/g,' ').trim();
 function lev(a,b){const m=a.length,n=b.length;if(!m)return n;if(!n)return m;let p=Array.from({length:n+1},(_,i)=>i);for(let i=1;i<=m;i++){const c=[i];for(let j=1;j<=n;j++)c[j]=Math.min(p[j]+1,c[j-1]+1,p[j-1]+(a[i-1]===b[j-1]?0:1));p=c}return p[n]}
