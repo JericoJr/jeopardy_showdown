@@ -365,7 +365,7 @@ const ThemeSpot={ctl:null,want:false,made:false,played:false,ok:false,pos:0,dur:
     return true},
   update(e){const d=(e&&e.data)||{},pos=d.position||0,dur=d.duration||0;this.pos=pos/1000;if(dur)this.dur=dur/1000;
     const playing=!d.isPaused&&!d.isBuffering&&dur>0;
-    if(playing){this.ok=true;this.played=true;this.playingAt=Date.now()}
+    if(playing){this.ok=true;this.played=true;this.playingAt=Date.now()}else if(d.isPaused)this.playingAt=0;
     if(!this.want){if(!d.isPaused)try{this.ctl.pause()}catch{}return}
     /* loop: let the whole song play, then jump back to the start right as it ends.
        The jump is timed from the song's own clock, so it doesn't wait for the next update. */
@@ -376,7 +376,7 @@ const ThemeSpot={ctl:null,want:false,made:false,played:false,ok:false,pos:0,dur:
     else if(d.isPaused&&this.played&&dur&&(pos>=dur-1500||(pos===0&&this.lastPos>=dur-3000)))this.loop(true);
     if(dur)this.lastPos=pos},
   loop(stopped){this.lastPos=0;try{this.ctl.seek(0);if(stopped)this.ctl.resume?this.ctl.resume():this.ctl.play()}catch{}},
-  stop(){this.want=false;clearTimeout(this.loopT);try{this.ctl&&this.ctl.pause()}catch{}}};
+  stop(){this.want=false;this.playingAt=0;this.kicked=0;clearTimeout(this.loopT);try{this.ctl&&this.ctl.pause()}catch{}}};
 /* browsers can block music until someone taps: a tap starts the theme only if it isn't already playing */
 document.addEventListener('pointerdown',()=>{if(ThemeSpot.want)ThemeSpot.kick()},true);
 const Music={on:false,kind:null,el:null,timer:null,bus:null,step:0,next:0,prog:()=>0,
