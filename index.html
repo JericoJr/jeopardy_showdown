@@ -222,6 +222,7 @@ body.tuning{padding-bottom:62vh}
 .spotdd>summary::-webkit-details-marker{display:none}
 .spotdd:not([open]){padding-top:10px;padding-bottom:10px;gap:0}
 .spotdd .spotsum{flex:1;min-width:0}.spotdd .spotchev{transition:transform .2s;opacity:.7}.spotdd[open] .spotchev{transform:rotate(180deg)}
+.volrow{display:grid;grid-template-columns:minmax(110px,auto) 1fr 48px;align-items:center;gap:10px}.volrow input{padding:0;width:100%}.volrow b{text-align:right;font-variant-numeric:tabular-nums}
 .steps{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:6px}
 .order{display:flex;align-items:center;justify-content:center;gap:6px 8px;flex-wrap:wrap;background:var(--panel);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:8px 10px}
 .order .olab{width:100%;text-align:center;margin-bottom:-2px}
@@ -363,14 +364,14 @@ setup.skip=(setup.skip||[]).filter(n=>BANK.some(b=>b.name===n));
 setup.settings=Object.assign(clone(DEF_SET),setup.settings||{});
 if(!PRESETS.some(p=>p.id===setup.preset))setup.preset='random';
 setup.pick=(setup.pick||[]).filter(id=>BANK.some(b=>b.id===id));
-let spotOpen=false,cidDraft='';
+let spotOpen=false,volOpen=false,cidDraft='';
 /* full screen (not available on iPhone; iPad and computers are fine) */
 const canFull=()=>!!(document.fullscreenEnabled||document.webkitFullscreenEnabled);
 const isFull=()=>!!(document.fullscreenElement||document.webkitFullscreenElement);
 function toggleFull(){const d=document,el=d.documentElement;try{if(isFull()){const x=d.exitFullscreen||d.webkitExitFullscreen;x&&x.call(d)}else{const r=el.requestFullscreen||el.webkitRequestFullscreen;const pr=r&&r.call(el);pr&&pr.catch&&pr.catch(()=>{})}}catch{}}
 document.addEventListener('fullscreenchange',()=>render());document.addEventListener('webkitfullscreenchange',()=>render());
 /* remember whether the Spotify dropdown is open, so it stays that way when the screen updates */
-document.addEventListener('toggle',e=>{const t=e.target;if(!t||!t.id)return;if(t.id==='spotcard')spotOpen=t.open;if(t.id==='tvspot'){D.spotOpen=t.open;saveDisplay()}},true);let view='role',edit=null,editFrom='setup',confirmDel=false,peek=false,showLobby=false,confirmNew=false,confirmRm=null,confirmEnd=false,ended=false;
+document.addEventListener('toggle',e=>{const t=e.target;if(!t||!t.id)return;if(t.id==='spotcard')spotOpen=t.open;if(t.id==='volcard')volOpen=t.open;if(t.id==='tvspot'){D.spotOpen=t.open;saveDisplay()}},true);let view='role',edit=null,editFrom='setup',confirmDel=false,peek=false,showLobby=false,confirmNew=false,confirmRm=null,confirmEnd=false,ended=false;
 let P=Object.assign({pid:uid(),name:'',code:'',step:'code'},store.get('ssw.player',{}));
 let D=Object.assign({code:'',step:'code'},store.get('ssw.display',{}));
 let PS=null,PSkey='',pDraft={wager:'',ans:'',fans:'',team:''},pTimer={end:0,left:0,run:false,len:1},pSent={buzz:-1,ans:-1,wager:-1,fans:-1};
@@ -394,12 +395,16 @@ function smoothNote(ac,f,t,dur,dest){const g=ac.createGain(),o1=ac.createOscilla
 function tone(ac,f,t,d,type,vol,dest){const o=ac.createOscillator(),g=ac.createGain();o.type=type;o.frequency.value=f;o.connect(g);g.connect(dest||ac.destination);
   g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(vol,t+0.015);g.gain.exponentialRampToValueAtTime(0.0001,t+d);o.start(t);o.stop(t+d+0.05)}
 /* the only sound effects: correct and wrong */
-function sfx(kind){const ac=audio();if(!ac)return;const t=ac.currentTime+0.02;
-  if(kind==='ok'){[[659.3,0,.16],[880,.12,.16],[1318.5,.24,.45]].forEach(([f,o,d])=>tone(ac,f,t+o,d,'triangle',.35))}
-  else if(kind==='timeup'){[0,.28,.56].forEach((o,i)=>{tone(ac,i<2?233:116.5,t+o,i<2?.22:.75,'square',.12);tone(ac,i<2?466:233,t+o,i<2?.2:.7,'sawtooth',.05)})}
-  else{tone(ac,155.6,t,.55,'sawtooth',.18);tone(ac,146.8,t+.02,.6,'square',.08)}}
+function sfx(kind){const ac=audio();if(!ac)return;const t=ac.currentTime+0.02;const g=ac.createGain();g.gain.value=vol('fx');g.connect(ac.destination);setTimeout(()=>{try{g.disconnect()}catch{}},3000);
+  if(kind==='ok'){[[659.3,0,.16],[880,.12,.16],[1318.5,.24,.45]].forEach(([f,o,d])=>tone(ac,f,t+o,d,'triangle',.35,g))}
+  else if(kind==='timeup'){[0,.28,.56].forEach((o,i)=>{tone(ac,i<2?233:116.5,t+o,i<2?.22:.75,'square',.12,g);tone(ac,i<2?466:233,t+o,i<2?.2:.7,'sawtooth',.05,g)})}
+  else{tone(ac,155.6,t,.55,'sawtooth',.18,g);tone(ac,146.8,t+.02,.6,'square',.08,g)}}
 /* original background music: a looping arpeggio over I-vi-IV-V (or the host's own file) */
 let musicVol=Number(store.get('ssw.vol',0.5));
+const VOL_DEF={music:0.6,songs:0.9,fx:0.8};
+function vol(k){const v=(view==='display'?(PS&&PS.vol):(S&&S.vol))||{};const x=v[k]==null?VOL_DEF[k]:+v[k];return Math.max(0,Math.min(1,isNaN(x)?VOL_DEF[k]:x))}
+function applyVolumes(){if(Music.bus)Music.bus.gain.value=Music.src?vol('music'):vol('music')*0.55;
+  if(Music.sdk)SpotSDK.vol(vol('music'));if(Clip.bus)Clip.bus.gain.value=vol('songs');if(Clip.el)Clip.el.volume=vol('songs');if(SdkClip.p)SpotSDK.vol(vol('songs'))}
 /* Two original tracks, played by the game itself:
    'show'    an upbeat game-show theme for the board (or the host's own music file)
    'tension' suspenseful countdown music that speeds up as the timer runs down */
@@ -448,7 +453,7 @@ function spotDoneHTML(){return `${header('Spotify')}<div class="card status" sty
 const SpotSDK={player:null,dev:null,state:'off',token:null,loading:false,repeatSet:false,want:false,
   setToken(a){this.token=a;if(!this.player)this.init()},
   init(){if(this.loading||this.player)return;if(!sdkSupported()){this.report('unsupported');return}this.loading=true;
-    const go=()=>{try{const pl=new window.Spotify.Player({name:view==='display'?'Jeopardy Showdown TV board':'Jeopardy Showdown',getOAuthToken:async cb=>{cb(await this.getToken())},volume:Math.max(0.05,musicVol)});this.player=pl;
+    const go=()=>{try{const pl=new window.Spotify.Player({name:view==='display'?'Jeopardy Showdown TV board':'Jeopardy Showdown',getOAuthToken:async cb=>{cb(await this.getToken())},volume:Math.max(0.05,vol('music'))});this.player=pl;
       pl.addListener('ready',({device_id})=>{this.dev=device_id;this.report('ready');themeSourceChanged()});
       pl.addListener('not_ready',()=>{this.dev=null;this.report('offline')});
       pl.addListener('account_error',()=>{this.report('premium')});pl.addListener('authentication_error',()=>{this.report('auth')});
@@ -537,12 +542,12 @@ function alertNote(t){const el=document.createElement('div');el.className='toast
 async function restoreThemeFile(){const v=await fileStore.get();if(!v||!v.data)return;try{Music.buf=await decodeAudio(v.data.slice(0));Music.fname=v.name||'Your music';if(Music.kind==='show'){const k=Music.kind;Music.stop();Music.start(k)}if(view==='host'||view==='display'||view==='setup')render()}catch{}}
 const Music={on:false,kind:null,el:null,timer:null,bus:null,step:0,next:0,prog:()=>0,
   start(kind){if(this.on&&this.kind===kind){if(this.spot)ThemeSpot.kick();if(this.sdk&&!SpotSDK.want)SpotSDK.play();return}this.stop();this.on=true;this.kind=kind;
-    if(kind==='show'&&this.buf){const ac=audio();if(ac){this.bus=ac.createGain();this.bus.gain.value=musicVol;this.bus.connect(ac.destination);
+    if(kind==='show'&&this.buf){const ac=audio();if(ac){this.bus=ac.createGain();this.bus.gain.value=vol('music');this.bus.connect(ac.destination);
       const src=ac.createBufferSource();src.buffer=this.buf;src.loop=true;src.connect(this.bus);src.start(0,this.at%this.buf.duration);this.src=src;this.t0=ac.currentTime-(this.at%this.buf.duration);return}}
-    if(kind==='show'&&SpotSDK.ready()&&ThemeSpot.id()){this.sdk=true;SpotSDK.play();return}
+    if(kind==='show'&&SpotSDK.ready()&&ThemeSpot.id()){this.sdk=true;SpotSDK.vol(vol('music'));SpotSDK.play();return}
     if(kind==='show'){if(ThemeSpot.start())this.spot=true;else{this.on=false;this.kind=null}return}
     const ac=audio();if(!ac){this.on=false;this.kind=null;return}
-    this.bus=ac.createGain();this.bus.gain.value=musicVol*0.55;this.bus.connect(ac.destination);this.step=0;this.next=ac.currentTime+0.1;
+    this.bus=ac.createGain();this.bus.gain.value=vol('music')*0.55;this.bus.connect(ac.destination);this.step=0;this.next=ac.currentTime+0.1;
     this.timer=setInterval(()=>{const a=actx;if(!a||!this.bus)return;while(this.next<a.currentTime+0.35){this.next+=this.tension(this.next);this.step++}},70)},
   stop(){if(this.sdk){this.sdk=false;SpotSDK.pause()}if(this.src){try{this.at=actx.currentTime-this.t0;this.src.stop()}catch{}this.src=null}this.on=false;this.kind=null;if(this.spot){this.spot=false;ThemeSpot.stop()}clearInterval(this.timer);this.timer=null;try{this.bus&&this.bus.disconnect()}catch{}this.bus=null},
   vol(v){musicVol=v;store.set('ssw.vol',v);SpotSDK.vol(v);if(this.bus)this.bus.gain.value=this.src?v:v*0.55},
@@ -568,8 +573,8 @@ const Clip={timer:null,el:null,bus:null,playing:false,paused:false,kind:'',endAt
     this.kind=m.spotify?'spotify':m.audio?'audio':'melody';
     this.full=false;
     if(m.spotify){Spot.play(m.spotify,m.start,len,{auto:m.auto,frac:m.frac});this.arm((len+4)*1000);return}
-    if(m.audio){try{const el=new Audio(m.audio);this.el=el;const go=()=>{try{el.currentTime=+m.start||0}catch{}el.play().catch(()=>{})};el.addEventListener('loadedmetadata',go,{once:true});el.load()}catch{}}
-    else if(m.melody){const ac=audio();if(ac){this.bus=ac.createGain();this.bus.gain.value=1;
+    if(m.audio){try{const el=new Audio(m.audio);el.volume=vol('songs');this.el=el;const go=()=>{try{el.currentTime=+m.start||0}catch{}el.play().catch(()=>{})};el.addEventListener('loadedmetadata',go,{once:true});el.load()}catch{}}
+    else if(m.melody){const ac=audio();if(ac){this.bus=ac.createGain();this.bus.gain.value=vol('songs');
         const lp=ac.createBiquadFilter();lp.type='lowpass';lp.frequency.value=2400;lp.Q.value=0.3;this.bus.connect(lp);lp.connect(ac.destination);this.lp=lp;
         const beat=60/(+m.bpm||100);let t=ac.currentTime+0.01;
       for(const tok of String(m.melody).trim().split(/\s+/)){const [n,d]=tok.split(':');const dur=(parseFloat(d)||1)*beat;const f=noteFreq(n);
@@ -579,7 +584,7 @@ const Clip={timer:null,el:null,bus:null,playing:false,paused:false,kind:'',endAt
   playFull(m,at){if(m&&m.spotify&&this.kind==='spotify'&&this.full&&this.playing&&Spot.p){at=Math.max(0,+at||0);this.paused=false;Spot.play(m.spotify,at,0,{full:true});return}
     this.stop();if(!m)return;this.playing=true;this.paused=false;this.full=true;if(Music.on)Music.stop();at=Math.max(0,+at||0);
     if(m.spotify){this.kind='spotify';Spot.play(m.spotify,at,0,{full:true});return}
-    if(m.audio){this.kind='audio';try{const el=new Audio(m.audio);this.el=el;el.addEventListener('loadedmetadata',()=>{try{el.currentTime=at}catch{}el.play().catch(()=>{})},{once:true});el.load()}catch{}return}
+    if(m.audio){this.kind='audio';try{const el=new Audio(m.audio);el.volume=vol('songs');this.el=el;el.addEventListener('loadedmetadata',()=>{try{el.currentTime=at}catch{}el.play().catch(()=>{})},{once:true});el.load()}catch{}return}
     this.full=false;this.play(m)},
   arm(ms){clearTimeout(this.timer);this.endAt=Date.now()+ms;this.timer=setTimeout(()=>this.stop(),ms)},
   pause(){if(!this.playing||this.paused)return;this.paused=true;clearTimeout(this.timer);this.left=Math.max(0,this.endAt-Date.now());
@@ -588,18 +593,36 @@ const Clip={timer:null,el:null,bus:null,playing:false,paused:false,kind:'',endAt
     if(this.kind==='spotify')Spot.resume();else if(this.kind==='audio'){try{this.el&&this.el.play().catch(()=>{})}catch{}}else{try{actx&&actx.resume()}catch{}}
     if(!this.full)this.arm(this.left||1000)},
   stop(){clearTimeout(this.timer);this.timer=null;this.full=false;if(this.paused&&this.kind==='melody'){try{actx&&actx.resume()}catch{}}this.paused=false;Spot.stop();try{this.lp&&this.lp.disconnect()}catch{}this.lp=null;if(this.el){try{this.el.pause()}catch{}this.el=null}try{this.bus&&this.bus.disconnect()}catch{}this.bus=null;const was=this.playing;this.playing=false;if(was){hostAudio();displayAudio()}}};
+/* with Spotify Premium linked on this screen, song clips play through the Premium player: full songs, and their volume can be set */
+const trackDurs={};
+async function trackDur(id){if(trackDurs[id])return trackDurs[id];const tk=await SpotSDK.getToken();if(!tk)return 0;try{const r=await fetch('https://api.spotify.com/v1/tracks/'+id,{headers:{Authorization:'Bearer '+tk}});const j=await r.json();trackDurs[id]=(+j.duration_ms||0)/1000;return trackDurs[id]}catch{return 0}}
+const SdkClip={p:null,t:null,poll:null,endAt:0,left:0,active:'',
+  async play(id,start,len,o){o=o||{};const same=this.p&&this.p.id===id&&this.active===id;const p={id,start:+start||0,len,full:!!o.full,auto:!!o.auto,frac:+o.frac||0.45};this.p=p;Spot.p=p;Spot.seeked=true;
+    clearTimeout(this.t);SpotSDK.want=false;SpotSDK.vol(vol('songs'));let st=p.start;
+    if(p.auto&&!p.full){const d=await trackDur(id);if(d>60)st=Math.max(30,Math.min(d-15,Math.round(d*p.frac)))}
+    if(this.p!==p)return;
+    if(same){try{await SpotSDK.player.seek(Math.round(st*1000));await SpotSDK.player.resume()}catch{}}
+    else{const ok=await SpotSDK.api('/play?device_id='+SpotSDK.dev,'PUT',{uris:['spotify:track:'+id],position_ms:Math.round(st*1000)});if(ok){this.active=id;SpotSDK.api('/repeat?state=off&device_id='+SpotSDK.dev,'PUT')}}
+    if(this.p!==p){try{SpotSDK.player.pause()}catch{}return}
+    if(!p.full){this.endAt=Date.now()+len*1000+300;this.t=setTimeout(()=>{if(this.p===p)this.stop()},len*1000+300)}
+    this.watch()},
+  watch(){clearInterval(this.poll);this.poll=setInterval(async()=>{if(!this.p||!SpotSDK.player)return;let st=null;try{st=await SpotSDK.player.getCurrentState()}catch{}if(!st)return;
+    Spot.pos=(st.position||0)/1000;Spot.dur=(st.duration||0)/1000;if(Spot.onPos)Spot.onPos(Spot.pos,Spot.dur,!!st.paused)},500)},
+  pause(){clearTimeout(this.t);this.left=Math.max(300,this.endAt-Date.now());try{SpotSDK.player.pause()}catch{}},
+  resume(){try{SpotSDK.player.resume()}catch{}if(this.p&&!this.p.full){clearTimeout(this.t);const p=this.p;this.endAt=Date.now()+this.left;this.t=setTimeout(()=>{if(this.p===p)this.stop()},this.left)}},
+  stop(){clearTimeout(this.t);clearInterval(this.poll);if(this.p){try{SpotSDK.player.pause()}catch{}}this.p=null;Spot.p=null}};
 const Spot={api:null,ctl:null,waiting:[],loading:false,p:null,seeked:false,t:null,cued:'',endAt:0,left:0,pos:0,dur:0,onPos:null,
   load(cb){if(this.api)return cb(this.api);this.waiting.push(cb);if(this.loading)return;this.loading=true;
     window.onSpotifyIframeApiReady=api=>{this.api=api;this.waiting.splice(0).forEach(f=>f(api))};
     const sc=document.createElement('script');sc.src='https://open.spotify.com/embed/iframe-api/v1';sc.async=true;document.body.appendChild(sc)},
   /* load a song into the hidden player without playing it, so Play starts right away */
-  cue(id){if(!id||this.cued===id||this.p)return;this.cued=id;this.live=null;this.load(api=>{const uri='spotify:track:'+id;
+  cue(id){if(!id||this.cued===id||this.p||SpotSDK.ready())return;this.cued=id;this.live=null;this.load(api=>{const uri='spotify:track:'+id;
     if(!this.ctl){this.make(api,uri,false)}else{try{this.ctl.loadUri(uri)}catch{}}})},
   make(api,uri,thenPlay){let w=document.getElementById('spotwrap');if(!w){w=document.createElement('div');w.id='spotwrap';w.setAttribute('aria-hidden','true');
       w.style.cssText='position:fixed;left:0;bottom:0;width:300px;height:80px;opacity:0;pointer-events:none;z-index:-1;overflow:hidden';document.body.appendChild(w)}
     const el=document.createElement('div');w.appendChild(el);
     api.createController(el,{uri,width:300,height:80},ctl=>{this.ctl=ctl;ctl.addListener('playback_update',e=>this.update(e));ctl.addListener('ready',()=>{if(this.p)this.go()});if(thenPlay)this.go()})},
-  play(id,start,len,o){o=o||{};this.p={id,start:+start||0,len,auto:!!o.auto,frac:+o.frac||0.45,full:!!o.full};this.seeked=false;
+  play(id,start,len,o){o=o||{};if(SpotSDK.ready()){try{this.ctl&&this.ctl.pause()}catch{}SdkClip.play(id,start,len,o);return}this.p={id,start:+start||0,len,auto:!!o.auto,frac:+o.frac||0.45,full:!!o.full};this.seeked=false;
     if(o.full&&this.ctl&&this.cued===id&&this.live===id){clearTimeout(this.t);this.seeked=true;this.aim(this.p.start);try{this.ctl.resume?this.ctl.resume():this.ctl.togglePlay()}catch{}return}
     this.load(api=>{const uri='spotify:track:'+id;if(!this.p)return;
       if(this.ctl&&this.cued===id){this.go();return}
@@ -617,9 +640,9 @@ const Spot={api:null,ctl:null,waiting:[],loading:false,p:null,seeked:false,t:nul
     if(!p||this.seeked||d.isPaused||d.isBuffering)return;this.seeked=true;
     if(p.auto&&this.dur>60)p.start=Math.max(30,Math.min(this.dur-15,Math.round(this.dur*p.frac)));
     if(p.start>0)this.aim(p.start);if(p.full)return;clearTimeout(this.t);const ms=(p.len+(p.start>0?0.7:0))*1000;this.endAt=Date.now()+ms;this.t=setTimeout(()=>this.stop(),ms)},
-  pause(){if(!this.p)return;clearTimeout(this.t);this.left=this.seeked?Math.max(300,this.endAt-Date.now()):0;try{this.ctl&&this.ctl.pause()}catch{}},
-  resume(){if(!this.p||!this.ctl)return;try{this.ctl.resume?this.ctl.resume():this.ctl.togglePlay()}catch{}if(this.seeked){clearTimeout(this.t);this.endAt=Date.now()+this.left;this.t=setTimeout(()=>this.stop(),this.left)}},
-  stop(){clearTimeout(this.t);this.t=null;this.p=null;try{this.ctl&&this.ctl.pause()}catch{}}};
+  pause(){if(SdkClip.p){SdkClip.pause();return}if(!this.p)return;clearTimeout(this.t);this.left=this.seeked?Math.max(300,this.endAt-Date.now()):0;try{this.ctl&&this.ctl.pause()}catch{}},
+  resume(){if(SdkClip.p){SdkClip.resume();return}if(!this.p||!this.ctl)return;try{this.ctl.resume?this.ctl.resume():this.ctl.togglePlay()}catch{}if(this.seeked){clearTimeout(this.t);this.endAt=Date.now()+this.left;this.t=setTimeout(()=>this.stop(),this.left)}},
+  stop(){if(SdkClip.p)SdkClip.stop();clearTimeout(this.t);this.t=null;this.p=null;try{this.ctl&&this.ctl.pause()}catch{}}};
 let hostClipN=null,songDrag=false,songDragAt=0,lastPosSend=0,renderHeld=false;
 const dragging=()=>songDrag&&Date.now()-songDragAt<5000;
 let posTrail=null;
@@ -671,6 +694,11 @@ function premiumHTML(onTV){const cid=SpotAuth.cid(),linked=SpotAuth.linked(),tv=
   return `${head}<span class="note">${msg}</span><div class="row">${sdk==='auth'?'<button class="btn-sm btn-gold" data-act="spot-login">Log in with Spotify</button>':''}<button class="btn-sm btn-ghost" data-act="spot-unlink">Unlink Spotify</button></div>`}
 /* host only: is the Jeopardy theme able to play the whole song on the screen that plays sound? */
 /* the Spotify dropdown: a one-line summary that opens to the details */
+function volHTML(){const pc=k=>Math.round(vol(k)*100)+'%';const spotSongs=displayOn()?S.tvSdk!=='ready':S.hostSdk!=='ready';
+  const sl=(k,label)=>`<label class="volrow"><span>${label}</span><input type="range" min="0" max="1" step="0.05" value="${vol(k)}" data-vol="${k}" aria-label="${label} volume"><b data-volv="${k}">${pc(k)}</b></label>`;
+  return spotDD('volcard',volOpen,`🔊 Volume <span class="muted" style="font-weight:400">· theme <span data-volv="music">${pc('music')}</span> · songs <span data-volv="songs">${pc('songs')}</span> · effects <span data-volv="fx">${pc('fx')}</span></span>`,false,
+    `${sl('music','Theme & timer music')}${sl('songs','Songs & clips')}${sl('fx','Sound effects')}
+    <span class="note">Sets the volume on ${displayOn()?'the TV board':'this device'} (wherever the sound plays). ${spotSongs?'Spotify song clips and the Spotify theme can only follow the device’s own volume unless Spotify Premium is linked there, because Spotify’s regular player doesn’t allow websites to change its volume.':'Spotify Premium is linked, so the theme and song clips follow these sliders too.'}</span>`)}
 function spotDD(id,open,summary,bad,body){return `<details class="card spotcard spotdd" id="${id}" ${open?'open':''} style="gap:8px;${bad?'border-color:var(--bad)':''}"><summary><span class="spotsum">${summary}</span><span class="spotchev" aria-hidden="true">▾</span></summary><div class="col" style="gap:8px;margin-top:8px">${body}</div></details>`}
 function spotifyCardHTML(){const st=spotState(),tv=displayOn(),where=tv?'the TV board':'this device',fo=S.fullOnly!==false;
   if(st==='none'||st==='file')return '';
@@ -729,7 +757,7 @@ function flash(kind){let el=document.getElementById('fxflash');if(!el){el=docume
   clearTimeout(flashT);flashT=setTimeout(()=>{el.className=''},1700)}
 function hostAudio(){if(view!=='host'||!S)return;Music.prog=()=>S&&S.tmr?1-tLeft()/(S.tmr.len||1):0;if(displayOn()||S.sound===false){setMusic(null);return}setMusic(wantMusic(S.phase,!!S.tmr?.run,S.tmusic!==false,!!S.music))}
 function musicControlsHTML(){return `<div class="row"><label for="musicfile" class="lbl" style="margin:0">Theme from a music file (optional)</label><input type="file" id="musicfile" accept="audio/*,video/*,.mov,.mp4,.m4a" data-music="file" style="width:auto;max-width:100%;min-width:0">${Music.buf?`<span class="pill">♪ ${esc(Music.fname)}</span><button class="btn-sm btn-ghost" data-act="music-builtin">Use the Spotify theme again</button>`:''}
-  <label for="musicvol" class="lbl" style="margin:0">Volume</label><input type="range" id="musicvol" min="0" max="1" step="0.05" value="${musicVol}" data-music="vol" style="width:140px;padding:0"></div>
+</div>
   <span class="note">${Music.buf?'Your file loops with no gap at all and is remembered on this device.':'The Jeopardy theme plays from Spotify on a loop. Its volume follows this device’s volume (the slider sets the timer music). If it doesn’t start, tap anywhere once.'} You can choose an audio file (MP3 or M4A) or a video (like a screen recording), and the game plays its sound. Silence at the start and end is trimmed so it loops with no gap. The file stays on this device and is never uploaded.</span>`}
 let wakeLock=null;async function keepAwake(){try{if(navigator.wakeLock&&!wakeLock){wakeLock=await navigator.wakeLock.request('screen');wakeLock.addEventListener('release',()=>{wakeLock=null})}}catch{}}
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&(view==='display'||view==='host'))keepAwake()});
@@ -881,7 +909,7 @@ function createGame(){
   const keep=S&&S.phase==='lobby'?S:null;
   S={code:keep?.code||newCode(),game:g,settings:clone(setup.settings),teams:keep?.teams||[],members:keep?.members||{},phase:'lobby',used:[0,1,2,3,4].map(()=>[0,0,0,0,0]),dds,
      cur:null,turn:0,answering:null,tried:[],revealed:false,hint:false,epoch:1,buzzOpen:false,tmr:{len:setup.settings.timer*1000,left:setup.settings.timer*1000,run:false,end:0},
-     scored:{},judged:{},ddWager:'',ddTeam:null,final:{wagers:{},marks:{}},inbox:{buzz:[],ans:{},wag:{},fans:{}},tv:false,sound:S?.sound!==false,music:S?.music!==false,tmusic:S?.tmusic!==false,fullOnly:S?.fullOnly!==false};
+     scored:{},judged:{},ddWager:'',ddTeam:null,final:{wagers:{},marks:{}},inbox:{buzz:[],ans:{},wag:{},fans:{}},tv:false,sound:S?.sound!==false,music:S?.music!==false,tmusic:S?.tmusic!==false,fullOnly:S?.fullOnly!==false,vol:Object.assign({},VOL_DEF,S?.vol||store.get('ssw.vols',{}))};
   saveHost();return !keep;
 }
 const curClue=()=>S.cur?S.game.cats[S.cur.c].clues[S.cur.r]:null;
@@ -946,7 +974,7 @@ function publicState(){
   const st={ph,code:S.code,title:short(g.title,60),cats:g.cats.map(x=>short(x.name,40)),used:S.used,
     teams:S.teams.map((t,i)=>({id:t.id,name:t.name,named:t.custom!==false,need:needName(i),score:t.score,m:members(i).map(m=>({p:m.pid,n:m.name,on:on.has(m.pid)}))})),
     loose:Object.entries(S.members).filter(([,m])=>!m.team||teamIdx(m.team)<0).map(([p,m])=>({p,n:m.name})),
-    ord:orderState(),fullOnly:S.fullOnly!==false,spotCheck:S.spotCheck||0,cap:S.settings.cap,create:S.settings.playersCreate,mode:S.settings.mode,ans:S.settings.answers,turn:S.turn,epoch:S.epoch,open:!!S.buzzOpen,
+    ord:orderState(),vol:Object.assign({},VOL_DEF,S.vol),fullOnly:S.fullOnly!==false,spotCheck:S.spotCheck||0,cap:S.settings.cap,create:S.settings.playersCreate,mode:S.settings.mode,ans:S.settings.answers,turn:S.turn,epoch:S.epoch,open:!!S.buzzOpen,
     tm:{left:tLeft(),run:!!S.tmr.run,len:S.tmr.len},music:!!S.music,tmusic:S.tmusic!==false,snd:S.sound!==false,fx:S.fx||null,clip:S.clip?{n:S.clip.n,act:S.clip.act,at:S.clip.at||0}:null,hi:activeTeam()};
   if(S.cur&&cl){st.clue={cat:g.cats[S.cur.c].name,val:clueValue(),dd:isDD(),wager:isDD()?S.ddWager:'',ddMax:isDD()?ddMax():0,ddTeam:S.ddTeam,ddBy:S.ddBy||'',
     q:ph==='clue'?cl.q:null,h:S.hint&&ph==='clue'?cl.h:null,a:S.revealed?(cl.a||(cl.song?'':null)):null,rev:!!S.revealed,m:ph==='clue'&&cl.m?cl.m:null,img:ph==='clue'&&cl.img?cl.img:null,full:ph==='clue'&&cl.full?cl.full:null,emoji:!!cl.emoji,zoom:ph==='clue'&&cl.img&&!S.revealed&&S.cur.r>=3?S.cur.r:0,ep:S.epoch,
@@ -970,7 +998,7 @@ function myTeamIdx(st){return st?st.teams.findIndex(t=>(t.m||[]).some(m=>m.p===P
 function applyState(st){
   if(!st||typeof st!=='object'||!Array.isArray(st.teams))return;
   if(st.tm)pTimer={left:st.tm.left,run:st.tm.run,len:st.tm.len||1,end:Date.now()+st.tm.left};
-  if(view==='display'){if(D.spotCheck!=null&&st.spotCheck!==D.spotCheck){sentPv=null;resetSpotify()}D.spotCheck=st.spotCheck;sendSpotStat();if(PS&&PS.fullOnly!==st.fullOnly)setTimeout(()=>ThemeSpot.kick(),0);const n=st.fx?st.fx.n:0;if(lastFx!=null&&n!==lastFx&&st.fx){if(!D.mute&&st.snd!==false)sfx(st.fx.k);flash(st.fx.k)}lastFx=n;
+  if(view==='display'){setTimeout(applyVolumes,0);if(D.spotCheck!=null&&st.spotCheck!==D.spotCheck){sentPv=null;resetSpotify()}D.spotCheck=st.spotCheck;sendSpotStat();if(PS&&PS.fullOnly!==st.fullOnly)setTimeout(()=>ThemeSpot.kick(),0);const n=st.fx?st.fx.n:0;if(lastFx!=null&&n!==lastFx&&st.fx){if(!D.mute&&st.snd!==false)sfx(st.fx.k);flash(st.fx.k)}lastFx=n;
     const on=!D.mute&&st.snd!==false,cn=st.clip?st.clip.n:0;playingN=cn;if(lastClip!=null&&cn!==lastClip&&st.clip){if(on)runClip(st.clip.act,st.clue&&st.clue.m,st.clip.at,st.clue&&st.clue.full);else Clip.stop()}lastClip=cn;
     if(!on&&Clip.playing)Clip.stop();if(st.ph==='clue'&&st.clue&&st.clue.m&&st.clue.m.spotify&&!Clip.playing)Spot.cue(st.clue.m.spotify);if(st.ph!=='clue'&&Clip.playing)Clip.stop();PS=st;displayAudio()}
   const k=JSON.stringify(Object.assign({},st,{tm:{run:st.tm?.run,left:st.tm?.run?0:st.tm?.left}}));
@@ -1206,13 +1234,14 @@ function lobbyHTML(inOverlay){
 }
 function hostHTML(){
   const g=S.game;
-  if(S.phase==='lobby')return `<div class="row"><div><div class="eyebrow">Jeopardy Showdown · lobby</div><h1 style="font-family:var(--f-display);font-weight:400;font-size:clamp(24px,4vw,38px);text-transform:uppercase">${esc(g.title)}</h1></div><div class="spacer"></div>${canFull()?`<button class="btn-sm" data-act="fs">${isFull()?'Exit full screen':'⛶ Full screen'}</button>`:''}<div id="conn">${connHTML()}</div></div>${spotifyCardHTML()}${lobbyHTML(false)}`;
+  if(S.phase==='lobby')return `<div class="row"><div><div class="eyebrow">Jeopardy Showdown · lobby</div><h1 style="font-family:var(--f-display);font-weight:400;font-size:clamp(24px,4vw,38px);text-transform:uppercase">${esc(g.title)}</h1></div><div class="spacer"></div>${canFull()?`<button class="btn-sm" data-act="fs">${isFull()?'Exit full screen':'⛶ Full screen'}</button>`:''}<div id="conn">${connHTML()}</div></div>${spotifyCardHTML()}${volHTML()}${lobbyHTML(false)}`;
   const allUsed=S.used.every(c=>c.every(Boolean));
   return `<div class="row"><div><div class="eyebrow">Jeopardy Showdown · host</div><h1 style="font-family:var(--f-display);font-weight:400;font-size:clamp(24px,4vw,38px);letter-spacing:.02em;text-transform:uppercase">${esc(g.title)}</h1></div><div class="spacer"></div>
     <button class="btn-sm" data-act="show-lobby">Code ${esc(S.code)} · teams & QR</button>${canFull()?`<button class="btn-sm" data-act="fs">${isFull()?'Exit full screen':'⛶ Full screen'}</button>`:''}<div id="conn">${connHTML()}</div></div>
-  ${spotifyCardHTML()}
+  ${spotifyCardHTML()}${volHTML()}
   ${orderHTML(orderState())}
   <div class="turnbar"><span class="eyebrow">${classic()?'In control':'Picking now'}</span><b>${esc(S.teams[S.turn]?.name||'No teams yet')}</b><span class="spacer"></span><span class="note">${classic()?'Classic Jeopardy':'Team Order'} · ${esc(LEVEL_NAMES[S.settings.level]||'All levels')} · ${S.settings.mode==='turns'?'next team steals':'buzz-in'} · ${S.settings.answers==='typed'?'typed answers'+(S.settings.auto?', auto-scored':''):'answers out loud'}</span></div>
+  <div class="row"><button class="btn-sm ${S.settings.autoTimer?'':'btn-ghost'}" data-act="auto-timer" aria-pressed="${!!S.settings.autoTimer}">⏱ Auto-start timer: ${S.settings.autoTimer?'on':'off'}</button><span class="note">${S.settings.autoTimer?'The timer starts by itself when a question opens.':'The timer waits until you tap Start timer.'}</span></div>
   <div class="scores" id="scores">${scoresInner(true)}</div>
   ${boardHTML(g.cats,S.used,true)}
   <div class="row">
@@ -1240,7 +1269,7 @@ function hostHTML(){
 function timerHTML(){
   const left=tLeft(),run=S.tmr.run;
   return `<div class="row"><div class="timer"><i id="tbar" class="${left<=5000?'low':''}" style="width:${100*left/(S.tmr.len||1)}%"></i></div><span class="ttext" id="ttext">${Math.ceil(left/1000)}s</span></div>
-  <div class="row">${run?'<button class="btn-sm" data-act="t-pause">Pause timer</button>':left>0&&left<S.tmr.len?'<button class="btn-sm btn-gold" data-act="t-resume">Resume timer</button>':'<button class="btn-sm btn-gold" data-act="t-start">Start timer</button>'}<button class="btn-sm" data-act="t-reset">Reset</button>${S.timeUp&&!run?'<span class="no">Time’s up</span>':''}</div>`;
+  <div class="row">${run?'<button class="btn-sm" data-act="t-pause">Pause timer</button>':left>0&&left<S.tmr.len?'<button class="btn-sm btn-gold" data-act="t-resume">Resume timer</button>':'<button class="btn-sm btn-gold" data-act="t-start">Start timer</button>'}<button class="btn-sm" data-act="t-reset">Reset</button><button class="btn-sm btn-ghost" data-act="auto-timer" aria-pressed="${!!S.settings.autoTimer}">Auto-start timer: ${S.settings.autoTimer?'on':'off'}</button>${S.timeUp&&!run?'<span class="no">Time’s up</span>':''}</div>`;
 }
 /* the song behind a question: its Spotify clip, or the recording linked to a Finish the Lyric line */
 const songIdOf=cl=>(cl&&cl.m&&cl.m.spotify)||(cl&&cl.full)||'';
@@ -1316,7 +1345,7 @@ function clueOverlay(){
   return `<div class="overlay" role="dialog" aria-label="Clue"><div class="ov-in">
     <div class="row"><span class="eyebrow">${esc(g.cats[c.c].name)} · ${dd?'Daily Double · wager '+val:val+' points'}${cl.from?` · from ${esc(cl.from)}`:''}</span><div class="spacer"></div>
       ${!S.revealed&&!dd?'<button class="btn-sm btn-ghost" data-act="swap">Swap for a random question</button>':''}<button class="btn-gold" data-act="close">Back to board</button></div>
-    ${orderHTML(orderState())}
+    ${orderHTML(orderState())}${volHTML()}
     ${cl.img?picHTML(cl.img,0,0):''}
     <div class="cluebox">${cl.m?'<div class="cliptag">♪ Audio clip</div>':''}<div class="clue ${cl.emoji?'emojiq':''}">${clueText(cl.q)}</div>${cl.img&&S.cur.r>=3&&!S.revealed?'<div class="note" style="text-align:center">The TV starts zoomed in on this picture and slowly zooms out.</div>':''}${S.hint&&cl.h?`<div class="hint">Hint: ${esc(cl.h)}</div>`:''}</div>
     ${cl.m?`<div class="row"><span class="note" style="flex:1;min-width:0">♪ This clue has ${cl.m.spotify?'a Spotify clip':'an audio clip'} · <b>${audioWhere()}</b>. Tap Play clip when you’re ready; it plays ${displayOn()?'on the TV board':'on this device'}.${cl.m.spotify?' The TV board’s browser should be logged into Spotify for full songs.':''}</span></div><div class="row"><span class="pill" id="clipstat" aria-live="polite">${esc(clipStatusText())}</span>
@@ -1580,6 +1609,7 @@ document.addEventListener('click',e=>{
     case 'spot-login':{const w=window.open('about:blank','_blank');SpotAuth.login().then(u=>{if(!u)return;if(w)w.location.href=u;else location.href=u});break}
     case 'spot-unlink':SpotAuth.unlink();SpotSDK.stopAll();if(view==='display'){SpotSDK.report('off');themeSourceChanged();render();break}S.hostSdk='';conns.forEach((inf,c)=>{if(inf.role==='display'){inf.spotTok=null;try{c.send({t:'spottoken',a:''})}catch{}}});themeSourceChanged();render();break;
     case 'fs':toggleFull();break;
+    case 'auto-timer':S.settings.autoTimer=!S.settings.autoTimer;setup.settings.autoTimer=S.settings.autoTimer;saveSetup();commit();break;
     case 'spot-full':S.fullOnly=S.fullOnly===false;commit();if(!displayOn())ThemeSpot.kick();break;
     case 'spot-check':if(view==='display'){sentPv=null;resetSpotify();render();break}if(displayOn()){S.tvSpot=null;S.spotCheck=(S.spotCheck||0)+1;commit()}else{resetSpotify();render()}break;
     case 'autoplay':S.settings.autoplay=!S.settings.autoplay;setup.settings.autoplay=S.settings.autoplay;saveSetup();commit();break;
@@ -1654,6 +1684,7 @@ document.addEventListener('click',e=>{
 document.addEventListener('input',e=>{
   const t=e.target,d=t.dataset;
   if(d.cid!==undefined){cidDraft=t.value;return}
+  if(d.vol&&S){S.vol=Object.assign({},VOL_DEF,S.vol,{[d.vol]:+t.value});store.set('ssw.vols',S.vol);applyVolumes();saveHost();broadcastSoon();document.querySelectorAll(`[data-volv="${d.vol}"]`).forEach(x=>x.textContent=Math.round(+t.value*100)+'%');return}
   if(d.bind==='ddWager'){S.ddWager=t.value;S.ddBy='';saveHost();broadcastSoon()}
   else if(d.fw!==undefined){S.final.wagers[+d.fw]=t.value;saveHost()}
   else if(d.p){P[d.p]=d.p==='code'?t.value.toUpperCase():t.value;if(d.p==='code')t.value=P.code}
