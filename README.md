@@ -11,7 +11,7 @@ A free Bible quiz game show for youth groups and young adults. The host runs the
 
 ## Running a game
 
-1. **Host (iPad):** open the site, tap **Host a game**, choose a difficulty and your rules, then tap **Create game**. Every new game picks 5 random categories with random questions. To leave categories out, open **Categories in the mix** and tap any category you don't want. Everything else stays in the random draw (keep at least 5). **Leave out song categories** removes all the music ones at once, and **Include all** brings everything back. Your choices are remembered on that device.
+1. **Host (any device: iPad, iPhone, Android or laptop):** open the site, tap **Host a game**, choose a difficulty and your rules, then tap **Create game**. Every new game picks 5 random categories with random questions. To leave categories out, open **Categories in the mix** and tap any category you don't want. Everything else stays in the random draw (keep at least 5). **Leave out song categories** removes all the music ones at once, and **Include all** brings everything back. Your choices are remembered on that device.
 2. **TV board (laptop on AirPlay):** open the site, tap **Show the board**, enter the 4-letter code, then tap **Full screen**. Music and sound effects play from this screen.
 3. **Players (any phone):** scan the QR code on the TV and enter a name. Scanning always opens the game for that code, even if the phone was in an earlier game. Each player starts on their own team and can join another team in the lobby.
 4. When you're ready, the host taps **Start the game**. You can start with no teams or players; anyone who joins later gets their own team.
@@ -117,6 +117,8 @@ Each category looks like this:
 You can also edit the questions for a single game from the host screen with **Edit questions**, and save those games on your device.
 
 ## Good to know
+
+- **Hosting from a phone:** the host screen fits an iPhone or Android phone. On a phone, the question screen keeps **Correct**, **Wrong** and **Board** pinned at the bottom so you never have to scroll to score, and pictures shrink so the answer stays in view.
 
 - **Works on any device, browser and OS:** iPhone, iPad, Android, Windows, Mac, Chromebook and Linux, in a current version of Chrome, Safari, Edge, Firefox or Samsung Internet. Nothing to install, and no accounts needed for players. Very old browsers (from before about 2020) may not work.
 - A few small differences by device: iPhones can't go full screen in the browser (iPads and computers can); Firefox lets screens dim during long pauses, so keep the host and TV board awake in settings; and Spotify clips play best on the TV board laptop with a browser logged into Spotify.

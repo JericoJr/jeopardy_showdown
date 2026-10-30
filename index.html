@@ -91,7 +91,7 @@ label,.lbl{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:va
 .turnbar{background:var(--panel);border:1px solid var(--gold);border-radius:12px;padding:10px 14px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
 .turnbar b{font-family:var(--f-display);font-weight:400;font-size:22px;color:var(--gold);letter-spacing:.02em;text-transform:uppercase}
 /* overlay */
-.overlay{position:fixed;inset:0;background:rgba(5,7,26,.95);z-index:20;overflow:auto;
+.overlay{position:fixed;inset:0;background:rgba(5,7,26,.95);z-index:20;overflow:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;
   padding:calc(16px + env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) calc(24px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
 .ov-in{max-width:1000px;margin:0 auto;display:flex;flex-direction:column;gap:14px}
 .cluebox{background:var(--tile);border-radius:18px;padding:clamp(20px,4vw,44px);min-height:200px;display:flex;flex-direction:column;justify-content:center;gap:12px;box-shadow:0 20px 60px rgba(0,0,0,.4)}
@@ -119,6 +119,16 @@ label,.lbl{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:va
 .qr img,.qr canvas{display:block;width:200px;height:200px;max-width:100%}
 .lobby{display:grid;grid-template-columns:auto minmax(0,1fr);gap:24px;align-items:center}
 @media (max-width:700px){.lobby{grid-template-columns:minmax(0,1fr)}}
+/* phones (host on an iPhone): whole words in category names, a smaller picture, and score buttons pinned to the bottom */
+.quickbar{display:none}
+@media (max-width:600px){
+  .cat{overflow-wrap:normal;word-break:normal;hyphens:auto;-webkit-hyphens:auto;font-size:10px;letter-spacing:0;padding:3px;min-height:56px}
+  .board{gap:4px;padding:4px}
+  .ov-in .artbox{max-width:min(100%,46vh)}
+  .overlay{background:#05071a}
+  .quickbar{display:flex;position:sticky;bottom:0;z-index:2;gap:8px;padding:10px;margin:0 -4px;background:rgba(5,7,26,.97);border-top:1px solid rgba(255,255,255,.12);border-radius:12px 12px 0 0;padding-bottom:max(10px,env(safe-area-inset-bottom))}
+  .quickbar button{flex:1;min-height:48px;padding:6px 8px;font-size:15px}
+}
 .spot{display:flex;flex-direction:column;gap:6px;text-align:left;padding:14px;border-radius:14px;background:var(--panel)}
 .spot.mine{border:2px solid var(--gold)}
 .spot h3{font-family:var(--f-display);font-weight:400;font-size:24px;letter-spacing:.02em;text-transform:uppercase;color:var(--gold);overflow-wrap:anywhere}
@@ -1145,6 +1155,7 @@ function clueOverlay(){
     ${S.settings.answers==='typed'?`<div class="card" style="gap:8px"><div class="eyebrow">Typed answers</div><div id="answers">${answersHTML()}</div></div>`:''}
     <details class="card"><summary class="eyebrow" style="cursor:pointer">Give or take points from any team</summary>
       ${S.teams.map((t,i)=>`<div class="scorerow"><span class="nm">${esc(t.name)} <span class="muted">${t.score}</span></span><button class="btn-sm btn-good" data-act="adj" data-i="${i}" data-v="${val}">+${val}</button><button class="btn-sm btn-bad" data-act="adj" data-i="${i}" data-v="${-val}">−${val}</button></div>`).join('')}</details>
+    <div class="quickbar" role="group" aria-label="Quick controls">${ans!=null&&!S.revealed?`<button class="btn-good ${S.scored[ans]===1?'on-good':''}" data-act="mark" data-i="${ans}" data-s="1">✓ ${esc(S.teams[ans].name)} +${val}</button><button class="btn-bad ${S.scored[ans]===-1?'on-good':''}" data-act="mark" data-i="${ans}" data-s="-1">✗ Wrong</button>`:!S.revealed?'<button class="btn-gold" data-act="reveal">Reveal answer</button>':''}<button class="${S.revealed||ans==null?'btn-gold':''}" data-act="close">Board</button></div>
   </div></div>`;
 }
 function finalExtraHTML(){
