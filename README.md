@@ -44,7 +44,7 @@ In every mode, higher points always means a harder question.
 
 - **Theme music:** an original, upbeat game-show theme that plays in the lobby and on the board between questions. It goes quiet while a question is open. It's on by default; the host turns it on or off with the **Theme music** button.
 - **Timer music:** original suspenseful countdown music that plays while the timer is running and speeds up as time runs out. It stops when the timer is paused or ends. Turn it on or off with the **Timer music** button.
-- Music plays on the TV board, or on the host's device if no TV board is connected. Song clips pause the music while they play.
+- **Where sound plays:** all music, sound effects and song clips play on the TV board when one is connected, and on the host's device when it isn't. If the TV board connects or drops out mid-game (even mid-song), sound switches over right away. The host screen shows where sound is playing (**Sound: TV board** or **Sound: this device**). Song clips pause the music while they play.
 - To use your own theme song instead, choose a music file under **Music on this screen** on the TV board. Use music you have the right to play.
 - **Timer:** when the host starts the timer, a big countdown number shows on the TV board and players' phones. At zero, a buzzer sounds and a red **Time's up!** animation plays automatically. The host still decides the points.
 - **Sound effects and animations:** correct answers get a chime and a green **Correct!** flash; wrong answers get a buzz and a red **Wrong!** shake. They show on the TV board, the host screen and players' phones.

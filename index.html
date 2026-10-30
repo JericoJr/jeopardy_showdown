@@ -431,7 +431,8 @@ function updateSoundWarn(){const el=$('#sndwarn');if(!el)return;const show=view=
 setInterval(()=>{updateSoundWarn();if(view==='host'&&S&&S.clip){const el=$('#clipstat');if(el){const t=clipStatusText();if(el.textContent!==t)el.textContent=t;
   if(t==='Ready'&&S.clip.act!=='stop'&&S.clip.act!=='pause'&&!S.clip._done){S.clip._done=true;render()}}}},500);
 function runClip(act,m,at,full){if(act==='full'){const fm=full?{spotify:full}:m;fm&&Clip.playFull(fm,at)}else if(act==='play'){m&&Clip.play(m)}else if(act==='pause')Clip.pause();else if(act==='resume')Clip.resume();else Clip.stop()}
-function hostClip(){if(view!=='host'||!S||!S.clip)return;if(S.clip.n===hostClipN)return;hostClipN=S.clip.n;if(displayOn()||S.sound===false){Clip.stop();return}const cl=curClue();runClip(S.clip.act,cl&&cl.m,S.clip.at,cl&&cl.full)}
+function hostCue(){if(view!=='host'||!S||displayOn()||S.phase!=='clue')return;const cl=curClue(),id=cl&&cl.m&&cl.m.spotify;if(id&&!Clip.playing)Spot.cue(id)}
+function hostClip(){hostCue();if(view!=='host'||!S||!S.clip)return;if(S.clip.n===hostClipN)return;hostClipN=S.clip.n;if(displayOn()||S.sound===false){Clip.stop();return}const cl=curClue();runClip(S.clip.act,cl&&cl.m,S.clip.at,cl&&cl.full)}
 function clipCmd(act,at){const now=Date.now(),cl=curClue(),len=Math.min(20,Math.max(2,+(cl&&cl.m&&cl.m.length)||10))*1000,c=S.clip||{};
   let end=c.end||0,left=c.left||0,full=!!c.full;
   if(act==='full'){S.clip={n:(c.n||0)+1,act:'full',at:Math.max(0,+at||0),full:true,end:0,left:0};S.spos={pos:+at||0,dur:S.spos?.dur||0,paused:false,at:now};return}
@@ -524,7 +525,7 @@ function connHTML(){
   if(watching())return `<span class="pill"><span class="dot ${net==='live'?'live':''}"></span>${lbl[net]||''}</span>`;
   return '';
 }
-function updateConn(){const el=$('#conn');if(el)el.innerHTML=connHTML()}
+function updateConn(){const el=$('#conn');if(el)el.innerHTML=connHTML();const aw=$('#audiowhere');if(aw&&S)aw.textContent=audioWhere()}
 
 /* ---------- host: players & teams ---------- */
 const onlinePids=()=>[...conns.values()].filter(v=>v.role==='player'&&v.pid).map(v=>v.pid);
@@ -550,7 +551,16 @@ function mixTeams(n){
   ps.forEach((pid,i)=>{S.members[pid].team=S.teams[(i+off)%k].id});
   pruneTeams(true);
 }
-function netChanged(){if(!S)return;pruneTeams();syncNames();hostAudio();saveHost();broadcastSoon();refreshParts();updateConn()}
+let hadDisplay=false;
+/* sound goes to the TV board when one is connected, otherwise to this device; switch instantly when that changes */
+function audioWhere(){return S&&S.sound===false?'🔇 Sound off':displayOn()?'🔊 Sound: TV board':'🔊 Sound: this device'}
+function routeAudio(){if(view!=='host'||!S)return;const now=displayOn();if(now===hadDisplay)return;hadDisplay=now;
+  if(now){Clip.stop();hostClipN=S.clip?S.clip.n:null}
+  else if(S.sound!==false&&S.clip&&S.phase==='clue'){const cl=curClue(),st=clipState();
+    if(st==='playing'){if(S.clip.full){runClip('full',cl&&cl.m,(S.spos&&S.spos.pos)||S.clip.at||0,cl&&cl.full)}else if(cl&&cl.m){Clip.play(Object.assign({},cl.m,{length:Math.max(2,(S.clip.end-Date.now())/1000)}))}}
+    hostClipN=S.clip.n}
+  hostAudio();render()}
+function netChanged(){if(!S)return;pruneTeams();syncNames();routeAudio();hostAudio();saveHost();broadcastSoon();refreshParts();updateConn()}
 function onMsg(c,m){
   if(!S||!m||typeof m!=='object')return;
   const info=conns.get(c);if(!info)return;
@@ -607,7 +617,7 @@ async function songTitle(id){if(titleCache[id])return titleCache[id];
   try{const r=await fetch('https://open.spotify.com/oembed?url='+encodeURIComponent('https://open.spotify.com/track/'+id));if(!r.ok)return '';const j=await r.json();const t=String(j.title||'').trim();
     if(t){titleCache[id]=t;store.set('ssw.titles',titleCache)}return t}catch{return ''}}
 function fillSongTitles(){if(!S)return;S.game.cats.forEach(cat=>cat.clues.forEach(cl=>{if(cl.song&&cl.m&&cl.m.spotify&&!cl.a){songTitle(cl.m.spotify).then(t=>{if(t&&S&&!cl.a){cl.a=t;cl.alt=t.toLowerCase().replace(/\s*[\(\[-].*$/,'')+'|'+t.toLowerCase();commit()}})}}))}
-function openTile(c,r){
+function openTile(c,r){setTimeout(hostCue,0);
   if(S.used[c][r])return;
   S.cur={c,r};S.revealed=false;S.hint=false;peek=false;newEpoch();S.scored={};S.tried=[];S.ddWager='';
   const hasT=S.teams.length>0;if(S.turn>=S.teams.length)S.turn=0;S.answering=S.settings.mode==='turns'&&hasT?S.turn:null;S.ddTeam=hasT?S.turn:null;
@@ -903,6 +913,7 @@ function hostHTML(){
     <button data-act="autoplay" aria-pressed="${!!S.settings.autoplay}">${S.settings.autoplay?'Clip autoplay: on':'Clip autoplay: off'}</button>
     <button data-act="tmusic" aria-pressed="${S.tmusic!==false}">${S.tmusic!==false?'Timer music: on':'Timer music: off'}</button>
     <button data-act="sound" aria-pressed="${S.sound!==false}">${S.sound!==false?'Sounds: on':'Sounds: off'}</button>
+    <span class="pill" id="audiowhere" title="Where music, sounds and song clips play">${audioWhere()}</span>
     <button data-act="ed-host">Edit questions</button>
     <button data-act="tuner">Song Tuner</button>
     <div class="spacer"></div><button class="btn-ghost" data-act="go-setup">New game</button><button class="btn-bad" data-act="end-game">End game</button>
@@ -978,7 +989,7 @@ function clueOverlay(){
       ${!S.revealed&&!dd?'<button class="btn-sm btn-ghost" data-act="swap">Swap for a random question</button>':''}<button class="btn-gold" data-act="close">Back to board</button></div>
     ${cl.img?picHTML(cl.img,0,0):''}
     <div class="cluebox">${cl.m?'<div class="cliptag">♪ Audio clip</div>':''}<div class="clue ${cl.emoji?'emojiq':''}">${clueText(cl.q)}</div>${cl.img&&S.cur.r>=3&&!S.revealed?'<div class="note" style="text-align:center">The TV starts zoomed in on this picture and slowly zooms out.</div>':''}${S.hint&&cl.h?`<div class="hint">Hint: ${esc(cl.h)}</div>`:''}</div>
-    ${cl.m?`<div class="row"><span class="note" style="flex:1;min-width:0">♪ This clue has ${cl.m.spotify?'a Spotify clip':'an audio clip'}. Tap Play clip when you’re ready; it plays ${displayOn()?'on the TV board':'on this device'}.${cl.m.spotify?' The TV board’s browser should be logged into Spotify for full songs.':''}</span></div><div class="row"><span class="pill" id="clipstat" aria-live="polite">${esc(clipStatusText())}</span>
+    ${cl.m?`<div class="row"><span class="note" style="flex:1;min-width:0">♪ This clue has ${cl.m.spotify?'a Spotify clip':'an audio clip'} · <b>${audioWhere()}</b>. Tap Play clip when you’re ready; it plays ${displayOn()?'on the TV board':'on this device'}.${cl.m.spotify?' The TV board’s browser should be logged into Spotify for full songs.':''}</span></div><div class="row"><span class="pill" id="clipstat" aria-live="polite">${esc(clipStatusText())}</span>
       ${clipState()==='playing'?'<button class="btn-sm" data-act="clip-pause">❚❚ Pause</button>':clipState()==='paused'?'<button class="btn-sm btn-gold" data-act="clip-resume">▶ Resume</button>':''}
       <button class="btn-sm ${clipState()==='idle'?'btn-gold':''}" data-act="clip-play">${clipState()==='idle'?'▶ Play clip':'↺ Play from the start'}</button><button class="btn-sm" data-act="clip-stop">■ Stop</button></div>
       ${fullSongPanel(cl)}`:''}
