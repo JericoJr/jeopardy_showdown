@@ -38,10 +38,12 @@ h1,h2,h3{margin:0;text-wrap:balance}
 h2{font-size:20px}
 button,input,textarea,select{font:inherit;color:inherit}
 button{cursor:pointer;border-radius:10px;padding:10px 14px;background:var(--panel);border:1px solid var(--line);font-weight:600}
+a.btn{display:inline-block;text-decoration:none;color:inherit;cursor:pointer;border-radius:10px;padding:10px 14px;background:var(--panel);border:1px solid var(--line);font-weight:600}
 button:hover:not(:disabled){border-color:rgba(214,218,255,.45)}
 button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
 button:disabled{opacity:.45;cursor:not-allowed}
 .btn-gold{background:var(--gold);color:var(--gold-ink);border-color:var(--gold);font-weight:800}
+a.btn.btn-gold{background:var(--gold);color:var(--gold-ink);border-color:var(--gold);font-weight:800}
 .btn-good{background:var(--good);color:#04261a;border-color:var(--good);font-weight:800}
 .btn-bad{background:var(--bad);color:#3a0606;border-color:var(--bad);font-weight:800}
 .btn-ghost{background:transparent}
@@ -362,11 +364,14 @@ let musicVol=Number(store.get('ssw.vol',0.5));
    'tension' suspenseful countdown music that speeds up as the timer runs down */
 /* theme song from Spotify (questions.js spotify.theme), looped with its own hidden player */
 const LOOP_EARLY=350;
+const SPOT_LOGIN='https://accounts.spotify.com/login?continue=https%3A%2F%2Fopen.spotify.com%2F';
+/* "Full song only": don't play Spotify's 30-second mid-song preview */
+const fullOnlyNow=()=>view==='display'?!(PS&&PS.fullOnly===false):!(S&&S.fullOnly===false);
 const ThemeSpot={ctl:null,want:false,made:false,played:false,ok:false,pos:0,dur:0,playingAt:0,lastPos:0,kicked:0,
   id(){const qs=(window.QUESTION_BANK||{}).spotify||{};return typeof spotifyId==='function'?spotifyId(qs.theme||''):''},
   /* true while Spotify has reported it's playing in the last 2 seconds */
   isPlaying(){return Date.now()-this.playingAt<2000},
-  kick(){if(!this.ctl||this.isPlaying()||Date.now()-this.kicked<1500)return;this.kicked=Date.now();
+  kick(){if(!this.ctl||this.isPlaying()||Date.now()-this.kicked<1500)return;if(this.preview&&fullOnlyNow())return;this.kicked=Date.now();
     try{this.played&&this.ctl.resume?this.ctl.resume():this.ctl.play()}catch{}},
   start(){const id=this.id();if(!id)return false;if(!this.want)this.fromTop=true;this.want=true;
     if(this.ctl)this.kick();else this.prepare();
@@ -382,7 +387,7 @@ const ThemeSpot={ctl:null,want:false,made:false,played:false,ok:false,pos:0,dur:
     if(dur){const pv=dur<=31000;if(pv!==this.preview){this.preview=pv;previewChanged()}}
     if(playing){this.ok=true;this.played=true;this.playingAt=Date.now();if(this.fromTop){this.fromTop=false;if(pos>1500){this.loop();return}}}
     else if(d.isPaused)this.playingAt=0;
-    if(!this.want){if(!d.isPaused)try{this.ctl.pause()}catch{}return}
+    if(!this.want||(this.preview&&fullOnlyNow())){clearTimeout(this.loopT);if(!d.isPaused)try{this.ctl.pause()}catch{}return}
     /* loop: let the whole song play, then jump back to the start right as it ends.
        The jump is timed from the song's own clock, so it doesn't wait for the next update. */
     clearTimeout(this.loopT);
@@ -395,9 +400,13 @@ const ThemeSpot={ctl:null,want:false,made:false,played:false,ok:false,pos:0,dur:
     if(dur)this.lastPos=pos},
   loop(stopped){this.loopedAt=Date.now();try{this.ctl.seek(0);if(stopped)this.ctl.resume?this.ctl.resume():this.ctl.play()}catch{}},
   /* watchdog: the theme should be playing but Spotify has it paused (it stopped at the end, or after a jump) -> start it again */
-  watch(){if(!this.want||!this.ctl||!this.played||!this.lastPaused)return;if(Date.now()-this.kicked<1500)return;this.kicked=Date.now();
+  watch(){if(!this.want||!this.ctl||!this.played||!this.lastPaused)return;if(this.preview&&fullOnlyNow())return;if(Date.now()-this.kicked<1500)return;this.kicked=Date.now();
     try{if(this.dur&&this.pos>=this.dur-1.5)this.ctl.seek(0);this.ctl.resume?this.ctl.resume():this.ctl.play()}catch{}},
-  stop(){this.want=false;this.playingAt=0;this.kicked=0;clearTimeout(this.loopT);try{this.ctl&&this.ctl.pause()}catch{}}};
+  stop(){this.want=false;this.playingAt=0;this.kicked=0;clearTimeout(this.loopT);try{this.ctl&&this.ctl.pause()}catch{}},
+  /* after logging into Spotify: rebuild the player so it picks up the login */
+  reset(){const want=this.want;clearTimeout(this.loopT);try{this.ctl&&this.ctl.destroy&&this.ctl.destroy()}catch{}const w=document.getElementById('themewrap');if(w)w.innerHTML='';
+    Object.assign(this,{ctl:null,made:false,played:false,ok:false,preview:undefined,playingAt:0,kicked:0,lastPaused:false});previewChanged();this.prepare();if(want){this.want=true;this.fromTop=true}}};
+function resetSpotify(){ThemeSpot.reset();try{Spot.ctl&&Spot.ctl.destroy&&Spot.ctl.destroy()}catch{}const w=document.getElementById('spotwrap');if(w)w.innerHTML='';Spot.ctl=null;Spot.cued='';Spot.p=null}
 /* browsers can block music until someone taps: a tap starts the theme only if it isn't already playing */
 document.addEventListener('pointerdown',()=>{if(ThemeSpot.want)ThemeSpot.kick()},true);
 setInterval(()=>ThemeSpot.watch(),1000);
@@ -414,7 +423,7 @@ function trimSilence(b){try{const n=b.length,ch=[...Array(b.numberOfChannels)].m
 function alertNote(t){const el=document.createElement('div');el.className='toast';el.textContent=t;document.body.appendChild(el);setTimeout(()=>el.remove(),4000)}
 async function restoreThemeFile(){const v=await fileStore.get();if(!v||!v.data)return;try{Music.buf=await decodeAudio(v.data.slice(0));Music.fname=v.name||'Your music';if(Music.kind==='show'){const k=Music.kind;Music.stop();Music.start(k)}if(view==='host'||view==='display'||view==='setup')render()}catch{}}
 const Music={on:false,kind:null,el:null,timer:null,bus:null,step:0,next:0,prog:()=>0,
-  start(kind){if(this.on&&this.kind===kind)return;this.stop();this.on=true;this.kind=kind;
+  start(kind){if(this.on&&this.kind===kind){if(this.spot)ThemeSpot.kick();return}this.stop();this.on=true;this.kind=kind;
     if(kind==='show'&&this.buf){const ac=audio();if(ac){this.bus=ac.createGain();this.bus.gain.value=musicVol;this.bus.connect(ac.destination);
       const src=ac.createBufferSource();src.buffer=this.buf;src.loop=true;src.connect(this.bus);src.start(0,this.at%this.buf.duration);this.src=src;this.t0=ac.currentTime-(this.at%this.buf.duration);return}}
     if(kind==='show'){if(ThemeSpot.start())this.spot=true;else{this.on=false;this.kind=null}return}
@@ -519,8 +528,23 @@ function paintSongPos(){paintPlayer();const el=$('#songpos'),tx=$('#songtime');i
   if(tx){const v=dragging()&&el?+el.value:pos;tx.textContent=`${fmtT(Math.floor(v))} / ${dur?fmtT(Math.floor(dur)):'—:——'}`}}
 setInterval(()=>{if(view==='host'&&S&&S.phase==='clue')paintSongPos();if(renderHeld&&!dragging()){renderHeld=false;songDrag=false;render()}},500);
 function soundBlocked(){return !actx||actx.state!=='running'}
-function previewChanged(){updateSoundWarn();const el=$('#themewarn');if(el)el.innerHTML=themeWarnHTML()}
-function themeWarnHTML(){if(!ThemeSpot.preview||Music.buf)return '';return `<div class="card" style="border-color:var(--bad);gap:6px"><b>Spotify is only playing a 30-second preview of the theme on this ${view==='display'?'TV board':'device'}.</b><span class="note">That’s why it starts mid-song. To hear the whole song: open open.spotify.com in this same browser, log in, then reload this page. On an iPhone or iPad (Safari), also go to Settings › Apps › Safari and turn off “Prevent Cross-Site Tracking,” or Spotify can’t see your login inside the game.</span></div>`}
+function previewChanged(){if(view==='display'){sendSpotStat();return}const el=$('#spotcard');if(el&&view==='host')render()}
+let sentPv=null;function sendSpotStat(){if(view!=='display'||ThemeSpot.preview==null||sentPv===ThemeSpot.preview)return;sentPv=ThemeSpot.preview;send({t:'spotstat',pv:ThemeSpot.preview})}
+function spotState(){if(Music.buf&&!displayOn())return 'file';if(!ThemeSpot.id())return 'none';const pv=displayOn()?S.tvSpot:ThemeSpot.preview;return pv==null?'checking':pv?'preview':'full'}
+const isiOS=()=>/iPhone|iPad|iPod/.test(navigator.userAgent||'')||(/Macintosh/.test(navigator.userAgent||'')&&navigator.maxTouchPoints>1);
+/* host only: is the Jeopardy theme able to play the whole song on the screen that plays sound? */
+function spotifyCardHTML(alertOnly){const st=spotState(),tv=displayOn(),where=tv?'the TV board':'this device',fo=S.fullOnly!==false;
+  if(st==='none'||st==='file'||(alertOnly&&st!=='preview'))return '';
+  const head=st==='full'?`<b class="ok">✓ Spotify is linked on ${where}.</b> <span class="note">The whole theme song plays and loops.</span>`
+    :st==='checking'?`<b>Checking Spotify on ${where}…</b> <span class="note">This takes a few seconds after the theme loads.</span>`
+    :`<b class="no">Spotify isn’t linked on ${where}.</b> <span class="note">Without a login, Spotify only plays a 30-second preview from the middle of the song. ${fo?'The theme stays off until it’s linked (Full song only is on).':'The preview is playing for now.'}</span>`;
+  const how=st==='full'?'':tv?`<span class="note">On the TV laptop: open <b>open.spotify.com</b> in the same browser that shows the board, log in, then tap <b>Check again</b> here.</span>`
+    :`<span class="note">Tap <b>Link Spotify</b>, log in on the page that opens (free accounts work), come back here and tap <b>Check again</b>.${isiOS()?' On iPhone and iPad, also turn off Settings › Apps › Safari › Prevent Cross-Site Tracking, or Safari hides the login from the game.':''}</span>`;
+  return `<div class="card spotcard" id="spotcard" style="gap:8px;${st==='preview'?'border-color:var(--bad)':''}"><div class="eyebrow">🎵 Theme music · Spotify <span class="muted" style="text-transform:none;letter-spacing:0">(only you see this)</span></div>
+    <div>${head}</div>${how}
+    <div class="row">${!tv&&st!=='full'?`<a class="btn btn-sm btn-gold" href="${SPOT_LOGIN}" target="_blank" rel="noopener">Link Spotify</a>`:''}${st!=='full'?'<button class="btn-sm" data-act="spot-check">Check again</button>':''}
+      <button class="btn-sm" data-act="spot-full" aria-pressed="${fo}">Full song only: ${fo?'on':'off'}</button></div>
+    <span class="note">${fo?'Full song only is on: the theme never plays Spotify’s 30-second preview.':'Full song only is off: if Spotify isn’t linked, the 30-second preview plays.'}</span></div>`}
 function updateSoundWarn(){const el=$('#sndwarn');if(!el)return;const show=view==='display'&&D.step==='live'&&!D.mute&&soundBlocked()&&!Clip.paused;
   el.innerHTML=show?'<button class="btn-sm btn-gold" data-act="d-unlock">🔊 Click to turn on sound</button>':''}
 setInterval(()=>{updateSoundWarn();if(view==='host'&&S&&S.clip){const el=$('#clipstat');if(el){const t=clipStatusText();if(el.textContent!==t)el.textContent=t;
@@ -559,7 +583,7 @@ document.addEventListener('visibilitychange',()=>{if(document.visibilityState===
 
 /* ---------- networking (PeerJS: the host's device is the game server) ---------- */
 let peer=null,net='off',conns=new Map(),hconn=null,netCode='',retryT=null,lastState=0,hostTries=0;
-function netClose(){clearTimeout(retryT);try{hconn&&hconn.close()}catch{}hconn=null;conns.forEach((_,c)=>{try{c.close()}catch{}});conns.clear();try{peer&&peer.destroy()}catch{}peer=null;net='off'}
+function netClose(){sentPv=null;clearTimeout(retryT);try{hconn&&hconn.close()}catch{}hconn=null;conns.forEach((_,c)=>{try{c.close()}catch{}});conns.clear();try{peer&&peer.destroy()}catch{}peer=null;net='off'}
 function hostOpen(fresh){
   if(!window.Peer){net='nolib';updateConn();return}
   netClose();netCode=S.code;net='connecting';updateConn();
@@ -660,6 +684,7 @@ function netChanged(){if(!S)return;pruneTeams();syncNames();routeAudio();hostAud
 function onMsg(c,m){
   if(!S||!m||typeof m!=='object')return;
   const info=conns.get(c);if(!info)return;
+  if(info.role==='display'&&m.t==='spotstat'){S.tvSpot=!!m.pv;render();return}
   if(info.role==='display'&&m.t==='pos'){const c=S.clip||{},onlyDur=m.durOnly||m.n==null||m.n!==c.n||(c.act==='full'&&Date.now()-(c.ts||0)<3500&&Math.abs((+m.pos||0)-(c.at||0))>4);
     if(onlyDur||clipState()==='idle'){S.spos=Object.assign({pos:0,paused:true,at:Date.now()},S.spos,{dur:+m.dur||(S.spos&&S.spos.dur)||0});paintSongPos();return}
     S.spos={pos:+m.pos||0,dur:+m.dur||0,paused:!!m.paused,at:Date.now()};paintSongPos();return}
@@ -702,7 +727,7 @@ function createGame(){
   const keep=S&&S.phase==='lobby'?S:null;
   S={code:keep?.code||newCode(),game:g,settings:clone(setup.settings),teams:keep?.teams||[],members:keep?.members||{},phase:'lobby',used:[0,1,2,3,4].map(()=>[0,0,0,0,0]),dds,
      cur:null,turn:0,answering:null,tried:[],revealed:false,hint:false,epoch:1,buzzOpen:false,tmr:{len:setup.settings.timer*1000,left:setup.settings.timer*1000,run:false,end:0},
-     scored:{},judged:{},ddWager:'',ddTeam:null,final:{wagers:{},marks:{}},inbox:{buzz:[],ans:{},wag:{},fans:{}},tv:false,sound:S?.sound!==false,music:S?.music!==false,tmusic:S?.tmusic!==false};
+     scored:{},judged:{},ddWager:'',ddTeam:null,final:{wagers:{},marks:{}},inbox:{buzz:[],ans:{},wag:{},fans:{}},tv:false,sound:S?.sound!==false,music:S?.music!==false,tmusic:S?.tmusic!==false,fullOnly:S?.fullOnly!==false};
   saveHost();return !keep;
 }
 const curClue=()=>S.cur?S.game.cats[S.cur.c].clues[S.cur.r]:null;
@@ -767,7 +792,7 @@ function publicState(){
   const st={ph,code:S.code,title:short(g.title,60),cats:g.cats.map(x=>short(x.name,40)),used:S.used,
     teams:S.teams.map((t,i)=>({id:t.id,name:t.name,named:t.custom!==false,need:needName(i),score:t.score,m:members(i).map(m=>({p:m.pid,n:m.name,on:on.has(m.pid)}))})),
     loose:Object.entries(S.members).filter(([,m])=>!m.team||teamIdx(m.team)<0).map(([p,m])=>({p,n:m.name})),
-    ord:orderState(),cap:S.settings.cap,create:S.settings.playersCreate,mode:S.settings.mode,ans:S.settings.answers,turn:S.turn,epoch:S.epoch,open:!!S.buzzOpen,
+    ord:orderState(),fullOnly:S.fullOnly!==false,spotCheck:S.spotCheck||0,cap:S.settings.cap,create:S.settings.playersCreate,mode:S.settings.mode,ans:S.settings.answers,turn:S.turn,epoch:S.epoch,open:!!S.buzzOpen,
     tm:{left:tLeft(),run:!!S.tmr.run,len:S.tmr.len},music:!!S.music,tmusic:S.tmusic!==false,snd:S.sound!==false,fx:S.fx||null,clip:S.clip?{n:S.clip.n,act:S.clip.act,at:S.clip.at||0}:null,hi:activeTeam()};
   if(S.cur&&cl){st.clue={cat:g.cats[S.cur.c].name,val:clueValue(),dd:isDD(),wager:isDD()?S.ddWager:'',ddMax:isDD()?ddMax():0,ddTeam:S.ddTeam,ddBy:S.ddBy||'',
     q:ph==='clue'?cl.q:null,h:S.hint&&ph==='clue'?cl.h:null,a:S.revealed?(cl.a||(cl.song?'':null)):null,rev:!!S.revealed,m:ph==='clue'&&cl.m?cl.m:null,img:ph==='clue'&&cl.img?cl.img:null,full:ph==='clue'&&cl.full?cl.full:null,emoji:!!cl.emoji,zoom:ph==='clue'&&cl.img&&!S.revealed&&S.cur.r>=3?S.cur.r:0,ep:S.epoch,
@@ -791,7 +816,7 @@ function myTeamIdx(st){return st?st.teams.findIndex(t=>(t.m||[]).some(m=>m.p===P
 function applyState(st){
   if(!st||typeof st!=='object'||!Array.isArray(st.teams))return;
   if(st.tm)pTimer={left:st.tm.left,run:st.tm.run,len:st.tm.len||1,end:Date.now()+st.tm.left};
-  if(view==='display'){const n=st.fx?st.fx.n:0;if(lastFx!=null&&n!==lastFx&&st.fx){if(!D.mute&&st.snd!==false)sfx(st.fx.k);flash(st.fx.k)}lastFx=n;
+  if(view==='display'){if(D.spotCheck!=null&&st.spotCheck!==D.spotCheck){sentPv=null;resetSpotify()}D.spotCheck=st.spotCheck;sendSpotStat();if(PS&&PS.fullOnly!==st.fullOnly)setTimeout(()=>ThemeSpot.kick(),0);const n=st.fx?st.fx.n:0;if(lastFx!=null&&n!==lastFx&&st.fx){if(!D.mute&&st.snd!==false)sfx(st.fx.k);flash(st.fx.k)}lastFx=n;
     const on=!D.mute&&st.snd!==false,cn=st.clip?st.clip.n:0;playingN=cn;if(lastClip!=null&&cn!==lastClip&&st.clip){if(on)runClip(st.clip.act,st.clue&&st.clue.m,st.clip.at,st.clue&&st.clue.full);else Clip.stop()}lastClip=cn;
     if(!on&&Clip.playing)Clip.stop();if(st.ph==='clue'&&st.clue&&st.clue.m&&st.clue.m.spotify&&!Clip.playing)Spot.cue(st.clue.m.spotify);if(st.ph!=='clue'&&Clip.playing)Clip.stop();PS=st;displayAudio()}
   const k=JSON.stringify(Object.assign({},st,{tm:{run:st.tm?.run,left:st.tm?.run?0:st.tm?.left}}));
@@ -1024,7 +1049,7 @@ function lobbyHTML(inOverlay){
 }
 function hostHTML(){
   const g=S.game;
-  if(S.phase==='lobby')return `<div class="row"><div><div class="eyebrow">Jeopardy Showdown · lobby</div><h1 style="font-family:var(--f-display);font-weight:400;font-size:clamp(24px,4vw,38px);text-transform:uppercase">${esc(g.title)}</h1></div><div class="spacer"></div><div id="conn">${connHTML()}</div></div>${lobbyHTML(false)}`;
+  if(S.phase==='lobby')return `<div class="row"><div><div class="eyebrow">Jeopardy Showdown · lobby</div><h1 style="font-family:var(--f-display);font-weight:400;font-size:clamp(24px,4vw,38px);text-transform:uppercase">${esc(g.title)}</h1></div><div class="spacer"></div><div id="conn">${connHTML()}</div></div>${spotifyCardHTML(false)}${lobbyHTML(false)}`;
   const allUsed=S.used.every(c=>c.every(Boolean));
   return `<div class="row"><div><div class="eyebrow">Jeopardy Showdown · host</div><h1 style="font-family:var(--f-display);font-weight:400;font-size:clamp(24px,4vw,38px);letter-spacing:.02em;text-transform:uppercase">${esc(g.title)}</h1></div><div class="spacer"></div>
     <button class="btn-sm" data-act="show-lobby">Code ${esc(S.code)} · teams & QR</button><div id="conn">${connHTML()}</div></div>
@@ -1046,10 +1071,10 @@ function hostHTML(){
   </div>
   ${confirmEnd?endConfirmHTML():''}
   <div class="note">${S.tv?'Answers and hints are hidden on this screen until you reveal them. Use “Peek” to check privately.':'Answers show on this screen. If this screen is ever on the TV, turn on “Hide answers”.'}${S.dds.length?` ${S.dds.length===1?'A Daily Double is':'Two Daily Doubles are'} hidden on the board.`:''}</div>
-  ${displayOn()?'':`<div id="themewarn">${themeWarnHTML()}</div>`}
+  ${spotifyCardHTML(true)}
   <details class="card"><summary class="eyebrow" style="cursor:pointer">Music & sounds</summary>
     <span class="note">${displayOn()?'The TV board is connected, so music and sounds play there.':'No TV board is connected, so music and sounds play on this device.'} The theme plays on the board, and suspenseful timer music plays while the timer runs. The only sound effects are for correct and wrong answers.</span>
-    ${displayOn()?'':musicControlsHTML()}</details>
+    ${spotifyCardHTML(false)}${displayOn()?'':musicControlsHTML()}</details>
   <div class="card" style="gap:6px"><div class="eyebrow">Players</div><div id="plist">${playersHTML()}</div></div>
   ${showLobby?`<div class="overlay" role="dialog" aria-label="Teams and join info"><div class="ov-in">${lobbyHTML(true)}</div></div>`:''}
   ${S.phase==='clue'||S.phase==='dd'?clueOverlay():''}
@@ -1278,11 +1303,12 @@ function displayHTML(){
     <div class="card" style="max-width:520px;width:100%;margin:0 auto">
       <label for="d-code">Game code</label><input id="d-code" class="codeinput" maxlength="4" value="${esc(D.code)}" data-d="code" autocomplete="off" autocapitalize="characters" placeholder="ABCD">
       <button class="btn-gold" data-act="d-code">Show the board</button>
+      <a class="btn btn-sm btn-ghost" href="${SPOT_LOGIN}" target="_blank" rel="noopener" style="text-align:center">Log in to Spotify on this computer (for the full theme song)</a>
       <span class="note">Enter the code from the host’s screen. This view never shows an answer until the host reveals it, so it’s safe for the TV.</span>
       <button class="btn-ghost btn-sm" data-act="go-role">Back</button></div>`;
   const st=PS;
   const bar=`<div class="row"><span class="eyebrow">${esc(st?.title||'Jeopardy Showdown')} · Join with code <b style="color:var(--gold)">${esc(D.code)}</b></span><div class="spacer"></div><div id="conn">${connHTML()}</div>
-    <span id="sndwarn"></span><button class="btn-sm btn-ghost" data-act="d-sound">${D.mute?'Sound: off':'Sound: on'}</button><button class="btn-sm btn-ghost" data-act="d-full">Full screen</button><button class="btn-sm btn-ghost" data-act="d-leave">Exit</button></div><div id="themewarn">${themeWarnHTML()}</div>`;
+    <span id="sndwarn"></span><button class="btn-sm btn-ghost" data-act="d-sound">${D.mute?'Sound: off':'Sound: on'}</button><button class="btn-sm btn-ghost" data-act="d-full">Full screen</button><button class="btn-sm btn-ghost" data-act="d-leave">Exit</button></div>`;
   if(!st)return `${bar}<div class="tvbox"><div class="big-status">${net==='live'?'Loading…':'Connecting to the host…'}</div>${netNote()}</div>`;
   const scores=`<div class="scores">${st.teams.map((t,i)=>`<div class="team ${st.hi===i?'turn':''}">${st.hi===i?`<span class="badge">${st.ph==='clue'&&st.clue&&st.clue.who===i?'Answering':st.ph==='board'?'Picking':'Their turn'}</span>`:''}<span class="nm">${esc(t.name)}</span><span class="sc ${t.score<0?'neg':''}">${t.score}</span><span class="mem">${esc((t.m||[]).map(m=>m.n).join(', '))}</span></div>`).join('')}</div>`;
   let main='';
@@ -1385,6 +1411,8 @@ document.addEventListener('click',e=>{
     case 'tv':S.tv=!S.tv;peek=false;commit();break;
     case 'sound':S.sound=S.sound===false;commit();break;
     case 'music':S.music=!S.music;commit();break;
+    case 'spot-full':S.fullOnly=S.fullOnly===false;commit();if(!displayOn())ThemeSpot.kick();break;
+    case 'spot-check':if(displayOn()){S.tvSpot=null;S.spotCheck=(S.spotCheck||0)+1;commit()}else{resetSpotify();render()}break;
     case 'autoplay':S.settings.autoplay=!S.settings.autoplay;setup.settings.autoplay=S.settings.autoplay;saveSetup();commit();break;
     case 'tmusic':S.tmusic=S.tmusic===false;commit();break;
     case 'clip-play':clipCmd('play');commit();break;
