@@ -45,6 +45,14 @@ Pick one in setup:
 
 In both styles, any player on the picking team can tap a clue on their phone to open it, or the host can tap it. The scoreboard highlights the team that's answering, and the highlight moves when the clue passes.
 
+### Pass and steal
+
+- **Pass** (on by default): the team that's answering can pass with no penalty, from the host screen or any of its players' phones. The question moves on as if they'd missed it, but no points are lost. Passing isn't allowed on a Daily Double. On the TV show nobody passes; contestants just don't buzz, and only a wrong answer costs points, so passing works the same way.
+- **Steal** (setup › After a wrong answer):
+  - **Next team in order** (default): after a miss or a pass, the next team in turn order gets to answer.
+  - **Any team can buzz to steal**: after a miss or a pass, every team that hasn't tried gets a BUZZ button on their phones, and the fastest team answers. This is how the TV show works. The TV board shows "Steal! Buzz in now," and the turn-order graphic marks who can steal.
+- A team that steals correctly earns the points and picks next. In Classic Jeopardy a wrong steal still loses the points.
+
 ### Daily Double
 
 - One hidden clue each game is a Daily Double. It always goes to the team that picked it, and only that team answers.

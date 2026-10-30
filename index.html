@@ -360,7 +360,7 @@ function judge(text,clue){
 }
 
 /* ---------- local state ---------- */
-const DEF_SET={rules:'classic',autoplay:false,level:'all',mode:'turns',answers:'voice',auto:true,timer:30,autoTimer:true,hintHalf:true,wrongLose:false,cap:0,dd:1,playersCreate:true};
+const DEF_SET={allowPass:true,steal:'order',rules:'classic',autoplay:false,level:'all',mode:'turns',answers:'voice',auto:true,timer:30,autoTimer:true,hintHalf:true,wrongLose:false,cap:0,dd:1,playersCreate:true};
 let custom=store.get('ssw.custom',[]);
 let S=store.get('ssw.host',null);
 let setup=Object.assign({preset:'random',pick:[],skip:[],source:'bank',customId:null,settings:clone(DEF_SET)},store.get('ssw.setup',{}));
@@ -896,12 +896,13 @@ function onMsg(c,m){
     case 'rename':{if(S.phase!=='lobby'||!me.team)return;renameTeam(me.team,m.name);break}
     case 'leave':me.team=null;break;
     case 'pick':{if(S.phase!=='board'||myT!==S.turn)return;const c=+m.c,r=+m.r;if(!(c>=0&&c<5&&r>=0&&r<5)||S.used[c][r])return;openTile(c,r);return}
-    case 'buzz':{if(S.phase!=='clue'||S.settings.mode!=='buzz'||!S.buzzOpen||m.e!==S.epoch||myT==null||S.tried.includes(myT)||S.answering!=null)return;
+    case 'buzz':{if(S.phase!=='clue'||(S.settings.mode!=='buzz'&&!S.stealOpen)||!S.buzzOpen||m.e!==S.epoch||myT==null||S.tried.includes(myT)||S.answering!=null)return;
       if(!S.inbox.buzz.includes(pid))S.inbox.buzz.push(pid);
       if(S.answering==null){S.answering=myT;S.buzzOpen=false;resetTimer(S.settings.autoTimer);full=true}break}
     case 'ans':{if(S.phase!=='clue'||m.e!==S.epoch||myT==null||myT!==S.answering||S.revealed)return;if(S.inbox.ans[pid])return;S.inbox.ans[pid]={t:short(m.text,80),t0:Date.now()};if(autoJudge())full=true;break}
     case 'wager':{if(S.phase!=='final-cat'||m.e!==S.epoch||myT==null)return;S.inbox.wag[pid]={v:short(m.v,7),t0:Date.now()};break}
     case 'ddwager':{if(S.phase!=='dd'||myT==null||myT!==S.ddTeam)return;const max=ddMax();let w=parseInt(m.v,10);if(!(w>=0))return;S.ddWager=String(Math.max(5,Math.min(max,w)));S.ddBy=S.members[pid]?.name||'';full=true;break}
+    case 'passq':{if(S.phase!=='clue'||m.e!==S.epoch||myT==null||myT!==S.answering||S.revealed||isDD()||S.settings.allowPass===false)return;passTurn();full=true;break}
     case 'fans':{if(S.phase!=='final-clue'||m.e!==S.epoch||myT==null)return;S.inbox.fans[pid]={t:short(m.text,80),t0:Date.now()};break}
     default:return;
   }
@@ -936,10 +937,10 @@ async function songTitle(id){if(titleCache[id])return titleCache[id];
 function fillSongTitles(){if(!S)return;S.game.cats.forEach(cat=>cat.clues.forEach(cl=>{if(cl.song&&cl.m&&cl.m.spotify&&!cl.a){songTitle(cl.m.spotify).then(t=>{if(t&&S&&!cl.a){cl.a=t;cl.alt=t.toLowerCase().replace(/\s*[\(\[-].*$/,'')+'|'+t.toLowerCase();commit()}})}}))}
 function openTile(c,r){setTimeout(hostCue,0);
   if(S.used[c][r])return;
-  S.cur={c,r};S.revealed=false;S.hint=false;peek=false;newEpoch();S.scored={};S.tried=[];S.ddWager='';S.ddBy='';S.spos={pos:0,dur:0,paused:true,at:Date.now()};S.picker=S.turn;
+  S.cur={c,r};S.revealed=false;S.hint=false;peek=false;newEpoch();S.scored={};S.tried=[];S.passed={};S.ddWager='';S.ddBy='';S.spos={pos:0,dur:0,paused:true,at:Date.now()};S.picker=S.turn;
   const hasT=S.teams.length>0;if(S.turn>=S.teams.length)S.turn=0;S.answering=S.settings.mode==='turns'&&hasT?S.turn:null;S.ddTeam=hasT?S.turn:null;
   if(isDD()){S.phase='dd';S.buzzOpen=false;resetTimer(false);}
-  else{S.phase='clue';S.buzzOpen=S.settings.mode==='buzz';resetTimer(S.settings.autoTimer);if(curClue().m&&S.settings.autoplay)clipCmd('play')}
+  else{S.phase='clue';S.stealOpen=false;S.buzzOpen=S.settings.mode==='buzz';resetTimer(S.settings.autoTimer);if(curClue().m&&S.settings.autoplay)clipCmd('play')}
   S.passes=0;commit();
 }
 function closeTile(){S.lastScored=Object.assign({},S.scored);if(S.cur&&curClue()?.m)clipCmd('stop');if(S.cur)S.used[S.cur.c][S.cur.r]=1;S.cur=null;S.phase='board';S.buzzOpen=false;S.tmr.run=false;if(!S.teams.length)S.turn=0;else if(classic()){const w=Object.keys(S.lastScored||{}).find(k=>S.lastScored[k]===1);S.turn=w!=null?+w:((S.picker??S.turn)+1)%S.teams.length}else S.turn=((S.picker??S.turn)+1)%S.teams.length;S.lastScored=null;commit()}
@@ -959,11 +960,15 @@ function passTo(t){
   if(t==null){S.answering=null;S.buzzOpen=true}else S.answering=t;
   resetTimer(S.settings.autoTimer);
 }
-function upNext(){const n=S.teams.length;if(!n||S.settings.mode!=='turns')return null;const from=S.answering??S.picker??S.turn;for(let k=1;k<=n;k++){const t=(from+k)%n;if(t!==S.answering&&!S.tried.includes(t))return t}return null}
+function upNext(){const n=S.teams.length;if(!n||S.settings.mode!=='turns'||S.settings.steal==='buzz')return null;const from=S.answering??S.picker??S.turn;for(let k=1;k<=n;k++){const t=(from+k)%n;if(t!==S.answering&&!S.tried.includes(t))return t}return null}
+/* the answering team passes: no points lost, the question moves on (next team, or open for a steal) */
+function passTurn(){if(S.answering==null)return;S.passed=Object.assign({},S.passed,{[S.answering]:1});nextTeam()}
 function nextTeam(){
   if(S.answering!=null&&!S.tried.includes(S.answering))S.tried.push(S.answering);
   newEpoch();
-  if(S.settings.mode==='turns'){const n=S.teams.length;let nx=null;for(let k=1;k<=n;k++){const t=((S.answering??S.turn)+k)%n;if(!S.tried.includes(t)){nx=t;break}}S.answering=nx}
+  S.stealOpen=false;
+  if(S.settings.mode==='turns'&&S.settings.steal==='buzz'){S.answering=null;const left=S.teams.some((_,k)=>!S.tried.includes(k));S.buzzOpen=left;S.stealOpen=left}
+  else if(S.settings.mode==='turns'){const n=S.teams.length;let nx=null;for(let k=1;k<=n;k++){const t=((S.answering??S.turn)+k)%n;if(!S.tried.includes(t)){nx=t;break}}S.answering=nx}
   else{S.answering=null;S.buzzOpen=true}
   resetTimer((S.answering!=null||S.settings.mode==='buzz')&&S.settings.autoTimer);
 }
@@ -984,7 +989,7 @@ function publicState(){
   const st={ph,code:S.code,title:short(g.title,60),cats:g.cats.map(x=>short(x.name,40)),used:S.used,
     teams:S.teams.map((t,i)=>({id:t.id,name:t.name,named:t.custom!==false,need:needName(i),score:t.score,m:members(i).map(m=>({p:m.pid,n:m.name,on:on.has(m.pid)}))})),
     loose:Object.entries(S.members).filter(([,m])=>!m.team||teamIdx(m.team)<0).map(([p,m])=>({p,n:m.name})),
-    ord:orderState(),vol:Object.assign({},VOL_DEF,S.vol),fullOnly:S.fullOnly!==false,spotCheck:S.spotCheck||0,cap:S.settings.cap,create:S.settings.playersCreate,mode:S.settings.mode,ans:S.settings.answers,turn:S.turn,epoch:S.epoch,open:!!S.buzzOpen,
+    allowPass:S.settings.allowPass!==false,stealOpen:!!S.stealOpen,ord:orderState(),vol:Object.assign({},VOL_DEF,S.vol),fullOnly:S.fullOnly!==false,spotCheck:S.spotCheck||0,cap:S.settings.cap,create:S.settings.playersCreate,mode:S.settings.mode,ans:S.settings.answers,turn:S.turn,epoch:S.epoch,open:!!S.buzzOpen,
     tm:{left:tLeft(),run:!!S.tmr.run,len:S.tmr.len},music:!!S.music,tmusic:S.tmusic!==false,snd:S.sound!==false,fx:S.fx||null,clip:S.clip?{n:S.clip.n,act:S.clip.act,at:S.clip.at||0}:null,hi:activeTeam()};
   if(S.cur&&cl){st.clue={cat:g.cats[S.cur.c].name,val:clueValue(),dd:isDD(),wager:isDD()?S.ddWager:'',ddMax:isDD()?ddMax():0,ddTeam:S.ddTeam,ddBy:S.ddBy||'',
     q:ph==='clue'?cl.q:null,h:S.hint&&ph==='clue'?cl.h:null,a:S.revealed?(cl.a||(cl.song?'':null)):null,rev:!!S.revealed,m:ph==='clue'&&cl.m?cl.m:null,img:ph==='clue'&&cl.img?cl.img:null,full:ph==='clue'&&cl.full?cl.full:null,emoji:!!cl.emoji,zoom:ph==='clue'&&cl.img&&!S.revealed&&S.cur.r>=3?S.cur.r:0,ep:S.epoch,
@@ -1146,6 +1151,9 @@ function setupHTML(){
       <span class="note">${st.rules==='order'?'<b>Team Order:</b> teams take turns picking in order, no matter who answers. If a team misses, you can pass the question once. Wrong answers only lose points if you turn that on below.':'<b>Classic Jeopardy:</b> the real show’s rules. Right answers earn the points and that team picks next. Wrong answers lose the points and the question moves to the next team. Each team gets one try. If nobody gets it, no one earns the points and the next team in order picks.'}</span></div>
     <div class="opt"><span class="lbl">Who answers first</span>${segHTML('mode',[['turns','Teams take turns'],['buzz','Buzz in (fastest team)']])}
       <span class="note">${st.mode==='turns'?'The team whose turn it is picks a clue and answers. If they miss, pass it to the next team to steal.':'Everyone can buzz in. The first team to buzz answers; if they miss, the other teams can buzz again.'}</span></div>
+    ${st.mode==='turns'?`<div class="opt"><span class="lbl">After a wrong answer (steal)</span>${segHTML('steal',[['order','Next team in order'],['buzz','Any team can buzz to steal']])}
+      <span class="note">${st.steal==='buzz'?'After a miss, every team that hasn’t tried can buzz in. The fastest team gets the chance to steal, like the TV show.':'After a miss, the question goes to the next team in turn order.'}</span></div>`:''}
+    <label class="toggle"><input type="checkbox" id="opt-pass" data-opt="allowPass" ${st.allowPass!==false?'checked':''}>Teams can pass (no penalty): the question moves on${st.mode==='turns'&&st.steal!=='buzz'?' to the next team':' and the other teams can buzz in'}</label>
     <div class="opt"><span class="lbl">How players answer</span>${segHTML('answers',[['voice','Say it out loud, host scores'],['typed','Type it on a phone']])}</div>
     ${st.answers==='typed'?`<label class="toggle"><input type="checkbox" id="opt-auto" data-opt="auto" ${st.auto?'checked':''}>Score typed answers automatically (you can still override)</label>`:''}
     <div class="opt"><span class="lbl">Timer</span>${segHTML('timer',[[15,'15s'],[20,'20s'],[30,'30s'],[45,'45s'],[60,'60s']])}</div>
@@ -1181,12 +1189,14 @@ function editorHTML(){
 function orderState(){if(!S||!S.teams.length||S.phase==='lobby')return null;const inClue=S.phase==='clue'||S.phase==='dd';
   return {names:S.teams.map(t=>t.name),turn:S.turn,picker:inClue?(S.picker??S.turn):S.turn,who:S.phase==='clue'?S.answering:S.phase==='dd'?S.ddTeam:null,dd:S.phase==='dd'||(inClue&&isDD()),
     tried:inClue?S.tried||[]:[],res:inClue?S.scored||{}:{},clue:inClue,next:S.phase==='clue'&&!S.revealed&&!isDD()&&!Object.values(S.scored||{}).includes(1)?upNext():null,
-    nextPick:S.phase==='board'&&!classic()?(S.turn+1)%S.teams.length:null,rules:S.settings.rules,rev:!!S.revealed}}
+    nextPick:S.phase==='board'&&!classic()?(S.turn+1)%S.teams.length:null,passed:inClue?S.passed||{}:{},steal:S.phase==='clue'&&!!S.stealOpen,rules:S.settings.rules,rev:!!S.revealed}}
 function orderHTML(o){if(!o||!o.names.length)return '';const n=o.names.length;
   const chip=i=>{const r=o.res[i];let cls='',tag='';
     if(r===1){cls='ok';tag='✓ Correct'}
     else if(o.clue&&o.who===i&&!o.rev){cls='now';tag=o.dd?'Daily Double':'Answering'}
+    else if(o.passed&&o.passed[i]){cls='miss';tag='Passed'}
     else if(r===-1||o.tried.includes(i)){cls='miss';tag='✗ Missed'}
+    else if(o.steal&&o.clue&&!o.rev){cls='next';tag='Can steal'}
     else if(!o.clue&&o.turn===i){cls='now';tag=o.rules==='order'?'Picking':'In control'}
     else if(o.next===i){cls='next';tag='Up next'}
     else if(o.nextPick===i){cls='next';tag='Picks next'}
@@ -1372,12 +1382,13 @@ function clueOverlay(){
       ${ans!=null?`<span class="eyebrow">Answering now</span><span class="answering">${esc(S.teams[ans].name)}</span>
         <div class="row"><button class="btn-good ${S.scored[ans]===1?'on-good':''}" data-act="mark" data-i="${ans}" data-s="1">Correct +${val}</button>
         <button class="btn-bad ${S.scored[ans]===-1?'on-good':''}" data-act="mark" data-i="${ans}" data-s="-1">Wrong${S.settings.wrongLose||dd||classic()?' −'+val:''}</button>
+        ${S.settings.allowPass!==false&&!dd&&!S.revealed&&!S.scored[ans]&&S.teams.some((_,k)=>k!==ans&&!S.tried.includes(k))?`<button class="btn-ghost" data-act="pass-turn">Pass (no penalty)</button>`:''}
 </div>
-        ${classic()&&!dd&&!S.revealed?`<span class="note">Classic rules: a wrong answer loses ${val} points and ${mode==='turns'?(upNext()!=null?`the question goes to ${esc(S.teams[upNext()].name)}, next in order`:'no teams are left to try, so nobody earns the points and the next team in order picks'):'the other teams can buzz in'}. A right answer earns ${val} and picks next.</span>`:''}
+        ${classic()&&!dd&&!S.revealed?`<span class="note">Classic rules: a wrong answer loses ${val} points and ${mode==='turns'?(S.settings.steal==='buzz'?'the other teams can buzz in to steal':upNext()!=null?`the question goes to ${esc(S.teams[upNext()].name)}, next in order`:'no teams are left to try, so nobody earns the points and the next team in order picks'):'the other teams can buzz in'}. A right answer earns ${val} and picks next.</span>`:''}
         ${!classic()&&!dd&&!S.revealed&&!(S.passes>0)&&left.length?(mode==='turns'?`<span class="eyebrow">Pass this question to (one pass per question)</span><div class="row">${left.map(i=>`<button class="btn-sm" data-act="pass" data-i="${i}">${esc(S.teams[i].name)}</button>`).join('')}</div>`:'<div class="row"><button data-act="pass" data-i="-1">Reopen buzzers for other teams (one time)</button></div>'):''}
         ${!classic()&&S.passes>0&&!S.revealed&&!dd?'<span class="note">This question has already been passed once.</span>':''}
         ${S.judged[ans]?`<span class="${S.judged[ans]===1?'ok':'no'}">${S.settings.auto?'Auto-scored':'Typed answer looks'} ${S.judged[ans]===1?'correct':'wrong'}${S.settings.auto?'. Tap a button to change it.':''}</span>`:''}`
-      :mode==='buzz'?`<span class="eyebrow">Buzz order</span><div id="buzzq">${queueHTML()}</div><div class="row">${S.buzzOpen?'<button class="btn-sm" data-act="buzz-close">Close buzzers</button>':'<button class="btn-sm" data-act="buzz-open">Open buzzers</button>'}<button class="btn-sm" data-act="buzz-reset">Clear buzzes</button></div>
+      :mode==='buzz'||S.stealOpen?`<span class="eyebrow">${S.stealOpen?'Steal! Buzz order':'Buzz order'}</span><div id="buzzq">${queueHTML()}</div><div class="row">${S.buzzOpen?'<button class="btn-sm" data-act="buzz-close">Close buzzers</button>':'<button class="btn-sm" data-act="buzz-open">Open buzzers</button>'}<button class="btn-sm" data-act="buzz-reset">Clear buzzes</button></div>
         <span class="note">No phones? Tap the team that answers first:</span><div class="row">${S.teams.map((t,i)=>S.tried.includes(i)?'':`<button class="btn-sm" data-act="set-ans" data-i="${i}">${esc(t.name)}</button>`).join('')}</div>`
       :`<span class="note">${S.teams.length?'Every team has tried. Reveal the answer and head back to the board.':'No teams yet. You can still reveal the answer, and players can join any time with the game code.'}</span>`}
       ${S.tried.length?`<span class="note">Already tried: ${esc(S.tried.map(i=>S.teams[i].name).join(', '))}</span>`:''}
@@ -1470,8 +1481,8 @@ function playerHTML(){
   else if(st.ph==='clue'&&st.clue){
     const c=st.clue,who=c.who,mine=who===mi,tried=(c.tried||[]).includes(mi),res=c.res||{};let act='';
     if(c.a)act=`<div class="answer revealed"><span class="eyebrow">Answer</span><span class="a">${esc(c.a)}</span></div>${res[mi]===1?'<div class="big-status" style="color:var(--good)">Your team got it!</div>':res[mi]===-1?'<div class="status no">Not this time.</div>':''}`;
-    else if(mine)act=`<div class="big-status">Your team is answering!</div>`+(st.ans==='typed'?`<div class="card"><label for="p-ans">Your team’s answer</label><textarea id="p-ans" maxlength="80" data-pd="ans" ${pSent.ans===st.epoch?'disabled':''}>${esc(pDraft.ans)}</textarea><button class="btn-gold" data-act="p-ans" ${pSent.ans===st.epoch?'disabled':''}>${pSent.ans===st.epoch?'Sent ✓':'Send answer'}</button><span class="note">Anyone on your team can answer. The first answer sent counts.</span></div>`:`<div class="status">Anyone on your team can say the answer out loud.</div>`)+(res[mi]===-1?'<div class="status no">The host marked that wrong.</div>':'');
-    else if(st.mode==='buzz'&&who==null){const buzzed=pSent.buzz===st.epoch;act=tried?`<div class="status muted">Your team already tried this one.</div>`:`<button class="buzz" data-act="p-buzz" ${!st.open||buzzed?'disabled':''}>${buzzed?'IN!':'BUZZ'}</button><div class="status muted">${buzzed?'Buzzed! Waiting…':st.open?'Tap BUZZ when your team knows it.':'Buzzers are closed.'}</div>`}
+    else if(mine)act=`<div class="big-status">Your team is answering!</div>`+(st.allowPass&&!c.dd&&!res[mi]?`<button class="btn-ghost" data-act="p-pass">Pass (no penalty)</button>`:'')+(st.ans==='typed'?`<div class="card"><label for="p-ans">Your team’s answer</label><textarea id="p-ans" maxlength="80" data-pd="ans" ${pSent.ans===st.epoch?'disabled':''}>${esc(pDraft.ans)}</textarea><button class="btn-gold" data-act="p-ans" ${pSent.ans===st.epoch?'disabled':''}>${pSent.ans===st.epoch?'Sent ✓':'Send answer'}</button><span class="note">Anyone on your team can answer. The first answer sent counts.</span></div>`:`<div class="status">Anyone on your team can say the answer out loud.</div>`)+(res[mi]===-1?'<div class="status no">The host marked that wrong.</div>':'');
+    else if((st.mode==='buzz'||st.stealOpen)&&who==null){const buzzed=pSent.buzz===st.epoch;act=tried?`<div class="status muted">Your team already tried this one.</div>`:`<button class="buzz" data-act="p-buzz" ${!st.open||buzzed?'disabled':''}>${buzzed?'IN!':'BUZZ'}</button><div class="status muted">${buzzed?'Buzzed! Waiting…':st.open?'Tap BUZZ when your team knows it.':'Buzzers are closed.'}</div>`}
     else act=`<div class="status"><b>${esc(who!=null?st.teams[who]?.name:'Another team')}</b> is answering.${tried?' Your team already tried.':''}</div>`;
     main=`${orderHTML(st.ord)}<div class="eyebrow">${esc(c.cat)} · ${c.dd?'Daily Double · wager '+c.val:c.val+' points'}</div>
     ${c.img?picHTML(c.img,c.zoom,c.ep):''}
@@ -1530,7 +1541,7 @@ function displayHTML(){
     ${!c.a?timerP(true):''}
     ${r===1?`<div class="result ok">Correct! ${esc(st.teams[who]?.name)} +${c.val}</div>`:r===-1&&!c.a?'<div class="result no">Not quite</div>':''}
     ${c.a||(c.rev&&c.m&&c.m.spotify)?`<div class="answer revealed"><span class="eyebrow">Answer</span><span class="a" style="font-size:clamp(22px,3.4vw,44px)">${esc(c.a||'')}</span></div>${c.m&&c.m.spotify?songCard(c.m.spotify,152):''}`:''}
-    ${st.mode==='buzz'&&who==null&&!c.a?`<div class="status" style="font-size:22px">${st.open?'Buzzers are open!':'Buzzers closed'}</div>`:''}
+    ${(st.mode==='buzz'||st.stealOpen)&&who==null&&!c.a?`<div class="status" style="font-size:22px">${st.stealOpen&&st.open?'Steal! Buzz in now':st.open?'Buzzers are open!':'Buzzers closed'}</div>`:''}
     ${(c.queue||[]).length&&!c.a?`<div class="row" style="justify-content:center">${c.queue.map((n,i)=>`<span class="pill" style="font-size:16px">${i+1}. ${esc(n)}</span>`).join('')}</div>`:''}
     ${(c.tried||[]).length&&!c.a?`<div class="status muted">Already tried: ${esc(c.tried.map(i=>st.teams[i]?.name).join(', '))}</div>`:''}`;
   }else if(st.fin){
@@ -1658,6 +1669,7 @@ document.addEventListener('click',e=>{
     case 'set-ans':S.answering=i;S.buzzOpen=false;resetTimer(S.settings.autoTimer);commit();break;
     case 'mark':{const sg=+b.dataset.s;markClue(i,sg);if(sg===-1&&classic()&&!isDD()&&S.scored[i]===-1&&!S.revealed){const left=S.teams.map((_,k)=>k).filter(k=>k!==i&&!S.tried.includes(k));if(left.length)nextTeam()}commit();break}
     case 'next-team':nextTeam();commit();break;
+    case 'pass-turn':passTurn();commit();break;
     case 'pass':{if(S.passes>0)return;passTo(i<0?null:i);commit();break}
     case 'dd-team':S.ddTeam=i;commit();break;
     case 'dd-go':{const t=S.ddTeam,max=Math.max(500,S.teams[t].score);let w=parseInt(S.ddWager,10);if(!(w>=5))w=Math.min(500,max);S.ddWager=String(Math.min(w,max));S.answering=t;S.phase='clue';resetTimer(S.settings.autoTimer);if(curClue().m&&S.settings.autoplay)clipCmd('play');commit();break}
@@ -1684,6 +1696,7 @@ document.addEventListener('click',e=>{
     case 'p-buzz':if(!PS)return;pSent.buzz=PS.epoch;send({t:'buzz',e:PS.epoch});try{navigator.vibrate&&navigator.vibrate(60)}catch{}render();break;
     case 'p-ans':if(!PS||!short(pDraft.ans,80))return;pSent.ans=PS.epoch;send({t:'ans',e:PS.epoch,text:pDraft.ans});render();break;
     case 'p-dd':if(!PS)return;send({t:'ddwager',v:pDraft.dd});break;
+    case 'p-pass':if(!PS)return;send({t:'passq',e:PS.epoch});break;
     case 'p-wager':if(!PS)return;pSent.wager=PS.epoch;send({t:'wager',e:PS.epoch,v:pDraft.wager});render();break;
     case 'p-fans':if(!PS||!short(pDraft.fans,80))return;pSent.fans=PS.epoch;send({t:'fans',e:PS.epoch,text:pDraft.fans});render();break;
     /* display */
