@@ -55,8 +55,13 @@ In both styles, any player on the picking team can tap a clue on their phone to 
 ### Music and sounds
 
 - **Theme music:** the Jeopardy theme song from Spotify plays on a loop in the lobby and on the board between questions, starting the moment you create a game. It goes quiet while a question is open and starts from the top when it comes back. The host turns it on or off with the **Theme music** button.
-- **Linking Spotify (host only):** the host's lobby (and **Music & sounds**) has a Spotify card that only the host sees. It shows whether the screen playing sound is logged into Spotify. Without a login, Spotify only plays a 30-second preview from the middle of the song.
-  - Sound on the host's device: tap **Link Spotify**, log in (free accounts work), come back and tap **Check again**. On iPhone and iPad, also turn off Settings › Apps › Safari › Prevent Cross-Site Tracking.
+- **Spotify card (host only):** the host's lobby (and **Music & sounds**) has a Spotify card that only the host sees. Players and the TV never see it.
+- **Spotify Premium link (recommended, needs Spotify Premium):** log in once on the host device and the TV board plays the whole theme on repeat through your account, with no login needed on the TV.
+  - One-time setup on the host device: go to developer.spotify.com/dashboard, tap **Create app**, paste the **Redirect URI** the card shows (for example `https://<githubusername>.github.io/jeopardy_showdown/`), check **Web API** and **Web Playback SDK**, save, then copy the app's **Client ID** into the card. Then tap **Log in with Spotify**.
+  - Your Client ID and login are saved only in that device's browser. Nothing is added to the repo or the game's files, and players' phones never receive them.
+  - The TV board needs a computer browser (Chrome, Edge, Firefox or Safari). Phones and tablets can't run Spotify's player, so with no TV board connected, an iPhone or iPad host uses the regular Spotify player below.
+- **Without Premium:** the screen playing sound must be logged into Spotify (open.spotify.com in the same browser), or Spotify only plays a 30-second preview from the middle of the song.
+  - Sound on the host's device: tap **Log in on this device**, log in (free accounts work), come back and tap **Check again**. On iPhone and iPad, also turn off Settings › Apps › Safari › Prevent Cross-Site Tracking.
   - Sound on the TV board: on the TV laptop, log in at open.spotify.com in the same browser (the TV board's code screen has a **Log in to Spotify** link), then tap **Check again** on the host.
   - **Full song only** (on by default) keeps the theme off instead of playing the 30-second preview. Turn it off to allow the preview.
   - If a browser blocks the theme from starting, tap anywhere on that screen once. Its volume follows the device's volume; the volume slider sets the timer music. To use a different song, paste its Spotify link into `theme` in the `spotify` section of `questions.js`.
@@ -122,6 +127,8 @@ Each category looks like this:
 You can also edit the questions for a single game from the host screen with **Edit questions**, and save those games on your device.
 
 ## Good to know
+
+- **AirPlay to a TV (for example a Roku TV):** on a Mac, mirroring sends the picture but keeps the sound on the Mac until you pick the TV: open **Control Center › Sound** and choose your TV. On iPhone or iPad, turn the volume up; the game plays sound even when the silent switch is on. On a Roku TV, make sure AirPlay is turned on and the TV volume is up. The TV board's code screen has these tips too.
 
 - **Hosting from a phone:** the host screen fits an iPhone or Android phone. On a phone, the question screen keeps **Correct**, **Wrong** and **Board** pinned at the bottom so you never have to scroll to score, and pictures shrink so the answer stays in view.
 
