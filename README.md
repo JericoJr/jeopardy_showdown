@@ -47,11 +47,13 @@ In every mode, higher points always means a harder question.
 - Music plays on the TV board, or on the host's device if no TV board is connected. Song clips pause the music while they play.
 - To use your own theme song instead, choose a music file under **Music on this screen** on the TV board. Use music you have the right to play.
 - The only sound effects are for correct and wrong answers.
+- Turning **Sounds** off on the host also mutes the TV board.
+- Browsers can block sound until someone clicks the page. If the TV board shows **Click to turn on sound**, click it once on the laptop.
 
 ### Song categories
 
 - **Finish the Lyric** shows a public-domain hymn line with an underlined blank and plays a smooth built-in version of the tune, and players fill in the missing word.
-- Clips play on the TV board (or the host's device if no TV board is connected) when the host taps **Play clip**, then stop after a few seconds. To have clips start by themselves when a clue opens, turn on **Clip autoplay** in setup or on the host screen.
+- Clips play on the TV board (or the host's device if no TV board is connected) when the host taps **Play clip**, then stop after a few seconds. The host can **Pause**, **Resume**, **Play from the start** or **Stop**, and the TV follows every tap. The host screen shows what the TV is doing, like "Playing on the TV · 6s left." The TV board loads each Spotify song when the clue opens, so it starts right away. To have clips start by themselves when a clue opens, turn on **Clip autoplay** in setup or on the host screen.
 - The built-in songs are public-domain hymns and carols, and the game plays their melodies itself.
 - **Spotify categories from your playlists:** `questions.js` has a `spotify` section listing songs from your worship and hymn playlists, each with a difficulty level. Paste each playlist's song links into `worshipLinks` and `hymnLinks` (in the Spotify desktop app: open the playlist, click a song, Ctrl+A / Cmd+A, then Ctrl+C / Cmd+C). The game then adds:
   - **Guess That Song** and **Name the Hymn:** a few seconds of the song play on the TV board. Harder rows play shorter clips, 12 seconds at 100 down to 3 seconds at 500.

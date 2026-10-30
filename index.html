@@ -324,35 +324,65 @@ const Music={on:false,kind:null,el:null,timer:null,bus:null,step:0,next:0,prog:(
 };
 function noteFreq(n){const m=/^([A-Ga-g])([#b]?)(-?\d)$/.exec(String(n||''));if(!m)return 0;const base={c:0,d:2,e:4,f:5,g:7,a:9,b:11}[m[1].toLowerCase()]+(m[2]==='#'?1:m[2]==='b'?-1:0);const midi=(+m[3]+1)*12+base;return 440*Math.pow(2,(midi-69)/12)}
 /* audio clips for song questions: a built-in melody or a sound file, cut off after a few seconds */
-const Clip={timer:null,el:null,bus:null,playing:false,
-  play(m){this.stop();if(!m)return;const len=Math.min(20,Math.max(2,+m.length||8));this.playing=true;if(Music.on)Music.stop();
-    if(m.spotify){Spot.play(m.spotify,m.start,len);this.timer=setTimeout(()=>this.stop(),(len+4)*1000);return}
+const Clip={timer:null,el:null,bus:null,playing:false,paused:false,kind:'',endAt:0,left:0,
+  play(m){this.stop();if(!m)return;const len=Math.min(20,Math.max(2,+m.length||8));this.playing=true;this.paused=false;if(Music.on)Music.stop();
+    this.kind=m.spotify?'spotify':m.audio?'audio':'melody';
+    if(m.spotify){Spot.play(m.spotify,m.start,len);this.arm((len+4)*1000);return}
     if(m.audio){try{const el=new Audio(m.audio);this.el=el;const go=()=>{try{el.currentTime=+m.start||0}catch{}el.play().catch(()=>{})};el.addEventListener('loadedmetadata',go,{once:true});el.load()}catch{}}
     else if(m.melody){const ac=audio();if(ac){this.bus=ac.createGain();this.bus.gain.value=1;
         const lp=ac.createBiquadFilter();lp.type='lowpass';lp.frequency.value=2400;lp.Q.value=0.3;this.bus.connect(lp);lp.connect(ac.destination);this.lp=lp;
         const beat=60/(+m.bpm||100);let t=ac.currentTime+0.01;
       for(const tok of String(m.melody).trim().split(/\s+/)){const [n,d]=tok.split(':');const dur=(parseFloat(d)||1)*beat;const f=noteFreq(n);
         if(f)smoothNote(ac,f,t,dur,this.bus);t+=dur;if(t-ac.currentTime>len)break}}}
-    this.timer=setTimeout(()=>this.stop(),len*1000)},
-  stop(){clearTimeout(this.timer);this.timer=null;Spot.stop();try{this.lp&&this.lp.disconnect()}catch{}this.lp=null;if(this.el){try{this.el.pause()}catch{}this.el=null}try{this.bus&&this.bus.disconnect()}catch{}this.bus=null;const was=this.playing;this.playing=false;if(was){hostAudio();displayAudio()}}};
-const Spot={api:null,ctl:null,waiting:[],loading:false,p:null,seeked:false,t:null,
+    this.arm(len*1000)},
+  arm(ms){clearTimeout(this.timer);this.endAt=Date.now()+ms;this.timer=setTimeout(()=>this.stop(),ms)},
+  pause(){if(!this.playing||this.paused)return;this.paused=true;clearTimeout(this.timer);this.left=Math.max(0,this.endAt-Date.now());
+    if(this.kind==='spotify')Spot.pause();else if(this.kind==='audio'){try{this.el&&this.el.pause()}catch{}}else{try{actx&&actx.suspend()}catch{}}},
+  resume(){if(!this.playing||!this.paused)return;this.paused=false;
+    if(this.kind==='spotify')Spot.resume();else if(this.kind==='audio'){try{this.el&&this.el.play().catch(()=>{})}catch{}}else{try{actx&&actx.resume()}catch{}}
+    this.arm(this.left||1000)},
+  stop(){clearTimeout(this.timer);this.timer=null;if(this.paused&&this.kind==='melody'){try{actx&&actx.resume()}catch{}}this.paused=false;Spot.stop();try{this.lp&&this.lp.disconnect()}catch{}this.lp=null;if(this.el){try{this.el.pause()}catch{}this.el=null}try{this.bus&&this.bus.disconnect()}catch{}this.bus=null;const was=this.playing;this.playing=false;if(was){hostAudio();displayAudio()}}};
+const Spot={api:null,ctl:null,waiting:[],loading:false,p:null,seeked:false,t:null,cued:'',endAt:0,left:0,
   load(cb){if(this.api)return cb(this.api);this.waiting.push(cb);if(this.loading)return;this.loading=true;
     window.onSpotifyIframeApiReady=api=>{this.api=api;this.waiting.splice(0).forEach(f=>f(api))};
     const sc=document.createElement('script');sc.src='https://open.spotify.com/embed/iframe-api/v1';sc.async=true;document.body.appendChild(sc)},
+  /* load a song into the hidden player without playing it, so Play starts right away */
+  cue(id){if(!id||this.cued===id||this.p)return;this.cued=id;this.load(api=>{const uri='spotify:track:'+id;
+    if(!this.ctl){this.make(api,uri,false)}else{try{this.ctl.loadUri(uri)}catch{}}})},
+  make(api,uri,thenPlay){let w=document.getElementById('spotwrap');if(!w){w=document.createElement('div');w.id='spotwrap';w.setAttribute('aria-hidden','true');
+      w.style.cssText='position:fixed;left:0;bottom:0;width:300px;height:80px;opacity:0;pointer-events:none;z-index:-1;overflow:hidden';document.body.appendChild(w)}
+    const el=document.createElement('div');w.appendChild(el);
+    api.createController(el,{uri,width:300,height:80},ctl=>{this.ctl=ctl;ctl.addListener('playback_update',e=>this.update(e));ctl.addListener('ready',()=>{if(this.p)this.go()});if(thenPlay)this.go()})},
   play(id,start,len){this.p={id,start:+start||0,len};this.seeked=false;
     this.load(api=>{const uri='spotify:track:'+id;if(!this.p)return;
-      if(!this.ctl){let w=document.getElementById('spotwrap');if(!w){w=document.createElement('div');w.id='spotwrap';w.setAttribute('aria-hidden','true');
-          w.style.cssText='position:fixed;left:0;bottom:0;width:300px;height:80px;opacity:0;pointer-events:none;z-index:-1;overflow:hidden';document.body.appendChild(w)}
-        const el=document.createElement('div');w.appendChild(el);
-        api.createController(el,{uri,width:300,height:80},ctl=>{this.ctl=ctl;ctl.addListener('playback_update',e=>this.update(e));ctl.addListener('ready',()=>this.go());this.go()})}
-      else{try{this.ctl.loadUri(uri)}catch{}setTimeout(()=>this.go(),300)}})},
+      if(this.ctl&&this.cued===id){this.go();return}
+      this.cued=id;
+      if(!this.ctl){this.make(api,uri,true);return}
+      try{this.ctl.loadUri(uri)}catch{}setTimeout(()=>this.go(),300)})},
   go(){if(!this.ctl||!this.p)return;try{this.ctl.play()}catch{}},
   update(e){const p=this.p,d=(e&&e.data)||{};if(!p||this.seeked||d.isPaused||d.isBuffering)return;this.seeked=true;
-    if(p.start>0)try{this.ctl.seek(p.start)}catch{};clearTimeout(this.t);this.t=setTimeout(()=>this.stop(),(p.len+(p.start>0?0.7:0))*1000)},
+    if(p.start>0)try{this.ctl.seek(p.start)}catch{};clearTimeout(this.t);const ms=(p.len+(p.start>0?0.7:0))*1000;this.endAt=Date.now()+ms;this.t=setTimeout(()=>this.stop(),ms)},
+  pause(){if(!this.p)return;clearTimeout(this.t);this.left=this.seeked?Math.max(300,this.endAt-Date.now()):0;try{this.ctl&&this.ctl.pause()}catch{}},
+  resume(){if(!this.p||!this.ctl)return;try{this.ctl.resume?this.ctl.resume():this.ctl.togglePlay()}catch{}if(this.seeked){clearTimeout(this.t);this.endAt=Date.now()+this.left;this.t=setTimeout(()=>this.stop(),this.left)}},
   stop(){clearTimeout(this.t);this.t=null;this.p=null;try{this.ctl&&this.ctl.pause()}catch{}}};
 let hostClipN=null;
-function hostClip(){if(view!=='host'||!S||!S.clip)return;if(S.clip.n===hostClipN)return;hostClipN=S.clip.n;if(displayOn()||S.sound===false)return;if(S.clip.act==='play'){const cl=curClue();cl&&cl.m&&Clip.play(cl.m)}else Clip.stop()}
-function clipCmd(act){S.clip={n:(S.clip?.n||0)+1,act}}
+function soundBlocked(){return !actx||actx.state!=='running'}
+function updateSoundWarn(){const el=$('#sndwarn');if(!el)return;const show=view==='display'&&D.step==='live'&&!D.mute&&soundBlocked()&&!Clip.paused;
+  el.innerHTML=show?'<button class="btn-sm btn-gold" data-act="d-unlock">🔊 Click to turn on sound</button>':''}
+setInterval(()=>{updateSoundWarn();if(view==='host'&&S&&S.clip){const el=$('#clipstat');if(el){const t=clipStatusText();if(el.textContent!==t)el.textContent=t;
+  if(t==='Ready'&&S.clip.act!=='stop'&&S.clip.act!=='pause'&&!S.clip._done){S.clip._done=true;render()}}}},500);
+function runClip(act,m){if(act==='play'){m&&Clip.play(m)}else if(act==='pause')Clip.pause();else if(act==='resume')Clip.resume();else Clip.stop()}
+function hostClip(){if(view!=='host'||!S||!S.clip)return;if(S.clip.n===hostClipN)return;hostClipN=S.clip.n;if(displayOn()||S.sound===false){Clip.stop();return}const cl=curClue();runClip(S.clip.act,cl&&cl.m)}
+function clipCmd(act){const now=Date.now(),cl=curClue(),len=Math.min(20,Math.max(2,+(cl&&cl.m&&cl.m.length)||8))*1000,c=S.clip||{};
+  let end=c.end||0,left=c.left||0;
+  if(act==='play'){end=now+len+(cl&&cl.m&&cl.m.spotify?1200:0);left=0}
+  else if(act==='pause'){if(c.act!=='play'&&c.act!=='resume')return;left=Math.max(0,end-now)}
+  else if(act==='resume'){if(c.act!=='pause')return;end=now+left}
+  else {end=0;left=0}
+  S.clip={n:(c.n||0)+1,act,end,left}}
+function clipState(){const c=S&&S.clip;if(!c)return 'idle';if(c.act==='pause')return 'paused';if((c.act==='play'||c.act==='resume')&&c.end>Date.now())return 'playing';return 'idle'}
+function clipStatusText(){const st=clipState(),c=S.clip||{},where=displayOn()?'on the TV':'here';
+  if(st==='playing')return `▶ Playing ${where} · ${Math.ceil((c.end-Date.now())/1000)}s left`;if(st==='paused')return `❚❚ Paused · ${Math.ceil((c.left||0)/1000)}s left`;return 'Ready'}
 function setMusic(kind){if(Clip.playing)kind=null;if(!kind){if(Music.on)Music.stop()}else Music.start(kind)}
 function wantMusic(ph,run,tmusic,music){return tmusic&&run&&(ph==='clue'||ph==='final-clue')?'tension':music?'show':null}
 const displayOn=()=>[...conns.values()].some(v=>v.role==='display');
@@ -558,7 +588,7 @@ function publicState(){
     teams:S.teams.map((t,i)=>({id:t.id,name:t.name,named:t.custom!==false,need:needName(i),score:t.score,m:members(i).map(m=>({p:m.pid,n:m.name,on:on.has(m.pid)}))})),
     loose:Object.entries(S.members).filter(([,m])=>!m.team||teamIdx(m.team)<0).map(([p,m])=>({p,n:m.name})),
     cap:S.settings.cap,create:S.settings.playersCreate,mode:S.settings.mode,ans:S.settings.answers,turn:S.turn,epoch:S.epoch,open:!!S.buzzOpen,
-    tm:{left:tLeft(),run:!!S.tmr.run,len:S.tmr.len},music:!!S.music,tmusic:S.tmusic!==false,fx:S.fx||null,clip:S.clip||null,hi:activeTeam()};
+    tm:{left:tLeft(),run:!!S.tmr.run,len:S.tmr.len},music:!!S.music,tmusic:S.tmusic!==false,snd:S.sound!==false,fx:S.fx||null,clip:S.clip?{n:S.clip.n,act:S.clip.act}:null,hi:activeTeam()};
   if(S.cur&&cl){st.clue={cat:g.cats[S.cur.c].name,val:clueValue(),dd:isDD(),
     q:ph==='clue'?cl.q:null,h:S.hint&&ph==='clue'?cl.h:null,a:S.revealed?(cl.a||(cl.song?'':null)):null,rev:!!S.revealed,m:ph==='clue'&&cl.m?cl.m:null,
     who:S.answering,tried:S.tried,res:S.scored,queue:S.inbox.buzz.slice(0,6).map(p=>S.members[p]?.name||'Player')}}
@@ -576,13 +606,14 @@ function paintTimer(left,len){const bar=$('#tbar'),tx=$('#ttext');if(bar){bar.st
 
 /* ---------- client: receiving state ---------- */
 let lastFx=null,lastClip=null;
-function displayAudio(){if(view!=='display')return;Music.prog=()=>{const left=pTimer.run?Math.max(0,pTimer.end-Date.now()):pTimer.left;return 1-left/(pTimer.len||1)};if(D.mute||D.step!=='live'||!PS){setMusic(null);return}setMusic(wantMusic(PS.ph,!!(PS.tm&&PS.tm.run),PS.tmusic!==false,!!PS.music))}
+function displayAudio(){if(view!=='display')return;Music.prog=()=>{const left=pTimer.run?Math.max(0,pTimer.end-Date.now()):pTimer.left;return 1-left/(pTimer.len||1)};if(D.mute||D.step!=='live'||!PS||PS.snd===false){setMusic(null);return}setMusic(wantMusic(PS.ph,!!(PS.tm&&PS.tm.run),PS.tmusic!==false,!!PS.music))}
 function myTeamIdx(st){return st?st.teams.findIndex(t=>(t.m||[]).some(m=>m.p===P.pid)):-1}
 function applyState(st){
   if(!st||typeof st!=='object'||!Array.isArray(st.teams))return;
   if(st.tm)pTimer={left:st.tm.left,run:st.tm.run,len:st.tm.len||1,end:Date.now()+st.tm.left};
-  if(view==='display'){const n=st.fx?st.fx.n:0;if(lastFx!=null&&n!==lastFx&&st.fx&&!D.mute)sfx(st.fx.k);lastFx=n;
-    const cn=st.clip?st.clip.n:0;if(lastClip!=null&&cn!==lastClip&&st.clip&&!D.mute){if(st.clip.act==='play'&&st.clue&&st.clue.m)Clip.play(st.clue.m);else Clip.stop()}lastClip=cn;PS=st;displayAudio()}
+  if(view==='display'){const n=st.fx?st.fx.n:0;if(lastFx!=null&&n!==lastFx&&st.fx&&!D.mute&&st.snd!==false)sfx(st.fx.k);lastFx=n;
+    const on=!D.mute&&st.snd!==false,cn=st.clip?st.clip.n:0;if(lastClip!=null&&cn!==lastClip&&st.clip){if(on)runClip(st.clip.act,st.clue&&st.clue.m);else Clip.stop()}lastClip=cn;
+    if(!on&&Clip.playing)Clip.stop();if(st.ph==='clue'&&st.clue&&st.clue.m&&st.clue.m.spotify&&!Clip.playing)Spot.cue(st.clue.m.spotify);if(st.ph!=='clue'&&Clip.playing)Clip.stop();PS=st;displayAudio()}
   const k=JSON.stringify(Object.assign({},st,{tm:{run:st.tm?.run,left:st.tm?.run?0:st.tm?.left}}));
   if(k===PSkey)return;
   const newEp=!PS||PS.epoch!==st.epoch;PS=st;PSkey=k;
@@ -860,7 +891,9 @@ function clueOverlay(){
     <div class="row"><span class="eyebrow">${esc(g.cats[c.c].name)} · ${dd?'Daily Double · wager '+val:val+' points'}${cl.from?` · from ${esc(cl.from)}`:''}</span><div class="spacer"></div>
       ${!S.revealed&&!dd?'<button class="btn-sm btn-ghost" data-act="swap">Swap for a random question</button>':''}<button class="btn-gold" data-act="close">Back to board</button></div>
     <div class="cluebox">${cl.m?'<div class="cliptag">♪ Audio clip</div>':''}<div class="clue">${clueText(cl.q)}</div>${S.hint&&cl.h?`<div class="hint">Hint: ${esc(cl.h)}</div>`:''}</div>
-    ${cl.m?`<div class="row"><span class="note" style="flex:1;min-width:0">♪ This clue has ${cl.m.spotify?'a Spotify clip':'an audio clip'}. Tap Play clip when you’re ready; it plays ${displayOn()?'on the TV board':'on this device'}.${cl.m.spotify?' The TV board’s browser should be logged into Spotify for full songs.':''}</span><button class="btn-sm btn-gold" data-act="clip-play">▶ Play clip</button><button class="btn-sm" data-act="clip-stop">Stop</button></div>`:''}
+    ${cl.m?`<div class="row"><span class="note" style="flex:1;min-width:0">♪ This clue has ${cl.m.spotify?'a Spotify clip':'an audio clip'}. Tap Play clip when you’re ready; it plays ${displayOn()?'on the TV board':'on this device'}.${cl.m.spotify?' The TV board’s browser should be logged into Spotify for full songs.':''}</span></div><div class="row"><span class="pill" id="clipstat" aria-live="polite">${esc(clipStatusText())}</span>
+      ${clipState()==='playing'?'<button class="btn-sm" data-act="clip-pause">❚❚ Pause</button>':clipState()==='paused'?'<button class="btn-sm btn-gold" data-act="clip-resume">▶ Resume</button>':''}
+      <button class="btn-sm ${clipState()==='idle'?'btn-gold':''}" data-act="clip-play">${clipState()==='idle'?'▶ Play clip':'↺ Play from the start'}</button><button class="btn-sm" data-act="clip-stop">■ Stop</button></div>`:''}
     ${hintRow(cl.h)}
     ${answerBox(cl.a||(cl.song?'See the Spotify song card below':''))}
     ${cl.song&&cl.m&&cl.m.spotify&&(S.revealed||!S.tv||peek)?`<span class="note">Answer card from Spotify${S.revealed?'':' (only you can see this; don’t press play here)'}:</span>${songCard(cl.m.spotify)}`:''}
@@ -992,7 +1025,7 @@ function displayHTML(){
       <button class="btn-ghost btn-sm" data-act="go-role">Back</button></div>`;
   const st=PS;
   const bar=`<div class="row"><span class="eyebrow">${esc(st?.title||'Jeopardy Showdown')} · Join with code <b style="color:var(--gold)">${esc(D.code)}</b></span><div class="spacer"></div><div id="conn">${connHTML()}</div>
-    <button class="btn-sm btn-ghost" data-act="d-sound">${D.mute?'Sound: off':'Sound: on'}</button><button class="btn-sm btn-ghost" data-act="d-full">Full screen</button><button class="btn-sm btn-ghost" data-act="d-leave">Exit</button></div>`;
+    <span id="sndwarn"></span><button class="btn-sm btn-ghost" data-act="d-sound">${D.mute?'Sound: off':'Sound: on'}</button><button class="btn-sm btn-ghost" data-act="d-full">Full screen</button><button class="btn-sm btn-ghost" data-act="d-leave">Exit</button></div>`;
   if(!st)return `${bar}<div class="tvbox"><div class="big-status">${net==='live'?'Loading…':'Connecting to the host…'}</div>${netNote()}</div>`;
   const scores=`<div class="scores">${st.teams.map((t,i)=>`<div class="team ${st.hi===i?'turn':''}">${st.hi===i?`<span class="badge">${st.ph==='clue'&&st.clue&&st.clue.who===i?'Answering':st.ph==='board'?'Picking':'Their turn'}</span>`:''}<span class="nm">${esc(t.name)}</span><span class="sc ${t.score<0?'neg':''}">${t.score}</span><span class="mem">${esc((t.m||[]).map(m=>m.n).join(', '))}</span></div>`).join('')}</div>`;
   let main='';
@@ -1092,7 +1125,10 @@ document.addEventListener('click',e=>{
     case 'tmusic':S.tmusic=S.tmusic===false;commit();break;
     case 'clip-play':clipCmd('play');commit();break;
     case 'clip-stop':clipCmd('stop');commit();break;
+    case 'clip-pause':clipCmd('pause');commit();break;
+    case 'clip-resume':clipCmd('resume');commit();break;
     case 'music-builtin':Music.file(null);render();break;
+    case 'd-unlock':audio();Spot.load(()=>{});updateSoundWarn();break;
     case 'd-sound':D.mute=!D.mute;saveDisplay();displayAudio();render();break;
     case 'peek':peek=!peek;render();break;
     case 'hint':S.hint=true;commit();break;
