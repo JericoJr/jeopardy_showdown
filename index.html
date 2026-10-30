@@ -191,7 +191,16 @@ function tuneGet(){try{return JSON.parse(localStorage.getItem('ssw.tune')||'{}')
 function tuneSet(t){try{localStorage.setItem('ssw.tune',JSON.stringify(t))}catch{}}
 const lyricKey=(id,ans)=>'L:'+id+':'+String(ans||'').toLowerCase().replace(/[^a-z0-9]+/g,'');
 let FL_ORIG=null;
+/* saved spots ("1:05 Chorus") per song: questions.js marks + spots saved on this device */
+const QMARKS={};
+const parseMark=v=>{const m=/^\s*(\d+:\d{1,2}|\d+(?:\.\d+)?)\s*(.*)$/.exec(String(v||''));if(!m)return null;const t=toSec(m[1]);return t==null?null:{t,label:(m[2]||'Spot').trim().slice(0,24)||'Spot'}};
+function songMarks(id){const own=(tuneGet()['S:'+id]?.marks)||[];const all=[...(QMARKS[id]||[]),...own];const seen=new Set();
+  return all.filter(x=>{const k=Math.round(x.t)+'|'+x.label.toLowerCase();if(seen.has(k))return false;seen.add(k);return true}).sort((a,b)=>a.t-b.t)}
+function addMark(id,t,label){const T=tuneGet(),k='S:'+id;T[k]=Object.assign({},T[k]);T[k].marks=[...(T[k].marks||[]).filter(m=>Math.abs(m.t-t)>=1||m.label!==label),{t:Math.round(t*10)/10,label}];tuneSet(T)}
+function removeMark(id,t,label){const T=tuneGet(),k='S:'+id;if(!T[k]||!T[k].marks)return;T[k].marks=T[k].marks.filter(m=>!(Math.abs(m.t-t)<0.05&&m.label===label));tuneSet(T)}
+function setSongStart(id,t){const T=tuneGet(),k='S:'+id;T[k]=Object.assign({},T[k],{start:Math.round(t*10)/10});tuneSet(T);buildSpotify()}
 function buildSpotify(){const sp=QB.spotify;if(!sp)return;const wl=linkList(sp.worshipLinks),hl=linkList(sp.hymnLinks),T=tuneGet();
+  ['worship','hymns'].forEach(key=>(sp[key]||[]).forEach(e=>{const id=spotifyId(e.link)||(e.n>0?(key==='worship'?wl:hl)[e.n-1]||'':'');if(id&&Array.isArray(e.marks))QMARKS[id]=e.marks.map(parseMark).filter(Boolean)}));
   for(let i=BANK.length-1;i>=0;i--)if(BANK[i].id.startsWith('spotify-'))BANK.splice(i,1);
   const flc=BANK.find(b=>b.name==='Finish the Lyric');if(flc){if(!FL_ORIG)FL_ORIG=flc.q.slice();flc.q=FL_ORIG.slice()}
   const songStart=(id,e)=>T['S:'+id]?.start??toSec(e.start)??null;
@@ -376,7 +385,7 @@ const Spot={api:null,ctl:null,waiting:[],loading:false,p:null,seeked:false,t:nul
       if(!this.ctl){this.make(api,uri,true);return}
       try{this.ctl.loadUri(uri)}catch{}setTimeout(()=>this.go(),300)})},
   go(){if(!this.ctl||!this.p)return;try{this.ctl.play()}catch{}},
-  update(e){const p=this.p,d=(e&&e.data)||{};this.pos=(d.position||0)/1000;if(d.duration)this.dur=d.duration/1000;if(this.onPos&&p)this.onPos(this.pos,this.dur,!!d.isPaused);
+  update(e){const p=this.p,d=(e&&e.data)||{};this.pos=(d.position||0)/1000;if(d.duration)this.dur=d.duration/1000;if(this.onPos&&p&&this.seeked)this.onPos(this.pos,this.dur,!!d.isPaused);
     if(!p||this.seeked||d.isPaused||d.isBuffering)return;this.seeked=true;
     if(p.auto&&this.dur>60)p.start=Math.min(80,Math.max(35,Math.round(this.dur*0.22)));
     if(p.start>0)try{this.ctl.seek(p.start)}catch{};if(p.full)return;clearTimeout(this.t);const ms=(p.len+(p.start>0?0.7:0))*1000;this.endAt=Date.now()+ms;this.t=setTimeout(()=>this.stop(),ms)},
@@ -384,8 +393,13 @@ const Spot={api:null,ctl:null,waiting:[],loading:false,p:null,seeked:false,t:nul
   resume(){if(!this.p||!this.ctl)return;try{this.ctl.resume?this.ctl.resume():this.ctl.togglePlay()}catch{}if(this.seeked){clearTimeout(this.t);this.endAt=Date.now()+this.left;this.t=setTimeout(()=>this.stop(),this.left)}},
   stop(){clearTimeout(this.t);this.t=null;this.p=null;try{this.ctl&&this.ctl.pause()}catch{}}};
 let hostClipN=null,songDrag=false,lastPosSend=0;
-Spot.onPos=(pos,dur,paused)=>{if(view==='display'&&Clip.playing&&Date.now()-lastPosSend>450){lastPosSend=Date.now();send({t:'pos',pos,dur,paused})}
+let posTrail=null;
+Spot.onPos=(pos,dur,paused)=>{if(view==='display'&&Clip.playing){const go=()=>{lastPosSend=Date.now();send({t:'pos',pos:Spot.pos,dur:Spot.dur,paused})};clearTimeout(posTrail);if(Date.now()-lastPosSend>450)go();else posTrail=setTimeout(go,460)}
   if(view==='host'&&S&&!displayOn()){S.spos={pos,dur,paused,at:Date.now()};paintSongPos()}};
+/* where the song is right now: the TV's reported position, or the slider if nothing is playing */
+function currentSongPos(){const sp=(S&&S.spos)||{},c=(S&&S.clip)||{},el=$('#songpos');
+  if(clipState()==='playing'||clipState()==='paused'){return Math.max(0,(sp.pos||0)+(clipState()==='playing'&&!sp.paused?(Date.now()-(sp.at||Date.now()))/1000:0))}
+  return el?+el.value:0}
 function paintSongPos(){const el=$('#songpos'),tx=$('#songtime');if(!S)return;const sp=S.spos||{},c=S.clip||{},live=c.full&&clipState()==='playing'&&!sp.paused;
   const pos=Math.max(0,(sp.pos||0)+(live?(Date.now()-(sp.at||Date.now()))/1000:0)),dur=sp.dur||Spot.dur||0;
   if(el&&!songDrag){if(dur)el.max=String(Math.ceil(dur));if(c.full)el.value=String(Math.floor(pos))}
@@ -711,9 +725,13 @@ const Tuner={ctl:null,pos:0,paused:true,sel:null,tab:'worship',stopT:null,
       <button class="btn-sm" data-act="tu-nudge" data-v="-5">−5s</button><button class="btn-sm" data-act="tu-nudge" data-v="-1">−1s</button><button class="btn-sm" data-act="tu-nudge" data-v="1">+1s</button><button class="btn-sm" data-act="tu-nudge" data-v="5">+5s</button></div>
     <div class="row">${lyr?`<button class="btn-gold btn-sm" data-act="tu-mark" data-v="start">Line starts here</button><button class="btn-gold btn-sm" data-act="tu-mark" data-v="cut">Cut here (right before “${esc(it.answer)}”)</button>`
       :`<button class="btn-gold btn-sm" data-act="tu-mark" data-v="start">Chorus starts here</button>`}
-      <button class="btn-sm" data-act="tu-test">Test the clip</button><button class="btn-sm btn-ghost" data-act="tu-reset">Reset</button></div>
-    <span class="note">${lyr?`Line starts: <b>${fmtT(it.start)}</b> · Cut: <b>${fmtT(it.cut)}</b>${it.start!=null&&it.cut!=null&&it.cut>it.start?' · ready':' · set both to use the real recording'}`:`Clip starts: <b>${fmtT(it.start??45)}</b>${it.tuned?'':' (default guess)'}`}. Play the song, pause or nudge to the right spot, then tap the gold button.</span>`}};
-function tunerExport(){const items=tunerItems().filter(x=>x.tuned);if(!items.length)return 'No times set yet.';
+      <button class="btn-sm" data-act="tu-test">Test the clip</button><button class="btn-sm" data-act="tu-savespot">＋ Save this spot as Chorus</button><button class="btn-sm btn-ghost" data-act="tu-reset">Reset</button></div>
+    <span class="note">${lyr?`Line starts: <b>${fmtT(it.start)}</b> · Cut: <b>${fmtT(it.cut)}</b>${it.start!=null&&it.cut!=null&&it.cut>it.start?' · ready':' · set both to use the real recording'}`:`Clip starts: <b>${fmtT(it.start??45)}</b>${it.tuned?'':' (default guess)'}`}. Play the song, pause or nudge to the right spot, then tap the gold button.</span>
+    ${songMarks(it.id).length?`<div class="row"><span class="lbl">Saved spots</span>${songMarks(it.id).map(m=>`<button class="btn-sm" data-act="tu-jump" data-t="${m.t}">${fmtT(m.t)} ${esc(m.label)}</button>`).join('')}</div>`:''}`}};
+function tunerExport(){const items=tunerItems().filter(x=>x.tuned||(x.kind!=='lyric'&&(tuneGet()[x.key]?.marks||[]).length));if(!items.length)return 'No times set yet.';
+  return items.map(x=>{const mk=(tuneGet()[x.key]?.marks||[]).map(m=>`${fmtT(m.t)} ${m.label}`);
+    return `${x.title} (${x.sub||''})${x.tuned?`: clip start ${fmtT(x.start)}`:''}${mk.length?` · saved spots: ${mk.join(', ')}`:''}`}).join('\n')}
+function tunerExportOld(){const items=tunerItems().filter(x=>x.tuned);if(!items.length)return 'No times set yet.';
   return items.map(x=>x.kind==='lyric'?`${x.title} (lyric "${x.answer}"): line ${fmtT(x.start)}, cut ${fmtT(x.cut)}`:`${x.title} (${x.sub||''}): chorus ${fmtT(x.start)}`).join('\n')}
 function tunerHTML(){
   const all=tunerItems(),tabs=[['worship','Guess That Song'],['hymn','Name the Hymn']],list=all.filter(x=>x.kind===Tuner.tab),done=list.filter(x=>x.kind==='lyric'?(x.start!=null&&x.cut!=null):x.tuned).length;
@@ -931,6 +949,11 @@ function clueOverlay(){
       ${cl.m.spotify||cl.m.audio?`<details class="card" style="gap:8px" ${S.clip&&S.clip.full?'open':''}><summary class="eyebrow" style="cursor:pointer">Full song: drag to any part and play it (no cut-off)</summary>
         <input type="range" id="songpos" min="0" max="${Math.ceil((S.spos&&S.spos.dur)||Spot.dur||300)}" step="1" value="${Math.floor((S.clip&&S.clip.full&&S.spos&&S.spos.pos)||0)}" data-songpos aria-label="Position in the song">
         <div class="row"><span class="pill" id="songtime">0:00 / —:——</span><div class="spacer"></div><button class="btn-sm btn-gold" data-act="clip-full">▶ Play from here</button></div>
+        ${cl.m.spotify?`<span class="lbl">Saved spots in this song</span>
+        <div class="row" id="marklist">${songMarks(cl.m.spotify).map(m=>`<span class="pill" style="padding:0;overflow:hidden"><button class="btn-sm" style="border:0;border-radius:0" data-act="mark-go" data-t="${m.t}">▶ ${fmtT(m.t)} ${esc(m.label)}</button><button class="btn-sm btn-ghost" style="border:0;border-radius:0" data-act="mark-start" data-t="${m.t}" title="Use as this song’s clip start">Set as clip start</button><button class="btn-sm btn-ghost" style="border:0;border-radius:0" data-act="mark-del" data-t="${m.t}" data-l="${esc(m.label)}" aria-label="Delete this saved spot">✕</button></span>`).join('')||'<span class="note">None yet. Play the song, then save the spots you want to come back to.</span>'}</div>
+        <div class="row"><select id="marklabel" aria-label="Name for this spot" style="width:auto">${['Chorus','Verse','Bridge','Intro','Ending','Best part'].map(x=>`<option>${x}</option>`).join('')}</select>
+          <button class="btn-sm btn-gold" data-act="mark-save">＋ Save this spot</button><button class="btn-sm" data-act="mark-start" data-t="now">Use this spot as the clip start</button></div>
+        <span class="note">Clip start for this song: <b>${fmtT(cl.m.start)}</b>${cl.m.auto?' (automatic guess)':''}. Saved spots stay on this device and are included in “Copy all my times” in the Song Tuner.</span>`:''}
         <span class="note">Drag the slider and let go to jump there. The song keeps playing ${displayOn()?'on the TV':'here'} until you pause or stop it. The full length shows once it starts.</span></details>`:''}`:''}
     ${hintRow(cl.h)}
     ${answerBox(cl.a||'(see questions.js)')}
@@ -1115,6 +1138,8 @@ document.addEventListener('click',e=>{
     case 'tu-pause':Tuner.pause();break;
     case 'tu-nudge':Tuner.nudge(+b.dataset.v);break;
     case 'tu-mark':Tuner.mark(b.dataset.v);break;
+    case 'tu-savespot':{const it=Tuner.sel;if(!it)return;addMark(it.id,Tuner.pos,'Chorus');render();break}
+    case 'tu-jump':{if(!Tuner.ctl)return;Tuner.pos=+b.dataset.t;try{Tuner.ctl.seek(+b.dataset.t)}catch{}break}
     case 'tu-test':Tuner.test();break;
     case 'tu-reset':Tuner.reset();break;
     case 'tu-copy':{const txt=tunerExport();const ta=$('#texport');if(ta){ta.value=txt;ta.hidden=false}try{navigator.clipboard.writeText(txt).then(()=>{b.textContent='Copied'},()=>{ta&&ta.select()})}catch{ta&&ta.select()}break}
@@ -1167,6 +1192,11 @@ document.addEventListener('click',e=>{
     case 'clip-pause':clipCmd('pause');commit();break;
     case 'clip-resume':clipCmd('resume');commit();break;
     case 'clip-full':{const el=$('#songpos');clipCmd('full',el?+el.value:0);commit();break}
+    case 'mark-go':{clipCmd('full',+b.dataset.t);commit();break}
+    case 'mark-save':{const cl=curClue();if(!cl||!cl.m||!cl.m.spotify)return;const lab=($('#marklabel')||{}).value||'Spot';addMark(cl.m.spotify,currentSongPos(),lab);render();break}
+    case 'mark-del':{const cl=curClue();if(!cl||!cl.m)return;removeMark(cl.m.spotify,+b.dataset.t,b.dataset.l);render();break}
+    case 'mark-start':{const cl=curClue();if(!cl||!cl.m||!cl.m.spotify)return;const t=b.dataset.t==='now'?currentSongPos():+b.dataset.t;setSongStart(cl.m.spotify,t);
+      S.game.cats.forEach(cat=>cat.clues.forEach(x=>{if(x.m&&x.m.spotify===cl.m.spotify&&x.m.start!==0){x.m.start=Math.round(t*10)/10;x.m.auto=false}}));commit();break}
     case 'music-builtin':Music.file(null);render();break;
     case 'd-unlock':audio();Spot.load(()=>{});updateSoundWarn();break;
     case 'd-sound':D.mute=!D.mute;saveDisplay();displayAudio();render();break;
