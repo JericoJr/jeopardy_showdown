@@ -330,7 +330,7 @@ setup.skip=(setup.skip||[]).filter(n=>BANK.some(b=>b.name===n));
 setup.settings=Object.assign(clone(DEF_SET),setup.settings||{});
 if(!PRESETS.some(p=>p.id===setup.preset))setup.preset='random';
 setup.pick=(setup.pick||[]).filter(id=>BANK.some(b=>b.id===id));
-let view='role',edit=null,editFrom='setup',confirmDel=false,peek=false,showLobby=false,confirmNew=false,confirmRm=null,confirmEnd=false,ended=false;
+let showSpot=false;let view='role',edit=null,editFrom='setup',confirmDel=false,peek=false,showLobby=false,confirmNew=false,confirmRm=null,confirmEnd=false,ended=false;
 let P=Object.assign({pid:uid(),name:'',code:'',step:'code'},store.get('ssw.player',{}));
 let D=Object.assign({code:'',step:'code'},store.get('ssw.display',{}));
 let PS=null,PSkey='',pDraft={wager:'',ans:'',fans:'',team:''},pTimer={end:0,left:0,run:false,len:1},pSent={buzz:-1,ans:-1,wager:-1,fans:-1};
@@ -613,10 +613,10 @@ function premiumHTML(){const cid=SpotAuth.cid(),linked=SpotAuth.linked(),tv=disp
       <li>Tap <b>Create app</b>. Give it any name and description, like “Jeopardy Showdown.”</li>
       <li>Under <b>Redirect URIs</b>, paste exactly:<div class="row" style="margin:4px 0"><code class="pill" id="spot-uri" style="user-select:all;word-break:break-all">${esc(spotRedirect())}</code><button class="btn-sm" data-act="spot-copyuri">Copy</button></div></li>
       <li>Under “Which API/SDKs are you planning to use?”, check <b>Web API</b> and <b>Web Playback SDK</b>. Agree to the terms and tap <b>Save</b>.</li>
-      <li>Open the app’s <b>Settings</b>, copy the <b>Client ID</b>, and paste it below.</li></ol>
-      <label for="spot-cid">Client ID</label><input id="spot-cid" autocomplete="off" spellcheck="false" placeholder="32 letters and numbers">
-      <div class="row"><button class="btn-sm btn-gold" data-act="spot-cid">Save on this device</button></div>
-      <span class="note">Saved only in this browser. To use another host device, paste the same Client ID there.</span></details>`;
+      <li>Open the app’s <b>Settings</b>, copy the <b>Client ID</b>, and paste it in the box below.</li></ol></details>
+    <label for="spot-cid">Paste your Client ID here</label><input id="spot-cid" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="32 letters and numbers">
+    <div class="row"><button class="btn btn-gold" data-act="spot-cid">Save on this device</button></div>
+    <span class="note">Saved only in this browser. To use another host device, paste the same Client ID there.</span>`;
   if(!linked)return `${head}<span class="note">Setup is done on this device. Log in with your Spotify Premium account to link it.</span>
     <div class="row"><button class="btn-sm btn-gold" data-act="spot-login">Log in with Spotify</button><button class="btn-sm btn-ghost" data-act="spot-cid-clear">Change Client ID</button></div>`;
   const msg=sdk==='ready'?`<b class="ok">✓ Linked.</b> The ${tv?'TV board':'game'} plays the whole theme through your Premium account, on repeat.`
@@ -1150,7 +1150,7 @@ function hostHTML(){
   if(S.phase==='lobby')return `<div class="row"><div><div class="eyebrow">Jeopardy Showdown · lobby</div><h1 style="font-family:var(--f-display);font-weight:400;font-size:clamp(24px,4vw,38px);text-transform:uppercase">${esc(g.title)}</h1></div><div class="spacer"></div><div id="conn">${connHTML()}</div></div>${spotifyCardHTML(false)}${lobbyHTML(false)}`;
   const allUsed=S.used.every(c=>c.every(Boolean));
   return `<div class="row"><div><div class="eyebrow">Jeopardy Showdown · host</div><h1 style="font-family:var(--f-display);font-weight:400;font-size:clamp(24px,4vw,38px);letter-spacing:.02em;text-transform:uppercase">${esc(g.title)}</h1></div><div class="spacer"></div>
-    <button class="btn-sm" data-act="show-lobby">Code ${esc(S.code)} · teams & QR</button><div id="conn">${connHTML()}</div></div>
+    <button class="btn-sm" data-act="show-lobby">Code ${esc(S.code)} · teams & QR</button><button class="btn-sm ${spotState()==='premium'?'':'btn-gold'}" data-act="spot-panel" aria-expanded="${!!showSpot}">🎵 Spotify${spotState()==='premium'?' ✓':''}</button><div id="conn">${connHTML()}</div></div>
   ${orderHTML(orderState())}
   <div class="turnbar"><span class="eyebrow">${classic()?'In control':'Picking now'}</span><b>${esc(S.teams[S.turn]?.name||'No teams yet')}</b><span class="spacer"></span><span class="note">${classic()?'Classic Jeopardy':'Team Order'} · ${esc(LEVEL_NAMES[S.settings.level]||'All levels')} · ${S.settings.mode==='turns'?'next team steals':'buzz-in'} · ${S.settings.answers==='typed'?'typed answers'+(S.settings.auto?', auto-scored':''):'answers out loud'}</span></div>
   <div class="scores" id="scores">${scoresInner(true)}</div>
@@ -1169,7 +1169,7 @@ function hostHTML(){
   </div>
   ${confirmEnd?endConfirmHTML():''}
   <div class="note">${S.tv?'Answers and hints are hidden on this screen until you reveal them. Use “Peek” to check privately.':'Answers show on this screen. If this screen is ever on the TV, turn on “Hide answers”.'}${S.dds.length?` ${S.dds.length===1?'A Daily Double is':'Two Daily Doubles are'} hidden on the board.`:''}</div>
-  ${spotifyCardHTML(true)}
+  ${showSpot?spotifyCardHTML(false):spotifyCardHTML(true)}
   <details class="card"><summary class="eyebrow" style="cursor:pointer">Music & sounds</summary>
     <span class="note">${displayOn()?'The TV board is connected, so music and sounds play there.':'No TV board is connected, so music and sounds play on this device.'} The theme plays on the board, and suspenseful timer music plays while the timer runs. The only sound effects are for correct and wrong answers.</span>
     ${spotifyCardHTML(false)}${displayOn()?'':musicControlsHTML()}</details>
@@ -1520,6 +1520,7 @@ document.addEventListener('click',e=>{
     case 'spot-copyuri':{try{navigator.clipboard.writeText(spotRedirect());alertNote('Copied.')}catch{}break}
     case 'spot-login':{const w=window.open('about:blank','_blank');SpotAuth.login().then(u=>{if(!u)return;if(w)w.location.href=u;else location.href=u});break}
     case 'spot-unlink':SpotAuth.unlink();SpotSDK.stopAll();S.hostSdk='';conns.forEach((inf,c)=>{if(inf.role==='display'){inf.spotTok=null;try{c.send({t:'spottoken',a:''})}catch{}}});themeSourceChanged();render();break;
+    case 'spot-panel':showSpot=!showSpot;render();if(showSpot)setTimeout(()=>{const c=$('#spotcard');c&&c.scrollIntoView({behavior:'smooth',block:'start'})},50);break;
     case 'spot-full':S.fullOnly=S.fullOnly===false;commit();if(!displayOn())ThemeSpot.kick();break;
     case 'spot-check':if(displayOn()){S.tvSpot=null;S.spotCheck=(S.spotCheck||0)+1;commit()}else{resetSpotify();render()}break;
     case 'autoplay':S.settings.autoplay=!S.settings.autoplay;setup.settings.autoplay=S.settings.autoplay;saveSetup();commit();break;
