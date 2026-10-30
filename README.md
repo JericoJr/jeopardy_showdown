@@ -60,6 +60,8 @@ In every mode, higher points always means a harder question.
   - **Guess That Song** and **Name the Hymn:** a few seconds of the song play on the TV board. Harder rows play shorter clips, 12 seconds at 100 down to 3 seconds at 500.
   - **Who Sings It?:** a clip plays and players name the artist.
   - **Name That Intro:** the first few seconds of a worship song or hymn play, and players name the song.
+- **Where clips start:** songs you haven't tuned start about a fifth of the way in, where the first chorus usually is. For an exact chorus, use the Song Tuner.
+- **Full song:** under the clip controls, the host can open **Full song**, drag the slider to any part of the song and let go (or tap **Play from here**). The TV board plays from there with no cut-off until the host pauses or stops, and the slider follows along.
 - **Song Tuner** (in setup and on the host screen): play each song and tap **Chorus starts here** so clips play the part everyone knows. Times are saved on that device and used right away. To keep them for every device, tap **Copy all my times** and add them to `questions.js` as `start`.
 - The host sees the song title as the answer on the iPad, and no song audio or video plays on the iPad while a TV board is connected. When the host reveals the answer, the TV board shows the Spotify song card.
 - For full songs, the browser on the TV board laptop should be logged into Spotify. Without a login, Spotify plays only 30-second previews, which may not include the part you picked. If a clip doesn't start, tap **Play clip again** on the host screen.

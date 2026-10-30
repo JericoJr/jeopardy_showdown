@@ -194,18 +194,18 @@ let FL_ORIG=null;
 function buildSpotify(){const sp=QB.spotify;if(!sp)return;const wl=linkList(sp.worshipLinks),hl=linkList(sp.hymnLinks),T=tuneGet();
   for(let i=BANK.length-1;i>=0;i--)if(BANK[i].id.startsWith('spotify-'))BANK.splice(i,1);
   const flc=BANK.find(b=>b.name==='Finish the Lyric');if(flc){if(!FL_ORIG)FL_ORIG=flc.q.slice();flc.q=FL_ORIG.slice()}
-  const songStart=(id,e)=>T['S:'+id]?.start??toSec(e.start)??45;
+  const songStart=(id,e)=>T['S:'+id]?.start??toSec(e.start)??null;
   const idFor=(e,list)=>spotifyId(e.link)||(e.n>0?list[e.n-1]||'':'');
   const acc2=e=>[...(e.accept||[]),String(e.title||'').toLowerCase().replace(/\s*[\(\[].*$/,'')].filter(Boolean).join('|');
   const guess=(key,list,name,question)=>{const q=(sp[key]||[]).map(e=>{const id=idFor(e,list);if(!id||!e.title)return null;
-      return[Math.min(7,Math.max(1,+e.level||3)),question,String(e.title),e.artist?`Recorded by ${e.artist}.`:'',acc2(e),{spotify:id,audio:'',start:songStart(id,e),length:8,melody:'',bpm:100}]}).filter(Boolean);
+      return[Math.min(7,Math.max(1,+e.level||3)),question,String(e.title),e.artist?`Recorded by ${e.artist}.`:'',acc2(e),{spotify:id,audio:'',start:songStart(id,e)??45,auto:songStart(id,e)==null,length:8,melody:'',bpm:100}]}).filter(Boolean);
     if(q.length>=5)BANK.push({id:'spotify-'+key,name,clipByRow:true,q})};
   guess('worship',wl,'Guess That Song','Listen to the clip. Name this worship song.');
   guess('hymns',hl,'Name the Hymn','Listen to the recording. Name this hymn.');
   /* name the artist from the chorus */
   const aq=(sp.worship||[]).map(e=>{const id=idFor(e,wl);if(!id||!e.artist)return null;const art=String(e.artist);
     const alts=[art,...art.split(/\s*(?:&|,| and | feat\.? )\s*/i)].map(x=>x.toLowerCase().trim()).filter(Boolean);
-    return[Math.min(7,Math.max(1,+(e.artistLevel||e.level)||3)),'Listen to the clip. Who is the artist?',art,`The song is "${e.title}."`,alts.join('|'),{spotify:id,audio:'',start:songStart(id,e),length:8,melody:'',bpm:100}]}).filter(Boolean);
+    return[Math.min(7,Math.max(1,+(e.artistLevel||e.level)||3)),'Listen to the clip. Who is the artist?',art,`The song is "${e.title}."`,alts.join('|'),{spotify:id,audio:'',start:songStart(id,e)??45,auto:songStart(id,e)==null,length:8,melody:'',bpm:100}]}).filter(Boolean);
   if(aq.length>=5)BANK.push({id:'spotify-artist',name:'Who Sings It?',clipByRow:true,q:aq});
   /* guess the song from its opening seconds; intros are harder, so each song counts one level higher */
   const iq=[['worship',wl,'worship song'],['hymns',hl,'hymn']].flatMap(([key,list,kind])=>(sp[key]||[]).map(e=>{const id=idFor(e,list);if(!id||!e.title)return null;
@@ -337,7 +337,8 @@ function noteFreq(n){const m=/^([A-Ga-g])([#b]?)(-?\d)$/.exec(String(n||''));if(
 const Clip={timer:null,el:null,bus:null,playing:false,paused:false,kind:'',endAt:0,left:0,
   play(m){this.stop();if(!m)return;const len=Math.min(20,Math.max(2,+m.length||8));this.playing=true;this.paused=false;if(Music.on)Music.stop();
     this.kind=m.spotify?'spotify':m.audio?'audio':'melody';
-    if(m.spotify){Spot.play(m.spotify,m.start,len);this.arm((len+4)*1000);return}
+    this.full=false;
+    if(m.spotify){Spot.play(m.spotify,m.start,len,{auto:m.auto});this.arm((len+4)*1000);return}
     if(m.audio){try{const el=new Audio(m.audio);this.el=el;const go=()=>{try{el.currentTime=+m.start||0}catch{}el.play().catch(()=>{})};el.addEventListener('loadedmetadata',go,{once:true});el.load()}catch{}}
     else if(m.melody){const ac=audio();if(ac){this.bus=ac.createGain();this.bus.gain.value=1;
         const lp=ac.createBiquadFilter();lp.type='lowpass';lp.frequency.value=2400;lp.Q.value=0.3;this.bus.connect(lp);lp.connect(ac.destination);this.lp=lp;
@@ -345,14 +346,19 @@ const Clip={timer:null,el:null,bus:null,playing:false,paused:false,kind:'',endAt
       for(const tok of String(m.melody).trim().split(/\s+/)){const [n,d]=tok.split(':');const dur=(parseFloat(d)||1)*beat;const f=noteFreq(n);
         if(f)smoothNote(ac,f,t,dur,this.bus);t+=dur;if(t-ac.currentTime>len)break}}}
     this.arm(len*1000)},
+  full:false,
+  playFull(m,at){this.stop();if(!m)return;this.playing=true;this.paused=false;this.full=true;if(Music.on)Music.stop();at=Math.max(0,+at||0);
+    if(m.spotify){this.kind='spotify';Spot.play(m.spotify,at,0,{full:true});return}
+    if(m.audio){this.kind='audio';try{const el=new Audio(m.audio);this.el=el;el.addEventListener('loadedmetadata',()=>{try{el.currentTime=at}catch{}el.play().catch(()=>{})},{once:true});el.load()}catch{}return}
+    this.full=false;this.play(m)},
   arm(ms){clearTimeout(this.timer);this.endAt=Date.now()+ms;this.timer=setTimeout(()=>this.stop(),ms)},
   pause(){if(!this.playing||this.paused)return;this.paused=true;clearTimeout(this.timer);this.left=Math.max(0,this.endAt-Date.now());
     if(this.kind==='spotify')Spot.pause();else if(this.kind==='audio'){try{this.el&&this.el.pause()}catch{}}else{try{actx&&actx.suspend()}catch{}}},
   resume(){if(!this.playing||!this.paused)return;this.paused=false;
     if(this.kind==='spotify')Spot.resume();else if(this.kind==='audio'){try{this.el&&this.el.play().catch(()=>{})}catch{}}else{try{actx&&actx.resume()}catch{}}
-    this.arm(this.left||1000)},
-  stop(){clearTimeout(this.timer);this.timer=null;if(this.paused&&this.kind==='melody'){try{actx&&actx.resume()}catch{}}this.paused=false;Spot.stop();try{this.lp&&this.lp.disconnect()}catch{}this.lp=null;if(this.el){try{this.el.pause()}catch{}this.el=null}try{this.bus&&this.bus.disconnect()}catch{}this.bus=null;const was=this.playing;this.playing=false;if(was){hostAudio();displayAudio()}}};
-const Spot={api:null,ctl:null,waiting:[],loading:false,p:null,seeked:false,t:null,cued:'',endAt:0,left:0,
+    if(!this.full)this.arm(this.left||1000)},
+  stop(){clearTimeout(this.timer);this.timer=null;this.full=false;if(this.paused&&this.kind==='melody'){try{actx&&actx.resume()}catch{}}this.paused=false;Spot.stop();try{this.lp&&this.lp.disconnect()}catch{}this.lp=null;if(this.el){try{this.el.pause()}catch{}this.el=null}try{this.bus&&this.bus.disconnect()}catch{}this.bus=null;const was=this.playing;this.playing=false;if(was){hostAudio();displayAudio()}}};
+const Spot={api:null,ctl:null,waiting:[],loading:false,p:null,seeked:false,t:null,cued:'',endAt:0,left:0,pos:0,dur:0,onPos:null,
   load(cb){if(this.api)return cb(this.api);this.waiting.push(cb);if(this.loading)return;this.loading=true;
     window.onSpotifyIframeApiReady=api=>{this.api=api;this.waiting.splice(0).forEach(f=>f(api))};
     const sc=document.createElement('script');sc.src='https://open.spotify.com/embed/iframe-api/v1';sc.async=true;document.body.appendChild(sc)},
@@ -363,35 +369,47 @@ const Spot={api:null,ctl:null,waiting:[],loading:false,p:null,seeked:false,t:nul
       w.style.cssText='position:fixed;left:0;bottom:0;width:300px;height:80px;opacity:0;pointer-events:none;z-index:-1;overflow:hidden';document.body.appendChild(w)}
     const el=document.createElement('div');w.appendChild(el);
     api.createController(el,{uri,width:300,height:80},ctl=>{this.ctl=ctl;ctl.addListener('playback_update',e=>this.update(e));ctl.addListener('ready',()=>{if(this.p)this.go()});if(thenPlay)this.go()})},
-  play(id,start,len){this.p={id,start:+start||0,len};this.seeked=false;
+  play(id,start,len,o){o=o||{};this.p={id,start:+start||0,len,auto:!!o.auto,full:!!o.full};this.seeked=false;
     this.load(api=>{const uri='spotify:track:'+id;if(!this.p)return;
       if(this.ctl&&this.cued===id){this.go();return}
       this.cued=id;
       if(!this.ctl){this.make(api,uri,true);return}
       try{this.ctl.loadUri(uri)}catch{}setTimeout(()=>this.go(),300)})},
   go(){if(!this.ctl||!this.p)return;try{this.ctl.play()}catch{}},
-  update(e){const p=this.p,d=(e&&e.data)||{};if(!p||this.seeked||d.isPaused||d.isBuffering)return;this.seeked=true;
-    if(p.start>0)try{this.ctl.seek(p.start)}catch{};clearTimeout(this.t);const ms=(p.len+(p.start>0?0.7:0))*1000;this.endAt=Date.now()+ms;this.t=setTimeout(()=>this.stop(),ms)},
+  update(e){const p=this.p,d=(e&&e.data)||{};this.pos=(d.position||0)/1000;if(d.duration)this.dur=d.duration/1000;if(this.onPos&&p)this.onPos(this.pos,this.dur,!!d.isPaused);
+    if(!p||this.seeked||d.isPaused||d.isBuffering)return;this.seeked=true;
+    if(p.auto&&this.dur>60)p.start=Math.min(80,Math.max(35,Math.round(this.dur*0.22)));
+    if(p.start>0)try{this.ctl.seek(p.start)}catch{};if(p.full)return;clearTimeout(this.t);const ms=(p.len+(p.start>0?0.7:0))*1000;this.endAt=Date.now()+ms;this.t=setTimeout(()=>this.stop(),ms)},
   pause(){if(!this.p)return;clearTimeout(this.t);this.left=this.seeked?Math.max(300,this.endAt-Date.now()):0;try{this.ctl&&this.ctl.pause()}catch{}},
   resume(){if(!this.p||!this.ctl)return;try{this.ctl.resume?this.ctl.resume():this.ctl.togglePlay()}catch{}if(this.seeked){clearTimeout(this.t);this.endAt=Date.now()+this.left;this.t=setTimeout(()=>this.stop(),this.left)}},
   stop(){clearTimeout(this.t);this.t=null;this.p=null;try{this.ctl&&this.ctl.pause()}catch{}}};
-let hostClipN=null;
+let hostClipN=null,songDrag=false,lastPosSend=0;
+Spot.onPos=(pos,dur,paused)=>{if(view==='display'&&Clip.playing&&Date.now()-lastPosSend>450){lastPosSend=Date.now();send({t:'pos',pos,dur,paused})}
+  if(view==='host'&&S&&!displayOn()){S.spos={pos,dur,paused,at:Date.now()};paintSongPos()}};
+function paintSongPos(){const el=$('#songpos'),tx=$('#songtime');if(!S)return;const sp=S.spos||{},c=S.clip||{},live=c.full&&clipState()==='playing'&&!sp.paused;
+  const pos=Math.max(0,(sp.pos||0)+(live?(Date.now()-(sp.at||Date.now()))/1000:0)),dur=sp.dur||Spot.dur||0;
+  if(el&&!songDrag){if(dur)el.max=String(Math.ceil(dur));if(c.full)el.value=String(Math.floor(pos))}
+  if(tx){const v=songDrag&&el?+el.value:pos;tx.textContent=`${fmtT(Math.floor(v))} / ${dur?fmtT(Math.floor(dur)):'—:——'}`}}
+setInterval(()=>{if(view==='host'&&S&&S.phase==='clue')paintSongPos()},500);
 function soundBlocked(){return !actx||actx.state!=='running'}
 function updateSoundWarn(){const el=$('#sndwarn');if(!el)return;const show=view==='display'&&D.step==='live'&&!D.mute&&soundBlocked()&&!Clip.paused;
   el.innerHTML=show?'<button class="btn-sm btn-gold" data-act="d-unlock">🔊 Click to turn on sound</button>':''}
 setInterval(()=>{updateSoundWarn();if(view==='host'&&S&&S.clip){const el=$('#clipstat');if(el){const t=clipStatusText();if(el.textContent!==t)el.textContent=t;
   if(t==='Ready'&&S.clip.act!=='stop'&&S.clip.act!=='pause'&&!S.clip._done){S.clip._done=true;render()}}}},500);
-function runClip(act,m){if(act==='play'){m&&Clip.play(m)}else if(act==='pause')Clip.pause();else if(act==='resume')Clip.resume();else Clip.stop()}
-function hostClip(){if(view!=='host'||!S||!S.clip)return;if(S.clip.n===hostClipN)return;hostClipN=S.clip.n;if(displayOn()||S.sound===false){Clip.stop();return}const cl=curClue();runClip(S.clip.act,cl&&cl.m)}
-function clipCmd(act){const now=Date.now(),cl=curClue(),len=Math.min(20,Math.max(2,+(cl&&cl.m&&cl.m.length)||8))*1000,c=S.clip||{};
-  let end=c.end||0,left=c.left||0;
+function runClip(act,m,at){if(act==='full'){m&&Clip.playFull(m,at)}else if(act==='play'){m&&Clip.play(m)}else if(act==='pause')Clip.pause();else if(act==='resume')Clip.resume();else Clip.stop()}
+function hostClip(){if(view!=='host'||!S||!S.clip)return;if(S.clip.n===hostClipN)return;hostClipN=S.clip.n;if(displayOn()||S.sound===false){Clip.stop();return}const cl=curClue();runClip(S.clip.act,cl&&cl.m,S.clip.at)}
+function clipCmd(act,at){const now=Date.now(),cl=curClue(),len=Math.min(20,Math.max(2,+(cl&&cl.m&&cl.m.length)||8))*1000,c=S.clip||{};
+  let end=c.end||0,left=c.left||0,full=!!c.full;
+  if(act==='full'){S.clip={n:(c.n||0)+1,act:'full',at:Math.max(0,+at||0),full:true,end:0,left:0};S.spos={pos:+at||0,dur:S.spos?.dur||0,paused:false,at:now};return}
   if(act==='play'){end=now+len+(cl&&cl.m&&cl.m.spotify?1200:0);left=0}
-  else if(act==='pause'){if(c.act!=='play'&&c.act!=='resume')return;left=Math.max(0,end-now)}
-  else if(act==='resume'){if(c.act!=='pause')return;end=now+left}
-  else {end=0;left=0}
-  S.clip={n:(c.n||0)+1,act,end,left}}
-function clipState(){const c=S&&S.clip;if(!c)return 'idle';if(c.act==='pause')return 'paused';if((c.act==='play'||c.act==='resume')&&c.end>Date.now())return 'playing';return 'idle'}
+  else if(act==='pause'){if(c.act!=='play'&&c.act!=='resume'&&c.act!=='full')return;left=full?0:Math.max(0,end-now)}
+  else if(act==='resume'){if(c.act!=='pause')return;end=full?0:now+left}
+  else {end=0;left=0;full=false}
+  if(act==='play')full=false;
+  S.clip={n:(c.n||0)+1,act,end,left,full}}
+function clipState(){const c=S&&S.clip;if(!c)return 'idle';if(c.act==='pause')return 'paused';if(c.full&&(c.act==='full'||c.act==='resume'))return 'playing';if((c.act==='play'||c.act==='resume')&&c.end>Date.now())return 'playing';return 'idle'}
 function clipStatusText(){const st=clipState(),c=S.clip||{},where=displayOn()?'on the TV':'here';
+  if(c.full&&st!=='idle'){const sp=S.spos||{},pos=sp.paused||st==='paused'?sp.pos||0:(sp.pos||0)+(Date.now()-(sp.at||Date.now()))/1000;return `${st==='paused'?'❚❚ Paused':'▶ Full song playing '+where} · ${fmtT(Math.floor(pos))}${sp.dur?' / '+fmtT(Math.floor(sp.dur)):''}`}
   if(st==='playing')return `▶ Playing ${where} · ${Math.ceil((c.end-Date.now())/1000)}s left`;if(st==='paused')return `❚❚ Paused · ${Math.ceil((c.left||0)/1000)}s left`;return 'Ready'}
 function setMusic(kind){if(Clip.playing)kind=null;if(!kind){if(Music.on)Music.stop()}else Music.start(kind)}
 function wantMusic(ph,run,tmusic,music){if(tmusic&&run&&(ph==='clue'||ph==='final-clue'))return 'tension';return music&&['lobby','board','final-cat','over'].includes(ph)?'show':null}
@@ -502,6 +520,7 @@ function netChanged(){if(!S)return;pruneTeams();syncNames();hostAudio();saveHost
 function onMsg(c,m){
   if(!S||!m||typeof m!=='object')return;
   const info=conns.get(c);if(!info)return;
+  if(info.role==='display'&&m.t==='pos'){S.spos={pos:+m.pos||0,dur:+m.dur||0,paused:!!m.paused,at:Date.now()};paintSongPos();return}
   if(m.t==='hello'){
     if(m.role==='display'){info.role='display'}
     else{const pid=short(m.pid,16);if(!pid)return;info.role='player';info.pid=pid;const ex=S.members[pid];S.members[pid]={name:short(m.name,20)||ex?.name||'Player',team:ex?.team&&teamIdx(ex.team)>=0?ex.team:null};if(!S.members[pid].team)soloTeam(pid)}
@@ -603,7 +622,7 @@ function publicState(){
     teams:S.teams.map((t,i)=>({id:t.id,name:t.name,named:t.custom!==false,need:needName(i),score:t.score,m:members(i).map(m=>({p:m.pid,n:m.name,on:on.has(m.pid)}))})),
     loose:Object.entries(S.members).filter(([,m])=>!m.team||teamIdx(m.team)<0).map(([p,m])=>({p,n:m.name})),
     cap:S.settings.cap,create:S.settings.playersCreate,mode:S.settings.mode,ans:S.settings.answers,turn:S.turn,epoch:S.epoch,open:!!S.buzzOpen,
-    tm:{left:tLeft(),run:!!S.tmr.run,len:S.tmr.len},music:!!S.music,tmusic:S.tmusic!==false,snd:S.sound!==false,fx:S.fx||null,clip:S.clip?{n:S.clip.n,act:S.clip.act}:null,hi:activeTeam()};
+    tm:{left:tLeft(),run:!!S.tmr.run,len:S.tmr.len},music:!!S.music,tmusic:S.tmusic!==false,snd:S.sound!==false,fx:S.fx||null,clip:S.clip?{n:S.clip.n,act:S.clip.act,at:S.clip.at||0}:null,hi:activeTeam()};
   if(S.cur&&cl){st.clue={cat:g.cats[S.cur.c].name,val:clueValue(),dd:isDD(),
     q:ph==='clue'?cl.q:null,h:S.hint&&ph==='clue'?cl.h:null,a:S.revealed?(cl.a||(cl.song?'':null)):null,rev:!!S.revealed,m:ph==='clue'&&cl.m?cl.m:null,
     who:S.answering,tried:S.tried,res:S.scored,queue:S.inbox.buzz.slice(0,6).map(p=>S.members[p]?.name||'Player')}}
@@ -627,7 +646,7 @@ function applyState(st){
   if(!st||typeof st!=='object'||!Array.isArray(st.teams))return;
   if(st.tm)pTimer={left:st.tm.left,run:st.tm.run,len:st.tm.len||1,end:Date.now()+st.tm.left};
   if(view==='display'){const n=st.fx?st.fx.n:0;if(lastFx!=null&&n!==lastFx&&st.fx){if(!D.mute&&st.snd!==false)sfx(st.fx.k);flash(st.fx.k)}lastFx=n;
-    const on=!D.mute&&st.snd!==false,cn=st.clip?st.clip.n:0;if(lastClip!=null&&cn!==lastClip&&st.clip){if(on)runClip(st.clip.act,st.clue&&st.clue.m);else Clip.stop()}lastClip=cn;
+    const on=!D.mute&&st.snd!==false,cn=st.clip?st.clip.n:0;if(lastClip!=null&&cn!==lastClip&&st.clip){if(on)runClip(st.clip.act,st.clue&&st.clue.m,st.clip.at);else Clip.stop()}lastClip=cn;
     if(!on&&Clip.playing)Clip.stop();if(st.ph==='clue'&&st.clue&&st.clue.m&&st.clue.m.spotify&&!Clip.playing)Spot.cue(st.clue.m.spotify);if(st.ph!=='clue'&&Clip.playing)Clip.stop();PS=st;displayAudio()}
   const k=JSON.stringify(Object.assign({},st,{tm:{run:st.tm?.run,left:st.tm?.run?0:st.tm?.left}}));
   if(k===PSkey)return;
@@ -908,7 +927,11 @@ function clueOverlay(){
     <div class="cluebox">${cl.m?'<div class="cliptag">♪ Audio clip</div>':''}<div class="clue">${clueText(cl.q)}</div>${S.hint&&cl.h?`<div class="hint">Hint: ${esc(cl.h)}</div>`:''}</div>
     ${cl.m?`<div class="row"><span class="note" style="flex:1;min-width:0">♪ This clue has ${cl.m.spotify?'a Spotify clip':'an audio clip'}. Tap Play clip when you’re ready; it plays ${displayOn()?'on the TV board':'on this device'}.${cl.m.spotify?' The TV board’s browser should be logged into Spotify for full songs.':''}</span></div><div class="row"><span class="pill" id="clipstat" aria-live="polite">${esc(clipStatusText())}</span>
       ${clipState()==='playing'?'<button class="btn-sm" data-act="clip-pause">❚❚ Pause</button>':clipState()==='paused'?'<button class="btn-sm btn-gold" data-act="clip-resume">▶ Resume</button>':''}
-      <button class="btn-sm ${clipState()==='idle'?'btn-gold':''}" data-act="clip-play">${clipState()==='idle'?'▶ Play clip':'↺ Play from the start'}</button><button class="btn-sm" data-act="clip-stop">■ Stop</button></div>`:''}
+      <button class="btn-sm ${clipState()==='idle'?'btn-gold':''}" data-act="clip-play">${clipState()==='idle'?'▶ Play clip':'↺ Play from the start'}</button><button class="btn-sm" data-act="clip-stop">■ Stop</button></div>
+      ${cl.m.spotify||cl.m.audio?`<details class="card" style="gap:8px" ${S.clip&&S.clip.full?'open':''}><summary class="eyebrow" style="cursor:pointer">Full song: drag to any part and play it (no cut-off)</summary>
+        <input type="range" id="songpos" min="0" max="${Math.ceil((S.spos&&S.spos.dur)||Spot.dur||300)}" step="1" value="${Math.floor((S.clip&&S.clip.full&&S.spos&&S.spos.pos)||0)}" data-songpos aria-label="Position in the song">
+        <div class="row"><span class="pill" id="songtime">0:00 / —:——</span><div class="spacer"></div><button class="btn-sm btn-gold" data-act="clip-full">▶ Play from here</button></div>
+        <span class="note">Drag the slider and let go to jump there. The song keeps playing ${displayOn()?'on the TV':'here'} until you pause or stop it. The full length shows once it starts.</span></details>`:''}`:''}
     ${hintRow(cl.h)}
     ${answerBox(cl.a||'(see questions.js)')}
     ${cl.song&&cl.m&&cl.m.spotify?`<span class="note">${displayOn()?'The song plays on the TV board only. Nothing plays on this device.':'No TV board is connected, so clips play on this device.'} The TV shows the Spotify song card when you reveal the answer.</span>`:''}
@@ -1143,6 +1166,7 @@ document.addEventListener('click',e=>{
     case 'clip-stop':clipCmd('stop');commit();break;
     case 'clip-pause':clipCmd('pause');commit();break;
     case 'clip-resume':clipCmd('resume');commit();break;
+    case 'clip-full':{const el=$('#songpos');clipCmd('full',el?+el.value:0);commit();break}
     case 'music-builtin':Music.file(null);render();break;
     case 'd-unlock':audio();Spot.load(()=>{});updateSoundWarn();break;
     case 'd-sound':D.mute=!D.mute;saveDisplay();displayAudio();render();break;
@@ -1204,6 +1228,7 @@ document.addEventListener('input',e=>{
   else if(d.pd){pDraft[d.pd]=t.value}
   else if(d.d){D.code=t.value.toUpperCase();t.value=D.code}
   else if(d.music==='vol'){Music.vol(+t.value)}
+  else if(d.songpos!==undefined){songDrag=true;paintSongPos()}
   else if(d.ed){const c=+d.c,r=+d.r,v=t.value;
     if(d.ed==='title')edit.title=v;else if(d.ed==='cat')edit.cats[c].name=v;
     else if(['q','a','h','alt'].includes(d.ed))edit.cats[c].clues[r][d.ed]=v;
@@ -1211,6 +1236,7 @@ document.addEventListener('input',e=>{
 });
 document.addEventListener('change',e=>{
   const d=e.target.dataset;
+  if(d.songpos!==undefined&&S){songDrag=false;clipCmd('full',+e.target.value);commit();return}
   if(d.music==='file'){const f=e.target.files&&e.target.files[0];if(f){Music.file(f);render()}return}
   if(d.opt){setup.settings[d.opt]=e.target.checked;saveSetup();render()}
   if(d.rename!==undefined&&S){if(!renameTeam(d.rename,e.target.value)){e.target.value='';e.target.placeholder='That name is taken'}commit();return}
