@@ -361,6 +361,7 @@ let musicVol=Number(store.get('ssw.vol',0.5));
    'show'    an upbeat game-show theme for the board (or the host's own music file)
    'tension' suspenseful countdown music that speeds up as the timer runs down */
 /* theme song from Spotify (questions.js spotify.theme), looped with its own hidden player */
+const LOOP_EARLY=350;
 const ThemeSpot={ctl:null,want:false,made:false,played:false,ok:false,pos:0,dur:0,playingAt:0,lastPos:0,kicked:0,
   id(){const qs=(window.QUESTION_BANK||{}).spotify||{};return typeof spotifyId==='function'?spotifyId(qs.theme||''):''},
   /* true while Spotify has reported it's playing in the last 2 seconds */
@@ -375,24 +376,31 @@ const ThemeSpot={ctl:null,want:false,made:false,played:false,ok:false,pos:0,dur:
       w.style.cssText='position:fixed;left:0;bottom:0;width:300px;height:80px;opacity:0;pointer-events:none;z-index:-1;overflow:hidden';document.body.appendChild(w)}
       const el=document.createElement('div');w.appendChild(el);
       api.createController(el,{uri:'spotify:track:'+id,width:300,height:80},ctl=>{this.ctl=ctl;ctl.addListener('playback_update',e=>this.update(e));ctl.addListener('ready',()=>{if(this.want)this.kick()});if(this.want)this.kick()})})},
-  update(e){const d=(e&&e.data)||{},pos=d.position||0,dur=d.duration||0;this.pos=pos/1000;if(dur)this.dur=dur/1000;
+  update(e){const d=(e&&e.data)||{},pos=d.position||0,dur=d.duration||0;this.pos=pos/1000;if(dur)this.dur=dur/1000;this.lastPaused=!!d.isPaused;this.lastUpd=Date.now();
     const playing=!d.isPaused&&!d.isBuffering&&dur>0;
-    if(playing){this.ok=true;this.played=true;this.playingAt=Date.now();if(this.fromTop){this.fromTop=false;if(pos>1500){this.loop();return}}}
     /* Spotify plays a 30-second preview (from the middle of the song) when it doesn't see a login */
-    if(dur){const pv=dur<=31000;if(pv!==this.preview){this.preview=pv;previewChanged()}}else if(d.isPaused)this.playingAt=0;
+    if(dur){const pv=dur<=31000;if(pv!==this.preview){this.preview=pv;previewChanged()}}
+    if(playing){this.ok=true;this.played=true;this.playingAt=Date.now();if(this.fromTop){this.fromTop=false;if(pos>1500){this.loop();return}}}
+    else if(d.isPaused)this.playingAt=0;
     if(!this.want){if(!d.isPaused)try{this.ctl.pause()}catch{}return}
     /* loop: let the whole song play, then jump back to the start right as it ends.
        The jump is timed from the song's own clock, so it doesn't wait for the next update. */
     clearTimeout(this.loopT);
+    /* jump back while the song is still playing (about a third of a second before the end): a jump made mid-song keeps playing,
+       while letting it reach the very end makes Spotify stop */
     if(playing){const left=dur-pos;
-      if(left<=80){this.loop()}else this.loopT=setTimeout(()=>{if(this.want)this.loop()},Math.max(0,left-80))}
+      if(left<=LOOP_EARLY){this.loop()}else this.loopT=setTimeout(()=>{if(this.want)this.loop()},Math.max(0,left-LOOP_EARLY))}
     /* the song finished on its own (stopped at the very end, or Spotify reset it to 0:00 after the end) */
     else if(d.isPaused&&this.played&&dur&&(pos>=dur-1500||(pos===0&&this.lastPos>=dur-3000)))this.loop(true);
     if(dur)this.lastPos=pos},
-  loop(stopped){this.lastPos=0;try{this.ctl.seek(0);if(stopped)this.ctl.resume?this.ctl.resume():this.ctl.play()}catch{}},
+  loop(stopped){this.loopedAt=Date.now();try{this.ctl.seek(0);if(stopped)this.ctl.resume?this.ctl.resume():this.ctl.play()}catch{}},
+  /* watchdog: the theme should be playing but Spotify has it paused (it stopped at the end, or after a jump) -> start it again */
+  watch(){if(!this.want||!this.ctl||!this.played||!this.lastPaused)return;if(Date.now()-this.kicked<1500)return;this.kicked=Date.now();
+    try{if(this.dur&&this.pos>=this.dur-1.5)this.ctl.seek(0);this.ctl.resume?this.ctl.resume():this.ctl.play()}catch{}},
   stop(){this.want=false;this.playingAt=0;this.kicked=0;clearTimeout(this.loopT);try{this.ctl&&this.ctl.pause()}catch{}}};
 /* browsers can block music until someone taps: a tap starts the theme only if it isn't already playing */
 document.addEventListener('pointerdown',()=>{if(ThemeSpot.want)ThemeSpot.kick()},true);
+setInterval(()=>ThemeSpot.watch(),1000);
 /* your own theme file, kept in this browser so it's there next time */
 const fileStore={db(){return new Promise((ok,no)=>{try{const r=indexedDB.open('ssw-music',1);r.onupgradeneeded=()=>r.result.createObjectStore('f');r.onsuccess=()=>ok(r.result);r.onerror=()=>no(r.error)}catch(e){no(e)}})},
   async put(v){try{const d=await this.db();d.transaction('f','readwrite').objectStore('f').put(v,'theme')}catch{}},
